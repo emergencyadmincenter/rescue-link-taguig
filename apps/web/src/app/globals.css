@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@import "../design-system/foundations/spacing.css";
+@import "../design-system/foundations/radius.css";
+@import "../design-system/foundations/border.css";
+
+@import "../design-system/themes/light.css";
+@import "../design-system/themes/dark.css";
+
+@import "../design-system/tokens.css";
+@import "../design-system/components.css";
