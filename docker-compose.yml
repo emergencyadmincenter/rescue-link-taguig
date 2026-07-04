@@ -15,7 +15,7 @@ services:
       CHOKIDAR_INTERVAL: 1000
       DB_HOST: db
       DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?schema=public"
-    command: npm run start:dev
+    command: sh -c "npx prisma generate && npx prisma migrate deploy && npm run start:dev"
     ports:
       - "3001:3000"
     volumes:
@@ -24,7 +24,8 @@ services:
     networks:
       - app-network
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:17-alpine
@@ -35,6 +36,11 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
