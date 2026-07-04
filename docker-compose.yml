@@ -47,11 +47,3 @@ networks:
 volumes:
   api_node_modules:
   postgres_data:
-
-# 1. Install frontend dependencies locally on Windows
-# npm install --prefix apps/web
-
-# 2. Create their local frontend environment file
-# echo NEXT_PUBLIC_API_URL=http://localhost:3001 > apps/web/.env.local
-
-# npm run dev
