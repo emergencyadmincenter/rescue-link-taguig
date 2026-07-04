@@ -1,0 +1,62 @@
+# System / OS junk
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+._*
+
+# IDE / editor settings
+.idea/
+.vscode/
+.vscode-test/
+*.iml
+*.suo
+*.user
+*.userossc
+*.swp
+*.swo
+*~
+
+# Package manager and dependency directories
+node_modules/
+vendor/
+target/
+.pnpm-store/
+.npm/
+.yarn/
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# Build outputs and artifacts
+dist/
+build/
+coverage/
+.nyc_output/
+.next/
+out/
+tmp/
+temp/
+.cache/
+logs/
+*.log
+*.pid
+*.pid.lock
+*.seed
+report.*.json
+*.tsbuildinfo
+
+# Security / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+certs/

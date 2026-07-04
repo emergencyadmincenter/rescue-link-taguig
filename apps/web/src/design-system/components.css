@@ -1,0 +1,33 @@
+@layer components {
+  .display-large {
+    @apply font-outfit font-bold text-[3rem] tracking-wide;
+  }
+  .display-medium {
+    @apply font-bold text-[1.875rem];
+  }
+  .display-small {
+    @apply font-bold text-[1.5rem];
+  }
+  .title-large {
+    @apply font-semibold text-[1.5rem];
+  }
+  .title-medium {
+    @apply font-semibold text-[1.25rem];
+  }
+  .title-small {
+    @apply font-semibold text-[1.125rem];
+  }
+  .body-large {
+    @apply text-[1.125rem];
+  }
+  .body-medium {
+    @apply text-[1rem];
+  }
+  .body-small {
+    @apply text-[0.875rem];
+  }
+
+  .body-xsmall {
+    @apply text-[0.75rem];
+  }
+}

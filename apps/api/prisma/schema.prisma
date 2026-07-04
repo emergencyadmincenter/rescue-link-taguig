@@ -1,0 +1,72 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  coordinator
+  admin
+}
+
+enum UserStatus {
+  pending_activation
+  active
+  inactive
+  removed
+}
+
+enum TokenType {
+  activation
+  password_reset
+}
+
+enum TokenStatus {
+  active
+  used
+  revoked
+  expired
+}
+
+model User {
+  id            String      @id @default(uuid()) @db.Uuid
+
+  role          UserRole
+  name          String
+
+  email         String      @unique
+
+  password_hash String?
+
+  status        UserStatus
+
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  removed_at    DateTime?
+
+  tokens        UserToken[]
+
+  @@map("users")
+}
+
+model UserToken {
+  id         String      @id @default(uuid()) @db.Uuid
+
+  user_id    String      @db.Uuid
+  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  type       TokenType
+  token      String      @unique
+
+  status     TokenStatus
+
+  expires_at DateTime
+  created_at DateTime    @default(now())
+
+  @@map("user_tokens")
+}
