@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import path from 'path';
 import { defineConfig } from 'prisma/config';
 
-config({ path: path.join(__dirname, '../.env') });
+config({ path: path.join(__dirname, '../../.env') });
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
