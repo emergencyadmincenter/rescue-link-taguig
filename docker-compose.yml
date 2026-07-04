@@ -3,7 +3,7 @@ name: rescue-link-taguig
 services:
   api:
     build:
-      context: ./api
+      context: ./apps/api
       dockerfile: Dockerfile
       target: dev
     env_file:
@@ -19,7 +19,7 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - ./api:/app
+      - ./apps/api:/app
       - api_node_modules:/app/node_modules
     networks:
       - app-network
@@ -49,9 +49,9 @@ volumes:
   postgres_data:
 
 # 1. Install frontend dependencies locally on Windows
-# npm install --prefix web
+# npm install --prefix apps/web
 
 # 2. Create their local frontend environment file
-# echo NEXT_PUBLIC_API_URL=http://localhost:3001 > web/.env.local
+# echo NEXT_PUBLIC_API_URL=http://localhost:3001 > apps/web/.env.local
 
 # npm run dev
