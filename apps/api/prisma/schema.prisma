@@ -1,16 +1,11 @@
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated/prisma"
-  moduleFormat    = "cjs"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum UserRole {
-  coordinator
-  admin
 }
 
 enum UserStatus {
@@ -33,40 +28,97 @@ enum TokenStatus {
 }
 
 model User {
-  id            String      @id @default(uuid()) @db.Uuid
+  id            String   @id @default(uuid()) @db.Uuid
 
-  role          UserRole
   name          String
-
-  email         String      @unique
+  email         String   @unique
 
   password_hash String?
 
   status        UserStatus
 
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
   removed_at    DateTime?
 
-  tokens        UserToken[]
+  tokens         UserToken[]
+  user_roles     UserRole[]
 
   @@map("users")
 }
 
-model UserToken {
-  id         String      @id @default(uuid()) @db.Uuid
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
 
-  user_id    String      @db.Uuid
-  user       User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  name        String   @unique
+  description String?
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user_roles       UserRole[]
+  role_permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+
+  name        String   @unique // "users:create"
+
+  resource    String
+  action      String
+
+  description String?
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  role_permissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  user_id     String @db.Uuid
+  role_id     String @db.Uuid
+
+  assigned_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role_id])
+
+  @@map("user_roles")
+}
+
+model RolePermission {
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+
+  @@map("role_permissions")
+}
+
+model UserToken {
+  id         String @id @default(uuid()) @db.Uuid
+
+  user_id    String @db.Uuid
+  user       User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   type       TokenType
-  token      String      @unique
+  token      String @unique
 
   status     TokenStatus
 
   expires_at DateTime
-  created_at DateTime    @default(now())
+  created_at DateTime @default(now())
 
   @@map("user_tokens")
 }
