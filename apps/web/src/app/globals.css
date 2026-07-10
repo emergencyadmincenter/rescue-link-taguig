@@ -2,10 +2,25 @@
 
 @import "../design-system/foundations/spacing.css";
 @import "../design-system/foundations/radius.css";
-@import "../design-system/foundations/border.css";
+@import "../design-system/foundations/stroke.css";
 
 @import "../design-system/themes/light.css";
 @import "../design-system/themes/dark.css";
 
 @import "../design-system/tokens.css";
 @import "../design-system/components.css";
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}

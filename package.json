@@ -6,5 +6,9 @@
     "dev:backend": "docker compose up -d db api",
     "dev:frontend": "npm run dev --prefix apps/web",
     "dev": "npm run dev:backend && npm run dev:frontend"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

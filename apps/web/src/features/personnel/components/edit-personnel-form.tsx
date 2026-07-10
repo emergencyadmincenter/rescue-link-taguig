@@ -46,7 +46,7 @@ export default function EditPersonnelForm({
         {/* Title */}
         <div className="flex items-center gap-2 mb-6">
           <FiEdit2 className="w-[16px] h-[16px] text-gray-700" />
-          <h2 className="text-[15px] font-bold text-gray-900">Edit Personnel</h2>
+          <h2 className="title-small text-gray-900">Edit Personnel</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,7 +57,7 @@ export default function EditPersonnelForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Name"
-              className="w-full px-0 py-2 text-[14px] text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
+              className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
               required
             />
           </div>
@@ -69,7 +69,7 @@ export default function EditPersonnelForm({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className="w-full px-0 py-2 text-[14px] text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
+              className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
               required
             />
           </div>
@@ -79,7 +79,7 @@ export default function EditPersonnelForm({
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-0 py-2 text-[14px] text-gray-900 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent appearance-none cursor-pointer transition-colors"
+              className="w-full px-0 py-2 body-small text-gray-900 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent appearance-none cursor-pointer transition-colors"
               required
             >
               <option value="" disabled>Coordinator</option>
@@ -97,14 +97,14 @@ export default function EditPersonnelForm({
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2 text-[13px] font-medium text-gray-500 hover:text-gray-700 transition-colors"
+              className="px-5 py-2 body-small font-medium text-gray-500 hover:text-gray-700 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 text-[13px] font-semibold text-white bg-[#16a34a] hover:bg-[#15803d] rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2 body-small font-semibold text-success-foreground bg-success hover:bg-success-hover rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Saving..." : "Save"}
             </button>

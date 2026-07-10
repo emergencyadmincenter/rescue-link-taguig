@@ -20,7 +20,8 @@
     ],
 
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared-schemas/*": ["../../packages/shared-schemas/src/*"]
     }
   },
   "include": [

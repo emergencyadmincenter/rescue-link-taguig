@@ -2,15 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { 
-  FiSearch, FiBell, FiChevronDown, FiMoreHorizontal,
-  FiMessageSquare
+import {
+  FiSearch,
+  FiBell,
+  FiChevronDown,
+  FiMoreHorizontal,
+  FiMessageSquare,
 } from "react-icons/fi";
-import { 
-  HiOutlineViewGrid, 
-  HiOutlineUserGroup, 
-  HiOutlineLocationMarker, 
-  HiOutlineUser
+import {
+  HiOutlineViewGrid,
+  HiOutlineUserGroup,
+  HiOutlineLocationMarker,
+  HiOutlineUser,
 } from "react-icons/hi";
 import { BiFilterAlt } from "react-icons/bi";
 import { MdCheckCircle } from "react-icons/md";
@@ -29,27 +32,48 @@ interface Personnel {
 }
 
 const MOCK_PERSONNEL: Personnel[] = [
-  { id: "1", name: "Mark Dennis Concha", email: "markdennisconcha@resculink.com", initials: "MC", status: "verified" },
-  { id: "2", name: "Liam Patel", email: "liampatel@resculink.com", initials: "LP", status: "unverified" },
-  { id: "3", name: "Ava Thompson", email: "avathompson@resculink.com", initials: "AT", status: "unverified" },
+  {
+    id: "1",
+    name: "Mark Dennis Concha",
+    email: "markdennisconcha@resculink.com",
+    initials: "MC",
+    status: "verified",
+  },
+  {
+    id: "2",
+    name: "Liam Patel",
+    email: "liampatel@resculink.com",
+    initials: "LP",
+    status: "unverified",
+  },
+  {
+    id: "3",
+    name: "Ava Thompson",
+    email: "avathompson@resculink.com",
+    initials: "AT",
+    status: "unverified",
+  },
 ];
 
 export default function PersonnelPageView() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Personnel | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{ type: "deactivate" | "reactivate" | "remove"; person: Personnel } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "deactivate" | "reactivate" | "remove";
+    person: Personnel;
+  } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f9] font-inter text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-background-subtle font-inter text-foreground flex flex-col">
       {/* ===== Top Navbar ===== */}
       <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-10 shrink-0">
         <div className="flex items-center">
-          <Image 
-            src="/images/logos/rlt-cc-logo.png" 
-            alt="RescueLink Taguig Command Center" 
-            width={160} 
-            height={45} 
+          <Image
+            src="/images/logos/rlt-cc-logo.png"
+            alt="RescueLink Taguig Command Center"
+            width={160}
+            height={45}
             className="object-contain"
           />
         </div>
@@ -67,18 +91,52 @@ export default function PersonnelPageView() {
           {/* Collapse button */}
           <div className="flex justify-end px-4 mb-3">
             <button className="text-gray-400 hover:text-gray-600">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M11 18L5 12L11 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15 18L9 12L15 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M11 18L5 12L11 6"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </div>
           <nav className="flex flex-col mt-1">
-            <SidebarItem icon={<HiOutlineViewGrid className="w-[18px] h-[18px]" />} label="Dashboard" />
-            <SidebarItem icon={<HiOutlineUserGroup className="w-[18px] h-[18px]" />} label="Personnel" active />
-            <SidebarItem icon={<HiOutlineLocationMarker className="w-[18px] h-[18px]" />} label="Barangays" />
-            <SidebarItem icon={<HiOutlineUser className="w-[18px] h-[18px]" />} label="Coordinators" />
-            <SidebarItem icon={<FiMessageSquare className="w-[18px] h-[18px]" />} label="Messages" />
+            <SidebarItem
+              icon={<HiOutlineViewGrid className="w-[18px] h-[18px]" />}
+              label="Dashboard"
+            />
+            <SidebarItem
+              icon={<HiOutlineUserGroup className="w-[18px] h-[18px]" />}
+              label="Personnel"
+              active
+            />
+            <SidebarItem
+              icon={<HiOutlineLocationMarker className="w-[18px] h-[18px]" />}
+              label="Barangays"
+            />
+            <SidebarItem
+              icon={<HiOutlineUser className="w-[18px] h-[18px]" />}
+              label="Coordinators"
+            />
+            <SidebarItem
+              icon={<FiMessageSquare className="w-[18px] h-[18px]" />}
+              label="Messages"
+            />
           </nav>
         </aside>
 
@@ -86,29 +144,29 @@ export default function PersonnelPageView() {
         <main className="flex-1 p-7 overflow-y-auto">
           <div className="bg-white rounded-xl w-full min-h-[calc(100vh-60px-56px)] px-10 py-9">
             {/* Page Title */}
-            <div className="mb-8">
-              <h1 className="text-[22px] font-extrabold text-gray-900 tracking-tight inline-block">
+            <div className="mb-8 w-max">
+              <h1 className="display-small text-gray-900 inline-block">
                 Personnel Management
               </h1>
-              <div className="w-[70px] h-[3px] bg-[#e11d48] rounded-full mt-1.5" />
+              <div className="divider-primary-half" />
             </div>
 
             {/* Search Row */}
             <div className="flex items-center gap-3 mb-8">
               <div className="relative flex-1">
-                <input 
-                  type="text" 
-                  placeholder="Search name or email..." 
-                  className="w-full pl-5 pr-10 py-2.5 border border-gray-200 rounded-full text-[13px] focus:outline-none focus:border-gray-300 text-gray-700 placeholder:text-gray-400"
+                <input
+                  type="text"
+                  placeholder="Search name or email..."
+                  className="w-full pl-5 pr-10 py-2.5 border border-gray-200 rounded-full body-small focus:outline-none focus:border-gray-300 text-gray-700 placeholder:text-gray-400"
                 />
                 <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-[15px] h-[15px]" />
               </div>
               <button className="text-gray-500 hover:text-gray-700 transition-colors shrink-0">
                 <BiFilterAlt className="w-[20px] h-[20px]" />
               </button>
-              <button 
+              <button
                 onClick={() => setShowAddForm(true)}
-                className="w-7 h-7 rounded-full bg-[#e11d48] hover:bg-[#be123c] text-white flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
+                className="w-7 h-7 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
               >
                 +
               </button>
@@ -116,7 +174,9 @@ export default function PersonnelPageView() {
 
             {/* Section Header */}
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-[15px] font-bold text-gray-900">Coordinators</h2>
+              <h2 className="body-medium font-bold text-gray-900">
+                Coordinators
+              </h2>
               <FiChevronDown className="text-gray-400 w-4 h-4" />
             </div>
 
@@ -125,17 +185,33 @@ export default function PersonnelPageView() {
             {/* Personnel List */}
             <div className="flex flex-col">
               {MOCK_PERSONNEL.map((person) => (
-                <PersonnelItem 
+                <PersonnelItem
                   key={person.id}
                   person={person}
                   isMenuOpen={openMenuId === person.id}
-                  onMenuToggle={() => setOpenMenuId(openMenuId === person.id ? null : person.id)}
+                  onMenuToggle={() =>
+                    setOpenMenuId(openMenuId === person.id ? null : person.id)
+                  }
                   onCloseMenu={() => setOpenMenuId(null)}
-                  onEdit={() => { setEditingPerson(person); setOpenMenuId(null); }}
-                  onDeactivate={() => { setConfirmAction({ type: "deactivate", person }); setOpenMenuId(null); }}
-                  onReactivate={() => { setConfirmAction({ type: "reactivate", person }); setOpenMenuId(null); }}
-                  onResendActivation={() => { setOpenMenuId(null); }}
-                  onRemove={() => { setConfirmAction({ type: "remove", person }); setOpenMenuId(null); }}
+                  onEdit={() => {
+                    setEditingPerson(person);
+                    setOpenMenuId(null);
+                  }}
+                  onDeactivate={() => {
+                    setConfirmAction({ type: "deactivate", person });
+                    setOpenMenuId(null);
+                  }}
+                  onReactivate={() => {
+                    setConfirmAction({ type: "reactivate", person });
+                    setOpenMenuId(null);
+                  }}
+                  onResendActivation={() => {
+                    setOpenMenuId(null);
+                  }}
+                  onRemove={() => {
+                    setConfirmAction({ type: "remove", person });
+                    setOpenMenuId(null);
+                  }}
                 />
               ))}
             </div>
@@ -177,15 +253,25 @@ export default function PersonnelPageView() {
 }
 
 /* ---- Sidebar Item ---- */
-function SidebarItem({ icon, label, active = false }: { icon: React.ReactNode; label: string; active?: boolean }) {
+function SidebarItem({
+  icon,
+  label,
+  active = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}) {
   return (
-    <div className={`flex items-center gap-3 px-5 py-3 cursor-pointer border-l-[3px] transition-colors ${
-      active 
-        ? 'border-[#e11d48] bg-red-50/80 text-[#e11d48] font-semibold' 
-        : 'border-transparent text-gray-500 hover:bg-gray-50'
-    }`}>
-      <span className={active ? "text-[#e11d48]" : "text-gray-400"}>{icon}</span>
-      <span className="text-[13px]">{label}</span>
+    <div
+      className={`flex items-center gap-3 px-5 py-3 cursor-pointer border-l-[3px] transition-colors ${
+        active
+          ? "border-primary bg-primary-subtle/80 text-primary font-semibold"
+          : "border-transparent text-gray-500 hover:bg-gray-50"
+      }`}
+    >
+      <span className={active ? "text-primary" : "text-gray-400"}>{icon}</span>
+      <span className="body-small">{label}</span>
     </div>
   );
 }
@@ -203,7 +289,17 @@ interface PersonnelItemProps {
   onRemove: () => void;
 }
 
-function PersonnelItem({ person, isMenuOpen, onMenuToggle, onCloseMenu, onEdit, onDeactivate, onReactivate, onResendActivation, onRemove }: PersonnelItemProps) {
+function PersonnelItem({
+  person,
+  isMenuOpen,
+  onMenuToggle,
+  onCloseMenu,
+  onEdit,
+  onDeactivate,
+  onReactivate,
+  onResendActivation,
+  onRemove,
+}: PersonnelItemProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -214,7 +310,8 @@ function PersonnelItem({ person, isMenuOpen, onMenuToggle, onCloseMenu, onEdit, 
     }
     if (isMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isMenuOpen, onCloseMenu]);
 
@@ -225,21 +322,27 @@ function PersonnelItem({ person, isMenuOpen, onMenuToggle, onCloseMenu, onEdit, 
         <div className="w-9 h-9 rounded-full bg-gray-200 shrink-0" />
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900 text-[13px]">{person.name}</span>
+            <span className="font-semibold text-gray-900 body-small">
+              {person.name}
+            </span>
             {person.status === "verified" && (
               <span className="flex items-center gap-0.5">
-                <span className="text-[11px] text-[#e11d48] font-medium italic">Verified</span>
-                <MdCheckCircle className="text-[#16a34a] w-[13px] h-[13px]" />
+                <span className="body-xsmall text-primary font-medium italic">
+                  Verified
+                </span>
+                <MdCheckCircle className="text-success w-[13px] h-[13px]" />
               </span>
             )}
           </div>
-          <span className="text-[12px] text-gray-400 mt-0.5">{person.email}</span>
+          <span className="body-xsmall text-gray-400 mt-0.5">
+            {person.email}
+          </span>
         </div>
       </div>
 
       {/* Three dots menu */}
       <div className="relative" ref={menuRef}>
-        <button 
+        <button
           onClick={onMenuToggle}
           className="text-gray-400 hover:text-gray-600 p-1"
         >
@@ -252,20 +355,39 @@ function PersonnelItem({ person, isMenuOpen, onMenuToggle, onCloseMenu, onEdit, 
               <>
                 <MenuButton label="Edit" onClick={onEdit} />
                 <MenuButton label="Deactivate" onClick={onDeactivate} />
-                <MenuButton label="Remove" onClick={onRemove} color="text-[#e11d48]" />
+                <MenuButton
+                  label="Remove"
+                  onClick={onRemove}
+                  color="text-danger"
+                />
               </>
             ) : person.status === "deactivated" ? (
               <>
                 <MenuButton label="Edit" onClick={onEdit} />
-                <MenuButton label="Reactivate" onClick={onReactivate} color="text-[#16a34a]" />
-                <MenuButton label="Remove" onClick={onRemove} color="text-[#e11d48]" />
+                <MenuButton
+                  label="Reactivate"
+                  onClick={onReactivate}
+                  color="text-success"
+                />
+                <MenuButton
+                  label="Remove"
+                  onClick={onRemove}
+                  color="text-danger"
+                />
               </>
             ) : (
               <>
                 <MenuButton label="Edit" onClick={onEdit} />
-                <MenuButton label="Resend Activation" onClick={onResendActivation} />
+                <MenuButton
+                  label="Resend Activation"
+                  onClick={onResendActivation}
+                />
                 <MenuButton label="Deactivate" onClick={onDeactivate} />
-                <MenuButton label="Remove" onClick={onRemove} color="text-[#e11d48]" />
+                <MenuButton
+                  label="Remove"
+                  onClick={onRemove}
+                  color="text-danger"
+                />
               </>
             )}
           </div>
@@ -276,11 +398,19 @@ function PersonnelItem({ person, isMenuOpen, onMenuToggle, onCloseMenu, onEdit, 
 }
 
 /* ---- Context Menu Button ---- */
-function MenuButton({ label, onClick, color = "text-gray-700" }: { label: string; onClick: () => void; color?: string }) {
+function MenuButton({
+  label,
+  onClick,
+  color = "text-gray-700",
+}: {
+  label: string;
+  onClick: () => void;
+  color?: string;
+}) {
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-1.5 text-[12px] hover:bg-gray-50 transition-colors ${color}`}
+      className={`w-full text-left px-4 py-1.5 body-xsmall hover:bg-gray-50 transition-colors ${color}`}
     >
       {label}
     </button>
