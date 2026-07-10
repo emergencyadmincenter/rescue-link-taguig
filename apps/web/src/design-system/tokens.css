@@ -9,20 +9,25 @@
   --color-foreground: var(--foreground);
 
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-subtle: var(--primary-subtle);
   --color-primary-foreground: var(--primary-foreground);
 
   --color-info: var(--info);
+  --color-info-hover: var(--info-hover);
   --color-info-foreground: var(--info-foreground);
 
   --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
   --color-success-foreground: var(--success-foreground);
 
   --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
   --color-warning-subtle: var(--warning-subtle);
   --color-warning-foreground: var(--warning-foreground);
 
   --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
 
   /*
@@ -56,17 +61,6 @@
   --radius-2xl: var(--radius-2xl);
   --radius-3xl: var(--radius-3xl);
   --radius-full: var(--radius-full);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Borders
-  |--------------------------------------------------------------------------
-  */
-  --border-width-subtle: var(--border-subtle);
-  --border-width-default: var(--border-default);
-  --border-width-medium: var(--border-medium);
-  --border-width-strong: var(--border-strong);
-  --border-width-heavy: var(--border-heavy);
 
   /*
   |--------------------------------------------------------------------------

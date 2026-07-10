@@ -1,4 +1,10 @@
 @layer components {
+  /*
+  |--------------------------------------------------------------------------
+  | Typography
+  |--------------------------------------------------------------------------
+  */
+
   .display-large {
     @apply font-outfit font-bold text-[3rem] tracking-wide;
   }
@@ -26,8 +32,16 @@
   .body-small {
     @apply text-[0.875rem];
   }
-
   .body-xsmall {
     @apply text-[0.75rem];
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Others
+  |--------------------------------------------------------------------------
+  */
+  .divider-primary-half {
+    @apply w-[30%] h-[var(--stroke-heavy)] bg-primary rounded-full;
   }
 }
