@@ -179,22 +179,10 @@ model Log {
   reference_no String @unique
 
   assigned_coordinator_id String? @db.Uuid
-  assigned_coordinator User?
-    @relation(
-      "AssignedCoordinator",
-      fields: [assigned_coordinator_id],
-      references: [id],
-      onDelete: SetNull
-    )
+  assigned_coordinator User? @relation("AssignedCoordinator", fields: [assigned_coordinator_id], references: [id], onDelete: SetNull)
 
   created_by_coordinator_id String? @db.Uuid
-  created_by_coordinator User?
-    @relation(
-      "CreatedByCoordinator",
-      fields: [created_by_coordinator_id],
-      references: [id],
-      onDelete: SetNull
-    )
+  created_by_coordinator User? @relation("CreatedByCoordinator", fields: [created_by_coordinator_id], references: [id], onDelete: SetNull)
 
   status LogStatus
 
@@ -276,8 +264,7 @@ model Call {
   log Log @relation(fields: [log_id], references: [id], onDelete: Cascade)
 
   coordinator_id String? @db.Uuid
-  coordinator User?
-    @relation(fields: [coordinator_id], references: [id], onDelete: SetNull)
+  coordinator User? @relation(fields: [coordinator_id], references: [id], onDelete: SetNull)
 
   communication_method CommunicationMethod
 
