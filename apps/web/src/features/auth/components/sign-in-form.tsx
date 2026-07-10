@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInFormData } from "shared-schemas/auth";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import { signIn } from "@/features/auth/api/auth.api";
+
 
 interface FeedbackMessage {
   type: "success" | "error";
@@ -12,6 +15,7 @@ interface FeedbackMessage {
 }
 
 export default function SignInForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
 
@@ -30,21 +34,19 @@ export default function SignInForm() {
   const onSubmit = async (data: SignInFormData) => {
     setFeedback(null);
 
-    // TODO: Replace with actual API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Simulated response — ready for backend integration
-      console.log("Sign-in payload ready:", data);
+      const response = await signIn(data);
 
       setFeedback({
         type: "success",
         text: "Sign-in successful! Redirecting...",
       });
-    } catch {
+
+      router.push("/personnel");
+    } catch (err: any) {
       setFeedback({
         type: "error",
-        text: "Invalid email or password. Please try again.",
+        text: err.message || "Invalid email or password. Please try again.",
       });
     }
   };

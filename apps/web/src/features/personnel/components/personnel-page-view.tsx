@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   FiSearch,
   FiBell,
   FiChevronDown,
   FiMoreHorizontal,
   FiMessageSquare,
+  FiShield,
 } from "react-icons/fi";
 import {
   HiOutlineViewGrid,
@@ -19,7 +21,7 @@ import { BiFilterAlt } from "react-icons/bi";
 import { MdCheckCircle } from "react-icons/md";
 import AddPersonnelForm from "./add-personnel-form";
 import EditPersonnelForm from "./edit-personnel-form";
-import ConfirmationDialog from "./confirmation-dialog";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 type PersonnelStatus = "verified" | "unverified" | "deactivated";
 
@@ -65,90 +67,24 @@ export default function PersonnelPageView() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background-subtle font-inter text-foreground flex flex-col">
-      {/* ===== Top Navbar ===== */}
-      <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-10 shrink-0">
-        <div className="flex items-center">
-          <Image
-            src="/images/logos/rlt-cc-logo.png"
-            alt="RescueLink Taguig Command Center"
-            width={160}
-            height={45}
-            className="object-contain"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-300 shrink-0" />
-          <button className="text-gray-500 hover:text-gray-700 transition-colors">
-            <FiBell className="w-[18px] h-[18px]" />
-          </button>
-        </div>
-      </header>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* ===== Sidebar ===== */}
-        <aside className="w-[190px] bg-white border-r border-gray-100 flex flex-col pt-4 shrink-0">
-          {/* Collapse button */}
-          <div className="flex justify-end px-4 mb-3">
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M15 18L9 12L15 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M11 18L5 12L11 6"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <nav className="flex flex-col mt-1">
-            <SidebarItem
-              icon={<HiOutlineViewGrid className="w-[18px] h-[18px]" />}
-              label="Dashboard"
-            />
-            <SidebarItem
-              icon={<HiOutlineUserGroup className="w-[18px] h-[18px]" />}
-              label="Personnel"
-              active
-            />
-            <SidebarItem
-              icon={<HiOutlineLocationMarker className="w-[18px] h-[18px]" />}
-              label="Barangays"
-            />
-            <SidebarItem
-              icon={<HiOutlineUser className="w-[18px] h-[18px]" />}
-              label="Coordinators"
-            />
-            <SidebarItem
-              icon={<FiMessageSquare className="w-[18px] h-[18px]" />}
-              label="Messages"
-            />
-          </nav>
-        </aside>
-
-        {/* ===== Main Content Area ===== */}
-        <main className="flex-1 p-7 overflow-y-auto">
+    <>
           <div className="bg-white rounded-xl w-full min-h-[calc(100vh-60px-56px)] px-10 py-9">
             {/* Page Title */}
-            <div className="mb-8 w-max">
-              <h1 className="display-small text-gray-900 inline-block">
-                Personnel Management
-              </h1>
-              <div className="divider-primary-half" />
+            <div className="mb-8 flex items-center justify-between">
+              <div className="w-max">
+                <h1 className="display-small text-gray-900 inline-block">
+                  Personnel Management
+                </h1>
+                <div className="divider-primary-half" />
+              </div>
+              
+              <Link
+                href="/personnel/permissions"
+                className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 shadow-sm"
+              >
+                <FiShield className="w-4 h-4 text-gray-500" />
+                Manage Permissions
+              </Link>
             </div>
 
             {/* Search Row */}
@@ -157,16 +93,16 @@ export default function PersonnelPageView() {
                 <input
                   type="text"
                   placeholder="Search name or email..."
-                  className="w-full pl-5 pr-10 py-2.5 border border-gray-200 rounded-full body-small focus:outline-none focus:border-gray-300 text-gray-700 placeholder:text-gray-400"
+                  className="w-full pl-5 pr-10 py-2.5 border border-gray-200 rounded-full body-small focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-gray-700 placeholder:text-gray-400"
                 />
                 <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-[15px] h-[15px]" />
               </div>
-              <button className="text-gray-500 hover:text-gray-700 transition-colors shrink-0">
+              <button className="text-gray-500 hover:text-gray-700 transition-colors duration-200 shrink-0 p-2 rounded-full hover:bg-gray-50">
                 <BiFilterAlt className="w-[20px] h-[20px]" />
               </button>
               <button
                 onClick={() => setShowAddForm(true)}
-                className="w-7 h-7 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
+                className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-all duration-200 shrink-0 text-[18px] leading-none font-light shadow-sm"
               >
                 +
               </button>
@@ -216,8 +152,6 @@ export default function PersonnelPageView() {
               ))}
             </div>
           </div>
-        </main>
-      </div>
 
       {/* ===== Add Personnel Dialog ===== */}
       {showAddForm && (
@@ -239,42 +173,33 @@ export default function PersonnelPageView() {
       )}
 
       {/* ===== Confirmation Dialog ===== */}
-      {confirmAction && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <ConfirmationDialog
-            type={confirmAction.type}
-            onCancel={() => setConfirmAction(null)}
-            onConfirm={() => setConfirmAction(null)}
-          />
-        </div>
-      )}
-    </div>
+      <ConfirmationDialog
+        isOpen={!!confirmAction}
+        title={
+          confirmAction?.type === "deactivate" 
+            ? "Deactivate Personnel Account" 
+            : confirmAction?.type === "reactivate" 
+              ? "Reactivate Personnel Account" 
+              : "Remove Personnel Account"
+        }
+        message={
+          confirmAction?.type === "deactivate"
+            ? "Are you sure you want to deactivate this personnel account? The personnel will no longer be able to access the system until the account is reactivated."
+            : confirmAction?.type === "reactivate"
+              ? "Are you sure you want to reactivate this personnel account? The personnel will regain access to the system using their existing credentials."
+              : "Are you sure you want to remove this personnel account? The account will be removed from the active personnel list and can no longer be reactivated."
+        }
+        confirmLabel={
+          confirmAction?.type === "deactivate" ? "Deactivate" : confirmAction?.type === "reactivate" ? "Reactivate" : "Remove"
+        }
+        isDestructive={confirmAction?.type !== "reactivate"}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => setConfirmAction(null)}
+      />
+    </>
   );
 }
 
-/* ---- Sidebar Item ---- */
-function SidebarItem({
-  icon,
-  label,
-  active = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-5 py-3 cursor-pointer border-l-[3px] transition-colors ${
-        active
-          ? "border-primary bg-primary-subtle/80 text-primary font-semibold"
-          : "border-transparent text-gray-500 hover:bg-gray-50"
-      }`}
-    >
-      <span className={active ? "text-primary" : "text-gray-400"}>{icon}</span>
-      <span className="body-small">{label}</span>
-    </div>
-  );
-}
 
 /* ---- Personnel List Item ---- */
 interface PersonnelItemProps {
