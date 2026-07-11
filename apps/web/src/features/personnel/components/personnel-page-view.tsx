@@ -163,51 +163,7 @@ export default function PersonnelPageView() {
               </button>
             </div>
 
-<<<<<<< HEAD
-            {/* Section Header */}
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="body-medium font-bold text-gray-900">
-                Coordinators
-              </h2>
-              <FiChevronDown className="text-gray-400 w-4 h-4" />
-            </div>
 
-            <div className="border-t border-gray-100" />
-
-            {/* Personnel List */}
-            <div className="flex flex-col">
-              {MOCK_PERSONNEL.map((person) => (
-                <PersonnelItem
-                  key={person.id}
-                  person={person}
-                  isMenuOpen={openMenuId === person.id}
-                  onMenuToggle={() =>
-                    setOpenMenuId(openMenuId === person.id ? null : person.id)
-                  }
-                  onCloseMenu={() => setOpenMenuId(null)}
-                  onEdit={() => {
-                    setEditingPerson(person);
-                    setOpenMenuId(null);
-                  }}
-                  onDeactivate={() => {
-                    setConfirmAction({ type: "deactivate", person });
-                    setOpenMenuId(null);
-                  }}
-                  onReactivate={() => {
-                    setConfirmAction({ type: "reactivate", person });
-                    setOpenMenuId(null);
-                  }}
-                  onResendActivation={() => {
-                    setOpenMenuId(null);
-                  }}
-                  onRemove={() => {
-                    setConfirmAction({ type: "remove", person });
-                    setOpenMenuId(null);
-                  }}
-                />
-              ))}
-            </div>
-=======
             {/* Personnel List */}
             {isLoading ? (
               <div className="py-10 text-center text-gray-500 body-small">Loading personnel...</div>
@@ -293,7 +249,7 @@ export default function PersonnelPageView() {
                 })}
               </div>
             )}
->>>>>>> feature/view-search-filter-personnel-list
+
           </div>
 
       {/* ===== Add Personnel Dialog ===== */}
