@@ -8,7 +8,6 @@ import { signInSchema, type SignInFormData } from "shared-schemas/auth";
 import { FiMail, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signIn } from "@/features/auth/api/auth.api";
 
-
 interface FeedbackMessage {
   type: "success" | "error";
   text: string;
@@ -41,7 +40,6 @@ export default function SignInForm() {
         type: "success",
         text: "Sign-in successful! Redirecting...",
       });
-
       router.push("/personnel");
     } catch (err: any) {
       setFeedback({
