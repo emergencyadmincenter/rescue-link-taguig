@@ -4,8 +4,8 @@
 @import "../design-system/foundations/radius.css";
 @import "../design-system/foundations/stroke.css";
 
-@import "../design-system/themes/light.css";
 @import "../design-system/themes/dark.css";
+@import "../design-system/themes/light.css";
 
 @import "../design-system/tokens.css";
 @import "../design-system/components.css";
@@ -23,4 +23,19 @@
 
 .animate-fade-in {
   animation: fade-in 0.25s ease-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--background-subtle);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-subtle);
 }

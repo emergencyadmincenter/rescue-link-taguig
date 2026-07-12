@@ -29,8 +29,8 @@ export function HeroSection({ onRequestAssistance }: HeroSectionProps) {
       <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-40 z-0"></div>
 
       {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-[600px] lg:w-[900px] h-[600px] lg:h-[900px] bg-primary/1 md:bg-primary/10 lg:bg-primary/20 rounded-full blur-[120px] -translate-y-1/3 translate-x-1/4 pointer-events-none z-0"></div>
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-danger/10 lg:bg-danger/20 rounded-full blur-[100px] translate-y-1/3 pointer-events-none z-0"></div>
+      <div className="absolute top-0 right-0 w-[600px] lg:w-[900px] h-[600px] lg:h-[900px] bg-primary/1 md:bg-primary/10 lg:bg-primary/5 rounded-full blur-[120px] -translate-y-1/3 translate-x-1/4 pointer-events-none z-0"></div>
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-danger/10 lg:bg-danger/5 rounded-full blur-[100px] translate-y-1/3 pointer-events-none z-0"></div>
       <div className="absolute top-1/3 left-0 w-[400px] h-[400px] bg-blue-400/5 rounded-full blur-[80px] -translate-x-1/2 pointer-events-none z-0"></div>
 
       {/* Ghosted Gallery Collage */}

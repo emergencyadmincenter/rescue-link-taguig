@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiMessageSquare, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import {
+  HiOutlineHome,
   HiOutlineViewGrid,
   HiOutlineUserGroup,
   HiOutlineLocationMarker,
@@ -20,7 +21,12 @@ type NavItem = {
 const NAVIGATION: NavItem[] = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: "/",
+    icon: HiOutlineHome,
+  },
+  {
+    label: "Logs",
+    href: "/logs",
     icon: HiOutlineViewGrid,
   },
   {

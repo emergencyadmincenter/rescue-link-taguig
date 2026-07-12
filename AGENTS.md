@@ -107,3 +107,11 @@ To maintain a polished, professional, and production-ready interface, strictly a
     - All interactive elements must adhere to the project's hover, focus, transition, and accessibility standards.
     - Responsive behavior is strictly required for every new page and component (mobile, tablet, and desktop).
     - Optimize assets (using `next/image`) and layouts to minimize layout shifts and maximize perceived performance.
+
+14. **Workspace & Data-Heavy Interfaces**
+    - Workspace pages should use fixed viewport layouts with independently scrollable content areas where appropriate.
+    - Forms in dialogs should have constrained heights with internal scrolling when necessary.
+    - Detail panels should use auto-save for low-risk edits where appropriate.
+    - List-detail interfaces should maintain layout stability during state changes.
+    - Feature-specific UI states should be implemented as reusable components rather than page-specific logic.
+    - Components should be designed with future real-time integration in mind.
