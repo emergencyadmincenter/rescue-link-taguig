@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiMessageSquare, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiMessageSquare, FiChevronDown, FiChevronRight, FiFileText } from "react-icons/fi";
 import {
   HiOutlineViewGrid,
   HiOutlineUserGroup,
@@ -15,6 +15,7 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ElementType;
+  roles?: string[]; // If undefined, accessible by all
 };
 
 const NAVIGATION: NavItem[] = [
@@ -22,32 +23,50 @@ const NAVIGATION: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: HiOutlineViewGrid,
+    // Accessible by all
+  },
+  {
+    label: "Emergency Logs",
+    href: "/logs",
+    icon: FiFileText,
+    roles: ["coordinator"], // Only Coordinator
   },
   {
     label: "Personnel",
     href: "/personnel",
     icon: HiOutlineUserGroup,
+    roles: ["admin"], // Only Admin
   },
   {
     label: "Barangays",
     href: "/barangays",
     icon: HiOutlineLocationMarker,
+    // Accessible by all
   },
   {
     label: "Coordinators",
     href: "/coordinators",
     icon: HiOutlineUser,
+    roles: ["admin"], // Only Admin
   },
   {
     label: "Messages",
     href: "/messages",
     icon: FiMessageSquare,
+    roles: ["admin"], // Only Admin
   },
 ];
+
+// MOCK ROLE: In a real implementation, get this from an AuthContext or /me API.
+const MOCK_USER_ROLE = "coordinator";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
+
+  // Dynamic mock role based on route for demonstration purposes
+  const isCoordinatorRoute = pathname.startsWith('/logs');
+  const mockRole = isCoordinatorRoute ? 'coordinator' : 'admin';
 
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
@@ -95,7 +114,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-col mt-1 flex-1 overflow-y-auto overflow-x-hidden px-2 gap-1 pb-4">
-        {NAVIGATION.map((item) => (
+        {NAVIGATION.filter((item) => !item.roles || item.roles.includes(mockRole)).map((item) => (
           <SidebarItem
             key={item.href}
             item={item}
