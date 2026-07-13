@@ -7,6 +7,8 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
+import { LogsModule } from './modules/logs/logs.module';
+import { CommunicationsModule } from './modules/communications/communications.module';
 import { PrismaModule } from './database/prisma/prisma.module';
 import { jwtConfig, throttlerConfig } from './config/env.config';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
@@ -35,6 +37,8 @@ import { PersonnelModule } from './modules/personnel/personnel.module';
     AuthModule,
     RolesModule,
     PermissionsModule,
+    LogsModule,
+    CommunicationsModule,
     PersonnelModule,
   ],
   controllers: [AppController],

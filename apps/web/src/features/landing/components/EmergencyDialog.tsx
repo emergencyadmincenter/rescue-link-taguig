@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FiMessageSquare, FiPhoneCall, FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { logsApi } from "@/features/logs/api/logs.api";
 
 export interface EmergencyDialogProps {
   isOpen: boolean;
@@ -11,10 +13,12 @@ export interface EmergencyDialogProps {
 
 export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !isSubmitting) {
         onClose();
       }
     };
@@ -26,13 +30,53 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isSubmitting]);
 
   if (!isOpen) return null;
 
-  const handleAction = (type: string) => {
-    toast.success(`${type} feature will be available soon!`, { icon: '🚧' });
-    onClose();
+  const handleAction = async (method: 'voice' | 'chat') => {
+    setIsSubmitting(true);
+    let latitude: number | undefined;
+    let longitude: number | undefined;
+
+    const createLogAndRedirect = async () => {
+      try {
+        const data = await logsApi.createEmergency({
+          communicationMethod: method,
+          latitude,
+          longitude,
+        });
+
+        if (data && data.id) {
+          router.push(`/sos/${data.id}`);
+          onClose();
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to connect to emergency services. Please call 911 directly if possible.');
+        setIsSubmitting(false);
+      }
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+          createLogAndRedirect();
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          // Proceed without location
+          createLogAndRedirect();
+        },
+        { timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      createLogAndRedirect();
+    }
   };
 
   return (
@@ -54,7 +98,8 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
           </h2>
           <button 
             onClick={onClose} 
-            className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-full hover:bg-white"
+            disabled={isSubmitting}
+            className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-full hover:bg-white disabled:opacity-50"
             aria-label="Close dialog"
           >
             <FiX className="w-5 h-5" />
@@ -63,12 +108,15 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
 
         <div className="px-6 py-6">
           <p className="body-medium text-gray-600 mb-6 text-center">
-            How would you like to communicate with an emergency coordinator?
+            {isSubmitting 
+              ? "Connecting to emergency services..." 
+              : "How would you like to communicate with an emergency coordinator?"}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}>
             <button
-              onClick={() => handleAction('Chat')}
+              onClick={() => handleAction('chat')}
+              disabled={isSubmitting}
               className="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-xl hover:border-primary hover:bg-primary/5 transition-all group"
             >
               <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-primary/10 transition-colors mb-4">
@@ -79,7 +127,8 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
             </button>
 
             <button
-              onClick={() => handleAction('Voice Call')}
+              onClick={() => handleAction('voice')}
+              disabled={isSubmitting}
               className="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-xl hover:border-danger hover:bg-danger/5 transition-all group"
             >
               <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-danger/10 transition-colors mb-4">
@@ -93,7 +142,8 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
           <div className="mt-6 flex justify-center">
              <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors hover:underline"
+              disabled={isSubmitting}
+              className="text-gray-500 hover:text-gray-700 text-sm font-medium transition-colors hover:underline disabled:opacity-50"
              >
                Cancel Request
              </button>

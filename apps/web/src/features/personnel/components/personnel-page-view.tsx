@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import {
   FiSearch,
   FiBell,
@@ -11,7 +10,6 @@ import {
   FiMoreHorizontal,
   FiMessageSquare,
   FiX,
-  FiShield,
 } from "react-icons/fi";
 import {
   HiOutlineViewGrid,
@@ -23,6 +21,7 @@ import { BiFilterAlt } from "react-icons/bi";
 import { MdCheckCircle } from "react-icons/md";
 import AddPersonnelForm from "./add-personnel-form";
 import EditPersonnelForm from "./edit-personnel-form";
+import { PersonnelDetailDialog } from "./personnel-detail-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { usePersonnel } from "../hooks/use-personnel";
 import { PersonnelEntry as ApiPersonnelItem, PersonnelStatus } from "../types/personnel.types";
@@ -36,6 +35,8 @@ export default function PersonnelPageView() {
   } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [detailPerson, setDetailPerson] = useState<ApiPersonnelItem | null>(null);
+  const [detailRole, setDetailRole] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
@@ -72,22 +73,12 @@ export default function PersonnelPageView() {
   return (
     <>
       <div className="bg-white rounded-xl w-full min-h-[calc(100vh-60px-56px)] px-10 py-9">
-        {/* Page Title */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="w-max">
-            <h1 className="display-small text-gray-900 inline-block">
-              Personnel Management
-            </h1>
-            <div className="divider-primary-half" />
-          </div>
-          
-          <Link
-            href="/personnel/permissions"
-            className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 shadow-sm"
-          >
-            <FiShield className="w-4 h-4 text-gray-500" />
-            Manage Permissions
-          </Link>
+            {/* Page Title */}
+            <div className="mb-8 w-max">
+              <h1 className="display-small text-gray-900 inline-block">
+                Personnel Management
+              </h1>
+              <div className="divider-primary-half" />
             </div>
 
             {/* Search Row */}
@@ -110,6 +101,7 @@ export default function PersonnelPageView() {
                   </button>
                 )}
               </div>
+
               <div className="relative">
                 <button 
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
@@ -163,7 +155,6 @@ export default function PersonnelPageView() {
               </button>
             </div>
 
-
             {/* Personnel List */}
             {isLoading ? (
               <div className="py-10 text-center text-gray-500 body-small">Loading personnel...</div>
@@ -215,7 +206,11 @@ export default function PersonnelPageView() {
                                 person={person}
                                 isMenuOpen={openMenuId === person.id}
                                 isSelected={selectedPersonId === person.id}
-                                onClick={() => setSelectedPersonId(person.id)}
+                                onClick={() => {
+                                  setSelectedPersonId(person.id);
+                                  setDetailPerson(person);
+                                  setDetailRole(group.role);
+                                }}
                                 onMenuToggle={() =>
                                   setOpenMenuId(openMenuId === person.id ? null : person.id)
                                 }
@@ -249,8 +244,19 @@ export default function PersonnelPageView() {
                 })}
               </div>
             )}
-
           </div>
+
+      {/* ===== Personnel Detail Dialog ===== */}
+      <PersonnelDetailDialog
+        isOpen={!!detailPerson}
+        person={detailPerson}
+        role={detailRole}
+        onClose={() => setDetailPerson(null)}
+        onEdit={(person) => {
+          setEditingPerson(person);
+          setDetailPerson(null);
+        }}
+      />
 
       {/* ===== Add Personnel Dialog ===== */}
       {showAddForm && (
@@ -275,10 +281,10 @@ export default function PersonnelPageView() {
       <ConfirmationDialog
         isOpen={!!confirmAction}
         title={
-          confirmAction?.type === "deactivate" 
-            ? "Deactivate Personnel Account" 
-            : confirmAction?.type === "reactivate" 
-              ? "Reactivate Personnel Account" 
+          confirmAction?.type === "deactivate"
+            ? "Deactivate Personnel Account"
+            : confirmAction?.type === "reactivate"
+              ? "Reactivate Personnel Account"
               : "Remove Personnel Account"
         }
         message={
@@ -289,7 +295,11 @@ export default function PersonnelPageView() {
               : "Are you sure you want to remove this personnel account? The account will be removed from the active personnel list and can no longer be reactivated."
         }
         confirmLabel={
-          confirmAction?.type === "deactivate" ? "Deactivate" : confirmAction?.type === "reactivate" ? "Reactivate" : "Remove"
+          confirmAction?.type === "deactivate"
+            ? "Deactivate"
+            : confirmAction?.type === "reactivate"
+              ? "Reactivate"
+              : "Remove"
         }
         isDestructive={confirmAction?.type !== "reactivate"}
         onCancel={() => setConfirmAction(null)}
@@ -298,8 +308,6 @@ export default function PersonnelPageView() {
     </>
   );
 }
-
-
 
 /* ---- Personnel List Item ---- */
 interface PersonnelItemProps {

@@ -3,3 +3,4 @@ export default {
     seed: 'tsx seed.ts',
   },
 };
+  

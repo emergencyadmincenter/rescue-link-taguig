@@ -44,17 +44,18 @@
   .divider-primary-half {
     @apply w-[30%] h-[var(--stroke-heavy)] bg-primary rounded-full;
   }
+
   /*
   |--------------------------------------------------------------------------
   | Global Interactive Elements
   |--------------------------------------------------------------------------
   */
-  button, 
+  button,
   a,
   .interactive {
     @apply transition-all duration-200 ease-in-out cursor-pointer;
   }
-  
+
   button:disabled,
   a[aria-disabled="true"],
   .interactive:disabled {

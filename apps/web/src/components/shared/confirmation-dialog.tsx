@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FiAlertTriangle } from "react-icons/fi";
 
 export interface ConfirmationDialogProps {
@@ -47,9 +48,15 @@ export function ConfirmationDialog({
     };
   }, [isOpen, isLoading, onCancel]);
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
         ref={dialogRef}
@@ -101,6 +108,7 @@ export function ConfirmationDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

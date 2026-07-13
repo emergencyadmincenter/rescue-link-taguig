@@ -21,7 +21,7 @@ type NavItem = {
 const NAVIGATION: NavItem[] = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: "/",
     icon: HiOutlineViewGrid,
     // Accessible by all
   },
@@ -59,7 +59,6 @@ const NAVIGATION: NavItem[] = [
 
 // MOCK ROLE: In a real implementation, get this from an AuthContext or /me API.
 const MOCK_USER_ROLE = "coordinator";
-
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
@@ -67,7 +66,6 @@ export function Sidebar() {
   // Dynamic mock role based on route for demonstration purposes
   const isCoordinatorRoute = pathname.startsWith('/logs');
   const mockRole = isCoordinatorRoute ? 'coordinator' : 'admin';
-
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   // Check if a nav item is active (either directly or via a child route)
