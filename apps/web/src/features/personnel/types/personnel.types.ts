@@ -6,6 +6,9 @@ export type PersonnelEntry = {
   email: string;
   status: PersonnelStatus;
   createdAt: string;
+  phone?: string;
+  location?: string;
+  lastActive?: string;
 };
 
 export type PersonnelGroup = {
