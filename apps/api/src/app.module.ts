@@ -12,6 +12,7 @@ import { CommunicationsModule } from './modules/communications/communications.mo
 import { PrismaModule } from './database/prisma/prisma.module';
 import { jwtConfig, throttlerConfig } from './config/env.config';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
+import { PersonnelModule } from './modules/personnel/personnel.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
     PermissionsModule,
     LogsModule,
     CommunicationsModule,
+    PersonnelModule,
   ],
   controllers: [AppController],
   providers: [
