@@ -10,6 +10,7 @@ import {
   FiMoreHorizontal,
   FiMessageSquare,
   FiShield,
+  FiX,
 } from "react-icons/fi";
 import {
   HiOutlineViewGrid,
@@ -22,8 +23,8 @@ import { MdCheckCircle } from "react-icons/md";
 import AddPersonnelForm from "./add-personnel-form";
 import EditPersonnelForm from "./edit-personnel-form";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-
-type PersonnelStatus = "verified" | "unverified" | "deactivated";
+import { usePersonnel } from "../hooks/use-personnel";
+import { PersonnelStatus } from "../types/personnel.types";
 
 interface Personnel {
   id: string;
@@ -39,21 +40,21 @@ const MOCK_PERSONNEL: Personnel[] = [
     name: "Mark Dennis Concha",
     email: "markdennisconcha@resculink.com",
     initials: "MC",
-    status: "verified",
+    status: "active",
   },
   {
     id: "2",
     name: "Liam Patel",
     email: "liampatel@resculink.com",
     initials: "LP",
-    status: "unverified",
+    status: "pending_activation",
   },
   {
     id: "3",
     name: "Ava Thompson",
     email: "avathompson@resculink.com",
     initials: "AT",
-    status: "unverified",
+    status: "pending_activation",
   },
 ];
 
@@ -165,6 +166,8 @@ export default function PersonnelPageView() {
             <PersonnelItem
               key={person.id}
               person={person}
+              isSelected={selectedPersonId === person.id}
+              onClick={() => setSelectedPersonId(person.id)}
               isMenuOpen={openMenuId === person.id}
               onMenuToggle={() =>
                 setOpenMenuId(openMenuId === person.id ? null : person.id)
@@ -247,7 +250,7 @@ export default function PersonnelPageView() {
 
 /* ---- Personnel List Item ---- */
 interface PersonnelItemProps {
-  person: ApiPersonnelItem;
+  person: Personnel;
   isMenuOpen: boolean;
   isSelected: boolean;
   onClick: () => void;
@@ -263,6 +266,8 @@ interface PersonnelItemProps {
 function PersonnelItem({
   person,
   isMenuOpen,
+  isSelected,
+  onClick,
   onMenuToggle,
   onCloseMenu,
   onEdit,
@@ -311,10 +316,10 @@ function PersonnelItem({
             <span className="font-semibold text-gray-900 body-small">
               {person.name}
             </span>
-            {person.status === "verified" && (
+            {person.status === "active" && (
               <span className="flex items-center gap-0.5">
                 <span className="body-xsmall text-primary font-medium italic">
-                  Verified
+                  Active
                 </span>
                 <MdCheckCircle className="text-success w-[13px] h-[13px]" />
               </span>
