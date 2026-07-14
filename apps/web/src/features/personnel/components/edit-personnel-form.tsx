@@ -25,19 +25,20 @@ export default function EditPersonnelForm({
   const [role, setRole] = useState(initialRole);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !email || !role) return;
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onSave?.({ name, email, role });
-      onCancel?.();
-    }, 1500);
+    // TODO (RLT-xx): wire up PATCH /api/personnel/:id when that endpoint is built.
+    // For now, call onSave with the local values so the UI can reflect the changes
+    // optimistically. The data will not persist until the API is connected.
+    onSave?.({ name, email, role });
+    onCancel?.();
+
+    setIsSubmitting(false);
   };
 
   return (
