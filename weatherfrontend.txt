@@ -1,0 +1,19 @@
+I already have a Weather Monitoring page in RescueLinkTaguig with barangay cards showing temperature, humidity, wind, rain chance, and precipitation, plus existing "Severe"/"Advisory" status badges. I'm frontend-only — add a Flood Risk Estimate feature on top of this, using mock data, clearly commented for backend wiring.
+Important constraint: there is no real API that predicts "this barangay floods in X hours." Do NOT build this as if it's a precise forecast. It must be framed as a rule-based risk estimate, not a prediction, both in the UI copy and code comments — this matters for our thesis defense, we can't overclaim accuracy.
+Requirements:
+
+Add a Flood Risk section/badge to each barangay card, below the existing weather stats. Use a simple tiered scale: Low, Moderate, Elevated, High — styled consistently with the existing Severe (red) / Advisory (yellow) badge system, adding a distinct visual treatment so it's not confused with the weather-condition badge already in the top-right of the card.
+Show a plain-language line under the badge, e.g. "Elevated risk — heavy rain + low-lying area" or "Low risk — light rain, no flood history." Avoid exact time countdowns like "floods in 3 hours" — that's a specific claim we can't back. Instead use phrasing like "risk may increase if rain continues."
+Mock the risk calculation as a simple weighted rule function combining:
+
+Precipitation/rain chance from the existing weather data
+A static isFloodProneArea: boolean flag per barangay (mock this — e.g. mark Napindan, Wawa, Hagonoy, Ususan, Bagumbayan-adjacent areas as flood-prone placeholders)
+// TODO: BACKEND comment noting this flag needs to come from real LGU/NOAH flood hazard map data, not guessed
+
+
+Add a filter/tab alongside the existing "All / Severe / Advisory" tabs for "Flood Risk" so users can filter barangays by risk tier.
+Add a // TODO: BACKEND comment block at the top of the risk calculation file explaining: real implementation would need rainfall accumulation over time (not just current snapshot), historical flood data per barangay, drainage capacity data, and ideally real-time river/waterway level data — none of which we currently have a live source for. Note Open-Meteo's Flood API as a possible future input for river discharge trends, with the caveat that its ~5km resolution won't distinguish individual barangays well.
+Add a small info icon/tooltip near the Flood Risk section explaining to end users this is an estimate based on rainfall patterns and known flood-prone areas, not a guaranteed forecast.
+Keep everything else about the existing card layout, colors, and spacing untouched — this is additive, not a redesign.
+
+Reuse existing components (badges, cards, filter tabs) instead of creating new ones from scratch. Ask me if you need the exact color tokens used for the current Severe/Advisory badges.

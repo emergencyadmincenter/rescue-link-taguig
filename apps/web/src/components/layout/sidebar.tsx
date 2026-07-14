@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiFileText } from "react-icons/fi";
 import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
+import { TiWeatherPartlySunny } from "react-icons/ti";
 import { useAuth } from "@/providers/AuthProvider";
 
 type NavItem = {
@@ -25,6 +26,12 @@ const NAVIGATION: NavItem[] = [
     label: "Logs",
     href: "/logs",
     icon: FiFileText,
+    roles: ["coordinator", "admin"],
+  },
+  {
+    label: "Weather",
+    href: "/weather",
+    icon: TiWeatherPartlySunny,
     roles: ["coordinator", "admin"],
   },
   {
