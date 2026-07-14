@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
@@ -9,9 +15,7 @@ import { randomInt } from 'crypto';
 
 @Injectable()
 export class LogsService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private async generateReferenceNo(): Promise<string> {
     const maxRetries = 50;
@@ -25,7 +29,9 @@ export class LogsService {
         return referenceNo;
       }
     }
-    throw new Error('Failed to generate unique reference number after maximum retries');
+    throw new Error(
+      'Failed to generate unique reference number after maximum retries',
+    );
   }
 
   async findAll(query: QueryLogsDto) {
@@ -61,7 +67,8 @@ export class LogsService {
 
     if (status) where.status = status;
     if (source) where.source = source;
-    if (assigned_coordinator_id) where.assigned_coordinator_id = assigned_coordinator_id;
+    if (assigned_coordinator_id)
+      where.assigned_coordinator_id = assigned_coordinator_id;
 
     if (date_from || date_to) {
       where.created_at = {};
@@ -78,8 +85,12 @@ export class LogsService {
         take: limit,
         orderBy: { [sort_by]: sort_order },
         include: {
-          assigned_coordinator: { select: { id: true, name: true, email: true } },
-          created_by_coordinator: { select: { id: true, name: true, email: true } },
+          assigned_coordinator: {
+            select: { id: true, name: true, email: true },
+          },
+          created_by_coordinator: {
+            select: { id: true, name: true, email: true },
+          },
           calls: {
             orderBy: { started_at: 'desc' },
             take: 1,
@@ -109,7 +120,9 @@ export class LogsService {
       where: { id },
       include: {
         assigned_coordinator: { select: { id: true, name: true, email: true } },
-        created_by_coordinator: { select: { id: true, name: true, email: true } },
+        created_by_coordinator: {
+          select: { id: true, name: true, email: true },
+        },
         calls: {
           orderBy: { started_at: 'desc' },
         },
@@ -151,7 +164,7 @@ export class LogsService {
       let res = await this.prisma.resource.findUnique({ where: { name } });
       if (!res) {
         res = await this.prisma.resource.create({
-          data: { name, category: 'utility' }
+          data: { name, category: 'utility' },
         });
       }
       customResourceIds.push(res.id);
@@ -178,7 +191,9 @@ export class LogsService {
       },
       include: {
         assigned_coordinator: { select: { id: true, name: true, email: true } },
-        created_by_coordinator: { select: { id: true, name: true, email: true } },
+        created_by_coordinator: {
+          select: { id: true, name: true, email: true },
+        },
         resource_assignments: { include: { resource: true } },
       },
     });
@@ -190,8 +205,13 @@ export class LogsService {
       throw new NotFoundException(`Log with ID ${id} not found`);
     }
 
-    if (existing.assigned_coordinator_id !== userId && existing.created_by_coordinator_id !== userId) {
-      throw new UnauthorizedException('You do not have permission to edit this log');
+    if (
+      existing.assigned_coordinator_id !== userId &&
+      existing.created_by_coordinator_id !== userId
+    ) {
+      throw new UnauthorizedException(
+        'You do not have permission to edit this log',
+      );
     }
 
     const { resource_ids, channels, ...rest } = dto;
@@ -200,18 +220,23 @@ export class LogsService {
       ...rest,
       last_activity_at: new Date(),
     };
-    
+
     if (channels !== undefined) {
       updateData.channels = channels;
     }
 
-    if ((dto.status === LogStatus.resolved || dto.status === LogStatus.cancelled) && existing.status !== dto.status) {
-      if (dto.status === LogStatus.resolved) updateData.resolved_at = new Date();
-      
+    if (
+      (dto.status === LogStatus.resolved ||
+        dto.status === LogStatus.cancelled) &&
+      existing.status !== dto.status
+    ) {
+      if (dto.status === LogStatus.resolved)
+        updateData.resolved_at = new Date();
+
       // Update associated call if it's still active
       await this.prisma.call.updateMany({
         where: { log_id: id, status: { in: ['active', 'ringing'] } },
-        data: { status: 'ended', ended_at: new Date() }
+        data: { status: 'ended', ended_at: new Date() },
       });
     } else if (dto.status && dto.status !== LogStatus.resolved) {
       updateData.resolved_at = null;
@@ -234,7 +259,7 @@ export class LogsService {
         let res = await this.prisma.resource.findUnique({ where: { name } });
         if (!res) {
           res = await this.prisma.resource.create({
-            data: { name, category: 'utility' }
+            data: { name, category: 'utility' },
           });
         }
         customResourceIds.push(res.id);
@@ -262,8 +287,12 @@ export class LogsService {
           where: { id },
           data: updateData,
           include: {
-            assigned_coordinator: { select: { id: true, name: true, email: true } },
-            created_by_coordinator: { select: { id: true, name: true, email: true } },
+            assigned_coordinator: {
+              select: { id: true, name: true, email: true },
+            },
+            created_by_coordinator: {
+              select: { id: true, name: true, email: true },
+            },
             resource_assignments: { include: { resource: true } },
           },
         });
@@ -275,18 +304,24 @@ export class LogsService {
       data: updateData,
       include: {
         assigned_coordinator: { select: { id: true, name: true, email: true } },
-        created_by_coordinator: { select: { id: true, name: true, email: true } },
+        created_by_coordinator: {
+          select: { id: true, name: true, email: true },
+        },
         resource_assignments: { include: { resource: true } },
       },
     });
   }
 
-  async getStatusCounts() {
+  async getStatusCounts(userId: string) {
     const counts = await this.prisma.log.groupBy({
       by: ['status'],
       _count: {
         status: true,
       },
+    });
+
+    const myLogsCount = await this.prisma.log.count({
+      where: { assigned_coordinator_id: userId },
     });
 
     const result = {
@@ -295,6 +330,7 @@ export class LogsService {
       dispatched: 0,
       resolved: 0,
       cancelled: 0,
+      my_logs: myLogsCount,
     };
 
     counts.forEach((item) => {
@@ -310,6 +346,4 @@ export class LogsService {
       orderBy: { name: 'asc' },
     });
   }
-
-
 }

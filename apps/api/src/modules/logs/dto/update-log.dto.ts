@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsEnum, IsNumber, IsArray } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
 import { LogStatus } from '../../../generated/prisma/client';
 
 export class UpdateLogDto {

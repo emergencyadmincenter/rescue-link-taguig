@@ -80,20 +80,23 @@ export class PersonnelService {
     }
 
     // Group by role
-    const grouped = filteredUsers.reduce((acc, user) => {
-      const roleName = user.role;
-      if (!acc[roleName]) {
-        acc[roleName] = [];
-      }
-      acc[roleName].push({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        status: user.status,
-        createdAt: user.createdAt,
-      });
-      return acc;
-    }, {} as Record<string, PersonnelItem[]>);
+    const grouped = filteredUsers.reduce(
+      (acc, user) => {
+        const roleName = user.role;
+        if (!acc[roleName]) {
+          acc[roleName] = [];
+        }
+        acc[roleName].push({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          status: user.status,
+          createdAt: user.createdAt,
+        });
+        return acc;
+      },
+      {} as Record<string, PersonnelItem[]>,
+    );
 
     // Format to expected response shape
     const allRoles = ['Coordinator', 'Admin']; // Ensures we return empty groups for roles if they have no matches

@@ -5,6 +5,7 @@ import { useSocket } from '@/lib/socket';
 import { getCookie } from '@/lib/cookies';
 import { useRouter, usePathname } from 'next/navigation';
 import { FiPhoneIncoming, FiX, FiCheck } from 'react-icons/fi';
+import { logsApi } from '@/features/logs/api/logs.api';
 
 const IncomingCallContext = createContext<any>(null);
 
@@ -21,11 +22,36 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
   const [declineReason, setDeclineReason] = useState('');
   const ringtoneRef = useRef<any>(null);
 
-  // Synchronize activeCallId with localStorage
+  // Synchronize activeCallId with localStorage and verify its state
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('activeCallId');
-      if (stored) setActiveCallIdState(stored);
+      if (stored) {
+        setActiveCallIdState(stored);
+        
+        // Verify if the call is still active on the server
+        logsApi.getCallDetails(stored)
+          .then((data) => {
+            const status = data?.call?.status;
+            if (status === 'ended' || status === 'rejected' || status === 'missed') {
+              setActiveCallIdState(null);
+              setActiveLogIdState(null);
+              localStorage.removeItem('activeCallId');
+              localStorage.removeItem('activeLogId');
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to verify active call state', err);
+            // If the call was deleted or not found, clear it
+            if (err?.response?.status === 404) {
+              setActiveCallIdState(null);
+              setActiveLogIdState(null);
+              localStorage.removeItem('activeCallId');
+              localStorage.removeItem('activeLogId');
+            }
+          });
+      }
+      
       const storedLog = localStorage.getItem('activeLogId');
       if (storedLog) setActiveLogIdState(storedLog);
     }
@@ -59,48 +85,6 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
       setTimeLeft(30);
       setShowDeclineDialog(false);
       setDeclineReason('');
-
-      // Play Ringtone
-      try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        const audioCtx = new AudioContext();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-        oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
-        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.5);
-
-        const interval = setInterval(() => {
-          if (audioCtx.state === 'closed') return;
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-          osc.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.1);
-          gain.gain.setValueAtTime(0, audioCtx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
-          gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.5);
-        }, 1500);
-
-        ringtoneRef.current = { audioCtx, interval };
-      } catch (e) {
-        console.error("Failed to play ringtone", e);
-      }
     };
 
     const onCallEnded = (data: any) => {
@@ -141,6 +125,47 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
       return;
     }
 
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioContext();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+
+      const toneInterval = setInterval(() => {
+        if (audioCtx.state === 'closed') return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      }, 1500);
+
+      ringtoneRef.current = { audioCtx, interval: toneInterval };
+    } catch (e) {
+      console.error("Failed to play ringtone", e);
+    }
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -152,7 +177,14 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (ringtoneRef.current) {
+        clearInterval(ringtoneRef.current.interval);
+        if (ringtoneRef.current.audioCtx) ringtoneRef.current.audioCtx.close().catch(() => {});
+        ringtoneRef.current = null;
+      }
+    };
   }, [incomingCall]);
 
   const handleAccept = () => {
@@ -163,7 +195,11 @@ export function IncomingCallProvider({ children }: { children: React.ReactNode }
       accept: true
     });
     
-    if (ringtoneRef.current && ringtoneRef.current.audioCtx) ringtoneRef.current.audioCtx.close();
+    if (ringtoneRef.current) {
+      clearInterval(ringtoneRef.current.interval);
+      if (ringtoneRef.current.audioCtx) ringtoneRef.current.audioCtx.close().catch(() => {});
+      ringtoneRef.current = null;
+    }
     
     const callId = incomingCall.callId;
     const logId = incomingCall.logId;

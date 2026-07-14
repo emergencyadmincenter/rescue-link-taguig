@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { LogsService } from './logs.service';
 import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
@@ -26,8 +37,8 @@ export class LogsController {
   @Get('status-counts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async getStatusCounts() {
-    const result = await this.logsService.getStatusCounts();
+  async getStatusCounts(@CurrentUser() user: any) {
+    const result = await this.logsService.getStatusCounts(user.sub);
     return ApiResponse.success(result);
   }
 
@@ -50,7 +61,10 @@ export class LogsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async create(@Body() createLogDto: CreateLogDto, @CurrentUser() user: JwtPayload) {
+  async create(
+    @Body() createLogDto: CreateLogDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
     const result = await this.logsService.create(createLogDto, user.sub);
     return ApiResponse.success(result);
   }
@@ -58,9 +72,12 @@ export class LogsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto, @CurrentUser() user: JwtPayload) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateLogDto: UpdateLogDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
     const result = await this.logsService.update(id, updateLogDto, user.sub);
     return ApiResponse.success(result);
   }
-
 }

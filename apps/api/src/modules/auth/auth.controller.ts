@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -14,7 +23,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@CurrentUser() user: any) {
-    return ApiResponse.success({ user });
+    const userData = { ...user, id: user.sub };
+    return ApiResponse.success({ user: userData });
   }
 
   @Throttle({
@@ -25,10 +35,13 @@ export class AuthController {
   })
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
-  async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) response: Response) {
+  async signIn(
+    @Body() signInDto: SignInDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const dto = new SignInDto(signInDto);
     const result = await this.authService.signIn(dto);
-    
+
     // Set HTTP-only cookie
     const isProduction = process.env.NODE_ENV === 'production';
     response.cookie('access_token', result.token, {
@@ -38,7 +51,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
-    
+
     // Do not return token in the body
     return ApiResponse.success({ user: result.user });
   }
@@ -53,7 +66,7 @@ export class AuthController {
       sameSite: 'lax',
       path: '/',
     });
-    
+
     return ApiResponse.success({ message: 'Signed out successfully' });
   }
 }

@@ -22,8 +22,9 @@ interface VoiceCallViewProps {
   socket?: Socket;
 }
 
-function formatDuration(startedAt: string, endedAt: string | null): string {
-  const start = new Date(startedAt).getTime();
+function formatDuration(startTime: string | null, endedAt: string | null): string {
+  if (!startTime) return "0:00";
+  const start = new Date(startTime).getTime();
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
   const seconds = Math.floor((end - start) / 1000);
   const mins = Math.floor(seconds / 60);
@@ -165,7 +166,7 @@ export default function VoiceCallView({
 
         {(isActive || isEnded) && (
           <p className="body-medium text-foreground/70">
-            {formatDuration(call.started_at, call.ended_at)}
+            {formatDuration(call.answered_at, call.ended_at)}
           </p>
         )}
       </div>

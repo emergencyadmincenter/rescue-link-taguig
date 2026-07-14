@@ -12,7 +12,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/images") ||
-    pathname.startsWith("/calls");
+    pathname.startsWith("/calls") ||
+    pathname.startsWith("/sos");
 
   if (isPublicRoute) {
     return NextResponse.next();

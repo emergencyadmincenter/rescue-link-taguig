@@ -24,7 +24,7 @@ export interface RoutingState {
 export class CommunicationsService implements OnModuleInit {
   private readonly logger = new Logger(CommunicationsService.name);
   private server: Server;
-  
+
   private coordinators = new Map<string, CoordinatorPresence>();
   private activeRoutings = new Map<string, RoutingState>();
   private coordinatorAssignments = new Map<string, number>();
@@ -32,19 +32,23 @@ export class CommunicationsService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
-    this.logger.log('Cleaning up any stale/ghost calls from previous server runs...');
+    this.logger.log(
+      'Cleaning up any stale/ghost calls from previous server runs...',
+    );
     try {
       const missedCalls = await this.prisma.call.updateMany({
         where: { status: 'ringing' },
-        data: { status: 'missed', ended_at: new Date() }
+        data: { status: 'missed', ended_at: new Date() },
       });
-      if (missedCalls.count > 0) this.logger.log(`Cleaned up ${missedCalls.count} stuck ringing calls.`);
+      if (missedCalls.count > 0)
+        this.logger.log(`Cleaned up ${missedCalls.count} stuck ringing calls.`);
 
       const endedCalls = await this.prisma.call.updateMany({
         where: { status: 'active' },
-        data: { status: 'ended', ended_at: new Date() }
+        data: { status: 'ended', ended_at: new Date() },
       });
-      if (endedCalls.count > 0) this.logger.log(`Cleaned up ${endedCalls.count} stuck active calls.`);
+      if (endedCalls.count > 0)
+        this.logger.log(`Cleaned up ${endedCalls.count} stuck active calls.`);
     } catch (e) {
       this.logger.error('Failed to run startup call cleanup', e);
     }
@@ -57,7 +61,7 @@ export class CommunicationsService implements OnModuleInit {
     let initialStatus: 'available' | 'busy' = 'available';
     // Check if coordinator is active in any call
     const activeCall = await this.prisma.call.findFirst({
-      where: { coordinator_id: userId, status: 'active' }
+      where: { coordinator_id: userId, status: 'active' },
     });
     if (activeCall) {
       initialStatus = 'busy';
@@ -69,9 +73,14 @@ export class CommunicationsService implements OnModuleInit {
       status: initialStatus,
       lastSeen: new Date(),
     });
-    this.logger.log(`Coordinator ${userId} connected (Socket: ${socket.id}) with status ${initialStatus}`);
+    this.logger.log(
+      `Coordinator ${userId} connected (Socket: ${socket.id}) with status ${initialStatus}`,
+    );
     socket.join(`coordinator_${userId}`);
-    this.server.emit('coordinator_status_change', { userId, status: initialStatus });
+    this.server.emit('coordinator_status_change', {
+      userId,
+      status: initialStatus,
+    });
 
     if (initialStatus === 'available') {
       this.triggerPendingRoutings();
@@ -83,7 +92,10 @@ export class CommunicationsService implements OnModuleInit {
     if (presence) {
       this.logger.log(`Coordinator ${presence.userId} disconnected`);
       this.coordinators.delete(socket.id);
-      this.server.emit('coordinator_status_change', { userId: presence.userId, status: 'offline' });
+      this.server.emit('coordinator_status_change', {
+        userId: presence.userId,
+        status: 'offline',
+      });
 
       // Immediate reassignment if this coordinator was ringing
       for (const [callId, state] of this.activeRoutings.entries()) {
@@ -93,40 +105,60 @@ export class CommunicationsService implements OnModuleInit {
             state.timerId = undefined;
           }
           state.assignedCoordinatorId = undefined;
-          
-          this.prisma.call.update({
-            where: { id: callId },
-            data: { coordinator_id: null }
-          }).catch(err => this.logger.error('Failed to clear coordinator on disconnect:', err));
-          
+
+          this.prisma.call
+            .update({
+              where: { id: callId },
+              data: { coordinator_id: null },
+            })
+            .catch((err) =>
+              this.logger.error(
+                'Failed to clear coordinator on disconnect:',
+                err,
+              ),
+            );
+
           this.routeNext(callId);
         }
       }
 
-      // Clean up any ghost active calls. If the coordinator has no sockets left in the call room, end it.
-      this.prisma.call.findMany({
-        where: { coordinator_id: presence.userId, status: 'active' }
-      }).then(activeCalls => {
-        for (const call of activeCalls) {
-          const room = this.server.sockets.adapter.rooms.get(`call_${call.id}`);
-          let hasSocketInRoom = false;
-          if (room) {
-            for (const socketId of room) {
-              const client = this.server.sockets.sockets.get(socketId);
-              if (client && client.data.role === 'coordinator' && client.data.userId === presence.userId) {
-                hasSocketInRoom = true;
-                break;
-              }
-            }
-          }
-          
-          if (!hasSocketInRoom) {
-            this.logger.log(`Cleaning up abandoned active Call ${call.id} for Coordinator ${presence.userId}`);
-            this.server.to(`call_${call.id}`).emit('call_ended', { callId: call.id, endedBy: 'system' });
-            this.endCall(call.id, 'system').catch(err => this.logger.error(err));
+      // Clean up any ghost active calls. Wait a few seconds to allow for page navigation/reconnections.
+      setTimeout(() => {
+        // If the coordinator has reconnected within the 5 seconds, do NOT end their active calls.
+        // This prevents the return banner from disappearing when they are just viewing another page.
+        let isReconnected = false;
+        for (const p of this.coordinators.values()) {
+          if (p.userId === presence.userId) {
+            isReconnected = true;
+            break;
           }
         }
-      }).catch(err => this.logger.error('Failed to query ghost calls:', err));
+
+        if (isReconnected) {
+          return;
+        }
+
+        this.prisma.call
+          .findMany({
+            where: { coordinator_id: presence.userId, status: 'active' },
+          })
+          .then((activeCalls) => {
+            for (const call of activeCalls) {
+              this.logger.log(
+                `Cleaning up abandoned active Call ${call.id} for Coordinator ${presence.userId}`,
+              );
+              this.server
+                .to(`call_${call.id}`)
+                .emit('call_ended', { callId: call.id, endedBy: 'system' });
+              this.endCall(call.id, 'system').catch((err) =>
+                this.logger.error(err),
+              );
+            }
+          })
+          .catch((err) =>
+            this.logger.error('Failed to query ghost calls:', err),
+          );
+      }, 5000);
     }
   }
 
@@ -149,7 +181,7 @@ export class CommunicationsService implements OnModuleInit {
 
   handleResidentDisconnect(callId: string) {
     this.logger.log(`Handling resident disconnect for Call ${callId}`);
-    
+
     setTimeout(async () => {
       // Give resident 5 seconds to reconnect
       const room = this.server.sockets.adapter.rooms.get(`call_${callId}`);
@@ -164,29 +196,39 @@ export class CommunicationsService implements OnModuleInit {
           }
         }
       }
-      
+
       if (!hasResident) {
         this.logger.log(`Resident abandoned Call ${callId}. Cleaning up.`);
         const state = this.activeRoutings.get(callId);
-        
+
         if (state) {
           if (state.timerId) clearTimeout(state.timerId);
           this.activeRoutings.delete(callId);
-          
-          this.prisma.call.update({
-            where: { id: callId },
-            data: { status: 'missed', ended_at: new Date() }
-          }).catch(err => this.logger.error('Failed to cleanup abandoned call:', err));
+
+          this.prisma.call
+            .update({
+              where: { id: callId },
+              data: { status: 'missed', ended_at: new Date() },
+            })
+            .catch((err) =>
+              this.logger.error('Failed to cleanup abandoned call:', err),
+            );
 
           if (state.assignedCoordinatorId) {
-            this.server.to(`coordinator_${state.assignedCoordinatorId}`).emit('call_ended', { callId, endedBy: 'system' });
+            this.server
+              .to(`coordinator_${state.assignedCoordinatorId}`)
+              .emit('call_ended', { callId, endedBy: 'system' });
           }
         } else {
           // It might have been accepted already
-          const call = await this.prisma.call.findUnique({ where: { id: callId } });
+          const call = await this.prisma.call.findUnique({
+            where: { id: callId },
+          });
           if (call && call.status === 'active') {
             this.endCall(callId, 'resident');
-            this.server.to(`call_${callId}`).emit('call_ended', { callId, endedBy: 'resident' });
+            this.server
+              .to(`call_${callId}`)
+              .emit('call_ended', { callId, endedBy: 'resident' });
           }
         }
       }
@@ -207,7 +249,7 @@ export class CommunicationsService implements OnModuleInit {
 
   private getAvailableCoordinators(): string[] {
     const available = new Set<string>();
-    
+
     // Find all currently ringing coordinators
     const ringingCoordinators = new Set<string>();
     for (const state of this.activeRoutings.values()) {
@@ -217,16 +259,25 @@ export class CommunicationsService implements OnModuleInit {
     }
 
     for (const presence of this.coordinators.values()) {
-      if (presence.status === 'available' && !ringingCoordinators.has(presence.userId)) {
+      if (
+        presence.status === 'available' &&
+        !ringingCoordinators.has(presence.userId)
+      ) {
         available.add(presence.userId);
       }
     }
     return Array.from(available);
   }
 
-  async startRouting(callId: string, communicationMethod: 'voice' | 'chat', logId: string) {
-    this.logger.log(`Starting routing for Call ${callId}. Total connected coordinators in memory: ${this.coordinators.size}`);
-    
+  async startRouting(
+    callId: string,
+    communicationMethod: 'voice' | 'chat',
+    logId: string,
+  ) {
+    this.logger.log(
+      `Starting routing for Call ${callId}. Total connected coordinators in memory: ${this.coordinators.size}`,
+    );
+
     this.activeRoutings.set(callId, {
       callId,
       communicationMethod,
@@ -249,8 +300,10 @@ export class CommunicationsService implements OnModuleInit {
     }
 
     const available = this.getAvailableCoordinators();
-    const eligibleCoordinators = available.filter(id => !state.rejectedCoordinators.includes(id));
-    
+    const eligibleCoordinators = available.filter(
+      (id) => !state.rejectedCoordinators.includes(id),
+    );
+
     // Sort eligible coordinators by last assigned time (ascending) for fair distribution
     eligibleCoordinators.sort((a, b) => {
       const timeA = this.coordinatorAssignments.get(a) || 0;
@@ -258,7 +311,9 @@ export class CommunicationsService implements OnModuleInit {
       return timeA - timeB;
     });
 
-    let candidate = eligibleCoordinators.find(id => !state.attemptedCoordinators.includes(id));
+    let candidate = eligibleCoordinators.find(
+      (id) => !state.attemptedCoordinators.includes(id),
+    );
 
     if (!candidate) {
       if (eligibleCoordinators.length > 0) {
@@ -266,7 +321,9 @@ export class CommunicationsService implements OnModuleInit {
         state.attemptedCoordinators = [...state.rejectedCoordinators];
         candidate = eligibleCoordinators[0];
       } else {
-        this.logger.log(`No available coordinators for Call ${callId}, retrying in 5s...`);
+        this.logger.log(
+          `No available coordinators for Call ${callId}, retrying in 5s...`,
+        );
         state.timerId = setTimeout(() => this.routeNext(callId), 5000);
         return;
       }
@@ -276,39 +333,52 @@ export class CommunicationsService implements OnModuleInit {
     state.assignedCoordinatorId = candidate;
     state.attemptedCoordinators.push(candidate);
     this.coordinatorAssignments.set(candidate, Date.now());
-    
+
     this.server.to(`coordinator_${candidate}`).emit('incoming_emergency', {
       callId,
       logId: state.logId,
       communicationMethod: state.communicationMethod,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
 
     this.server.to(`call_${callId}`).emit('routing_status', {
       status: 'ringing',
-      message: 'Connecting to a coordinator...'
+      message: 'Connecting to a coordinator...',
     });
 
     // Fire-and-forget DB update to avoid blocking subsequent logic
-    this.prisma.call.update({
-      where: { id: callId },
-      data: { coordinator_id: candidate }
-    }).catch(err => this.logger.error('Failed to update call coordinator:', err));
+    this.prisma.call
+      .update({
+        where: { id: callId },
+        data: { coordinator_id: candidate },
+      })
+      .catch((err) =>
+        this.logger.error('Failed to update call coordinator:', err),
+      );
 
     state.timerId = setTimeout(() => {
       this.logger.log(`Coordinator ${candidate} missed Call ${callId}`);
       state.assignedCoordinatorId = undefined;
-      
-      this.prisma.call.update({
-        where: { id: callId },
-        data: { coordinator_id: null }
-      }).catch(err => this.logger.error('Failed to clear coordinator on timeout:', err));
-      
+
+      this.prisma.call
+        .update({
+          where: { id: callId },
+          data: { coordinator_id: null },
+        })
+        .catch((err) =>
+          this.logger.error('Failed to clear coordinator on timeout:', err),
+        );
+
       this.routeNext(callId);
     }, 30000);
   }
 
-  async handleCoordinatorResponse(callId: string, coordinatorId: string, accept: boolean, rejectReason?: string) {
+  async handleCoordinatorResponse(
+    callId: string,
+    coordinatorId: string,
+    accept: boolean,
+    rejectReason?: string,
+  ) {
     const state = this.activeRoutings.get(callId);
     if (!state || state.assignedCoordinatorId !== coordinatorId) {
       return { success: false, error: 'Invalid or expired routing state' };
@@ -323,6 +393,7 @@ export class CommunicationsService implements OnModuleInit {
 
     if (accept) {
       this.logger.log(`Coordinator ${coordinatorId} accepted Call ${callId}`);
+      if (state.timerId) clearTimeout(state.timerId);
       this.activeRoutings.delete(callId);
       this.setCoordinatorStatus(coordinatorId, 'busy');
 
@@ -337,46 +408,61 @@ export class CommunicationsService implements OnModuleInit {
       Promise.all([
         this.prisma.call.update({
           where: { id: callId },
-          data: { status: 'active', answered_at: new Date(), coordinator_id: coordinatorId }
-        }),
-        call.log_id ? this.prisma.log.update({
-          where: { id: call.log_id },
           data: {
-            assigned_coordinator_id: coordinatorId,
-            created_by_coordinator_id: coordinatorId,
-          }
-        }) : Promise.resolve()
-      ]).catch(err => this.logger.error('Failed to update call/log on accept:', err));
+            status: 'active',
+            answered_at: new Date(),
+            coordinator_id: coordinatorId,
+          },
+        }),
+        call.log_id
+          ? this.prisma.log.update({
+              where: { id: call.log_id },
+              data: {
+                assigned_coordinator_id: coordinatorId,
+                created_by_coordinator_id: coordinatorId,
+              },
+            })
+          : Promise.resolve(),
+      ]).catch((err) =>
+        this.logger.error('Failed to update call/log on accept:', err),
+      );
 
       return { success: true };
     } else {
-      this.logger.log(`Coordinator ${coordinatorId} rejected Call ${callId} with reason: ${rejectReason}`);
-      
+      this.logger.log(
+        `Coordinator ${coordinatorId} rejected Call ${callId} with reason: ${rejectReason}`,
+      );
+
+      if (state.timerId) clearTimeout(state.timerId);
       this.activeRoutings.delete(callId);
 
       this.server.to(`call_${callId}`).emit('call_rejected', {
-        reason: rejectReason || 'Coordinator unavailable'
+        reason: rejectReason || 'Coordinator unavailable',
       });
 
       // Fire-and-forget database updates
       Promise.all([
         this.prisma.call.update({
           where: { id: callId },
-          data: { 
+          data: {
             coordinator_id: coordinatorId,
             status: 'rejected',
             rejection_reason: rejectReason,
-            ended_at: new Date()
-          }
+            ended_at: new Date(),
+          },
         }),
-        call.log_id ? this.prisma.log.update({
-          where: { id: call.log_id },
-          data: {
-            status: 'cancelled',
-            description: `Rejected by coordinator. Reason: ${rejectReason || 'None given'}`
-          }
-        }) : Promise.resolve()
-      ]).catch(err => this.logger.error('Failed to update call/log on reject:', err));
+        call.log_id
+          ? this.prisma.log.update({
+              where: { id: call.log_id },
+              data: {
+                status: 'cancelled',
+                description: `Rejected by coordinator. Reason: ${rejectReason || 'None given'}`,
+              },
+            })
+          : Promise.resolve(),
+      ]).catch((err) =>
+        this.logger.error('Failed to update call/log on reject:', err),
+      );
 
       return { success: true };
     }
@@ -388,12 +474,14 @@ export class CommunicationsService implements OnModuleInit {
     this.activeRoutings.delete(callId);
 
     if (state && state.assignedCoordinatorId) {
-      this.server.to(`coordinator_${state.assignedCoordinatorId}`).emit('call_ended', { callId, endedBy: 'system' });
+      this.server
+        .to(`coordinator_${state.assignedCoordinatorId}`)
+        .emit('call_ended', { callId, endedBy: 'system' });
     }
 
     this.server.to(`call_${callId}`).emit('routing_timeout', {
       callId,
-      message: 'No coordinators available at the moment.'
+      message: 'No coordinators available at the moment.',
     });
 
     const call = await this.prisma.call.findUnique({ where: { id: callId } });
@@ -401,30 +489,40 @@ export class CommunicationsService implements OnModuleInit {
     Promise.all([
       this.prisma.call.update({
         where: { id: callId },
-        data: { status: 'missed', ended_at: new Date() }
+        data: { status: 'missed', ended_at: new Date() },
       }),
-      (call && call.log_id) ? this.prisma.log.update({
-        where: { id: call.log_id },
-        data: {
-          status: 'cancelled',
-          cancellation_reason: 'Missed emergency call. Timeout reached.',
-          description: `Assignment attempts: ${state?.attemptedCoordinators.length || 0}. Rejections: ${state?.rejectedCoordinators.length || 0}.`,
-        }
-      }) : Promise.resolve()
-    ]).catch(err => this.logger.error('Failed to update call/log on global timeout:', err));
+      call && call.log_id
+        ? this.prisma.log.update({
+            where: { id: call.log_id },
+            data: {
+              status: 'cancelled',
+              cancellation_reason: 'Missed emergency call. Timeout reached.',
+              description: `Assignment attempts: ${state?.attemptedCoordinators.length || 0}. Rejections: ${state?.rejectedCoordinators.length || 0}.`,
+            },
+          })
+        : Promise.resolve(),
+    ]).catch((err) =>
+      this.logger.error('Failed to update call/log on global timeout:', err),
+    );
   }
 
-  async endCall(callId: string, endedBy: 'resident' | 'coordinator' | 'system' = 'system') {
+  async endCall(
+    callId: string,
+    endedBy: 'resident' | 'coordinator' | 'system' = 'system',
+  ) {
     const call = await this.prisma.call.findUnique({ where: { id: callId } });
     if (!call) return;
 
     await this.prisma.call.update({
       where: { id: callId },
-      data: { status: 'ended', ended_at: new Date() }
+      data: { status: 'ended', ended_at: new Date() },
     });
 
     if (call.coordinator_id) {
       this.setCoordinatorStatus(call.coordinator_id, 'available');
+      this.server
+        .to(`coordinator_${call.coordinator_id}`)
+        .emit('call_ended', { callId, endedBy });
     }
 
     this.server.to(`call_${callId}`).emit('call_ended', { callId, endedBy });
@@ -441,15 +539,21 @@ export class CommunicationsService implements OnModuleInit {
     return this.prisma.call.findUnique({ where: { id: callId } });
   }
 
-  async saveMessage(callId: string, senderType: 'resident' | 'coordinator', type: 'text' | 'image' | 'file', text?: string, attachmentUrl?: string) {
+  async saveMessage(
+    callId: string,
+    senderType: 'resident' | 'coordinator',
+    type: 'text' | 'image' | 'file',
+    text?: string,
+    attachmentUrl?: string,
+  ) {
     const message = await this.prisma.message.create({
       data: {
         call_id: callId,
         sender_type: senderType,
         type,
         text,
-        attachment_url: attachmentUrl
-      }
+        attachment_url: attachmentUrl,
+      },
     });
 
     this.server.to(`call_${callId}`).emit('chat_message', message);

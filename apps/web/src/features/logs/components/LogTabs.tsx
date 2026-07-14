@@ -12,7 +12,7 @@ interface LogTabsProps {
 export default function LogTabs({ activeTab, onTabChange, counts }: LogTabsProps) {
   const getCount = (value: string) => {
     if (value === 'all') return counts.total;
-    if (value === 'my_logs') return null;
+    if (value === 'my_logs') return counts.my_logs ?? 0;
     return counts[value as LogStatus] ?? 0;
   };
 

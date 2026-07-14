@@ -8,7 +8,7 @@ const logsCache: Record<string, any> = {};
 export function useLogs(initialParams?: LogsQueryParams) {
   const [logs, setLogs] = useState<Log[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 0 });
-  const [statusCounts, setStatusCounts] = useState<StatusCounts>({ total: 0, active: 0, dispatched: 0, resolved: 0, cancelled: 0 });
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({ total: 0, active: 0, dispatched: 0, resolved: 0, cancelled: 0, my_logs: 0 });
   const [loading, setLoading] = useState(true);
   const [params, setParams] = useState<LogsQueryParams>(initialParams || {});
 

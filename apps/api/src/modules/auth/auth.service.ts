@@ -27,22 +27,34 @@ export class AuthService {
     if (!user || !user.password_hash) {
       throw new UnauthorizedException({
         success: false,
-        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password',
+        },
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(data.password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(
+      data.password,
+      user.password_hash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException({
         success: false,
-        error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' },
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password',
+        },
       });
     }
 
     if (user.status !== UserStatus.active) {
       throw new UnauthorizedException({
         success: false,
-        error: { code: 'ACCOUNT_NOT_ACTIVE', message: `Account is ${user.status}` },
+        error: {
+          code: 'ACCOUNT_NOT_ACTIVE',
+          message: `Account is ${user.status}`,
+        },
       });
     }
 

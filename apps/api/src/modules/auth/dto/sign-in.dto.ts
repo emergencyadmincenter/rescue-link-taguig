@@ -8,7 +8,10 @@ export class SignInDto {
     if (!data || typeof data !== 'object') {
       throw new BadRequestException({
         success: false,
-        error: { code: 'VALIDATION_ERROR', message: 'Request body is required' },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Request body is required',
+        },
       });
     }
 
