@@ -43,7 +43,11 @@ export default function CallSessionPage() {
 
   useEffect(() => {
     if (!socket || !callId) return;
-    socket.emit("join_call_room", callId);
+    socket.emit("join_call_room", callId, (res: any) => {
+      if (res && res.success === false) {
+        toast.error(`Failed to join call room: ${res.error}`);
+      }
+    });
 
     const onCallEnded = () => {
       logsApi.getCallDetails(callId).then((data) => {
@@ -132,7 +136,7 @@ export default function CallSessionPage() {
         {/* Left Panel: Toggles between Communication and Location */}
         <div className="flex-1 flex flex-col h-full bg-background border-r border-background-subtle animate-in fade-in slide-in-from-left-4 min-w-0 overflow-hidden">
           {activeTab === "details" ? (
-            <CommunicationPanel log={log} />
+            <CommunicationPanel log={log} socket={socket || undefined} />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-background/50">
               <div className="text-center">

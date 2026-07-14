@@ -2,8 +2,9 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
-import { FiX, FiCheck, FiSend, FiImage } from 'react-icons/fi';
+import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { logsApi } from '@/features/logs/api/logs.api';
 
 interface ActiveSOSChatViewProps {
   callId: string;
@@ -21,6 +22,15 @@ export default function ActiveSOSChatView({ callId, callData, socket }: ActiveSO
     if (callData.logId) {
       socket.emit('join_log_room', callData.logId);
     }
+
+    logsApi.getCallDetails(callId).then((data) => {
+      if (data?.log?.messages) {
+        setMessages(data.log.messages);
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }).catch(console.error);
 
     const onChatMessage = (msg: any) => {
       setMessages((prev) => [...prev, msg]);
@@ -62,9 +72,9 @@ export default function ActiveSOSChatView({ callId, callData, socket }: ActiveSO
   };
 
   const handleSend = () => {
-    if (!text.trim() || !socket || !callData.logId) return;
+    if (!text.trim() || !socket || !callId) return;
     socket.emit('send_chat_message', {
-      logId: callData.logId,
+      callId,
       type: 'text',
       text,
     });
@@ -123,9 +133,14 @@ export default function ActiveSOSChatView({ callId, callData, socket }: ActiveSO
 
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
-            <p className="body-small">You are connected to the command center.</p>
-            <p className="body-small mt-1">Send a message to get help.</p>
+          <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-in fade-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6">
+              <FiMessageSquare className="w-10 h-10 text-primary/40" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-2">Connected to Command Center</h2>
+            <p className="text-sm text-center max-w-[250px] text-gray-500">
+              Send a message to share your situation, ask questions, or get help immediately.
+            </p>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -157,25 +172,36 @@ export default function ActiveSOSChatView({ callId, callData, socket }: ActiveSO
       </div>
 
       <div className="p-4 bg-white border-t border-gray-200 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex items-center gap-2 max-w-3xl mx-auto">
-          <input 
-            type="text" 
+        <div className="flex items-end gap-2 max-w-3xl mx-auto">
+          <textarea 
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder="Type your message here..." 
-            className="flex-1 bg-gray-100 text-gray-900 rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:bg-gray-50 border border-transparent focus:border-primary/30 transition-colors"
+            className="flex-1 bg-gray-100 text-gray-900 rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:bg-gray-50 border border-transparent focus:border-primary/30 transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar"
+            rows={1}
+            ref={(el) => {
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+              }
+            }}
           />
           <button 
             onClick={() => toast.error("Image upload is currently unavailable.")}
-            className="p-3 text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 rounded-xl"
+            className="p-3 text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 rounded-xl mb-1"
           >
             <FiImage className="w-5 h-5" />
           </button>
           <button 
             onClick={handleSend}
             disabled={!text.trim()}
-            className="p-3 bg-primary text-white hover:bg-primary-hover transition-colors rounded-xl disabled:opacity-50 shadow-sm"
+            className="p-3 bg-primary text-white hover:bg-primary-hover transition-colors rounded-xl disabled:opacity-50 shadow-sm mb-1"
           >
             <FiSend className="w-5 h-5" />
           </button>

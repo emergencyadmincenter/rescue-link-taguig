@@ -6,12 +6,10 @@ import VoiceCallView from "./VoiceCallView";
 
 interface CommunicationPanelProps {
   log: Log;
+  socket?: any;
 }
 
-import { useSocket } from "@/lib/socket";
-
-export default function CommunicationPanel({ log }: CommunicationPanelProps) {
-  const { socket } = useSocket();
+export default function CommunicationPanel({ log, socket }: CommunicationPanelProps) {
 
   const latestCall =
     log.calls?.length > 0

@@ -20,7 +20,6 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
 
   useEffect(() => {
     if (!socket) return;
-    socket.emit('join_log_room', logId);
 
     const onChatMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
@@ -46,13 +45,19 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
   }, [socket, logId]);
 
   const handleSend = () => {
-    if (!text.trim() || !socket) return;
-    socket.emit('send_chat_message', {
-      logId,
-      type: 'text',
-      text,
-    });
+    if (!text.trim() || !socket || !call?.id) return;
+    const currentText = text;
     setText('');
+    socket.emit('send_chat_message', {
+      callId: call.id,
+      type: 'text',
+      text: currentText,
+    }, (response: any) => {
+      if (response && response.success === false) {
+        toast.error(`Message failed: ${response.error}`);
+        setText(currentText);
+      }
+    });
   };
 
   const handleEndChat = () => {
@@ -63,12 +68,7 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
 
   const isEnded = call?.status === 'ended' || call?.status === 'missed' || call?.status === 'rejected';
 
-  const mockPlaceholderMessages: Message[] = [
-    { id: '1', log_id: logId, sender_type: 'resident', type: 'text', text: 'Hello, I need help.', attachment_url: null, created_at: new Date(Date.now() - 60000).toISOString() },
-    { id: '2', log_id: logId, sender_type: 'coordinator', type: 'text', text: 'I am here. What is your situation?', attachment_url: null, created_at: new Date(Date.now() - 30000).toISOString() },
-  ];
-
-  const displayMessages = messages.length > 0 ? messages : (isEnded ? mockPlaceholderMessages : []);
+  const displayMessages = messages;
   const hasMessages = displayMessages.length > 0;
 
   return (
@@ -153,25 +153,36 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
       {/* Message input */}
       {!isEnded && (
         <div className="px-lg py-sm border-t border-background-subtle shrink-0 bg-white">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
+          <div className="flex items-end gap-2 max-w-3xl mx-auto">
+            <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type a message..."
-              className="flex-1 px-md py-sm rounded-lg bg-background-subtle/50 border border-transparent focus:border-primary/30 focus:bg-white text-foreground body-small outline-none transition-colors"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Type a message... (Shift+Enter for new line)"
+              className="flex-1 px-md py-sm rounded-lg bg-background-subtle/50 border border-transparent focus:border-primary/30 focus:bg-white text-foreground body-small outline-none transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar"
+              rows={1}
+              ref={(el) => {
+                if (el) {
+                  el.style.height = 'auto';
+                  el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+                }
+              }}
             />
             <button 
               onClick={() => toast.error("Image upload is currently unavailable.")}
-              className="p-2 text-foreground/40 hover:text-foreground transition-colors"
+              className="p-2 text-foreground/40 hover:text-foreground transition-colors mb-1"
             >
               <FiImage className="w-5 h-5" />
             </button>
             <button 
               onClick={handleSend}
               disabled={!text.trim()}
-              className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
+              className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50 mb-1"
             >
               <FiSend className="w-5 h-5" />
             </button>

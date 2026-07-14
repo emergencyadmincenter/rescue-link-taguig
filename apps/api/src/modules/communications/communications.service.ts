@@ -397,35 +397,37 @@ export class CommunicationsService implements OnModuleInit {
       this.activeRoutings.delete(callId);
       this.setCoordinatorStatus(coordinatorId, 'busy');
 
+      try {
+        await Promise.all([
+          this.prisma.call.update({
+            where: { id: callId },
+            data: {
+              status: 'active',
+              answered_at: new Date(),
+              coordinator_id: coordinatorId,
+            },
+          }),
+          call.log_id
+            ? this.prisma.log.update({
+                where: { id: call.log_id },
+                data: {
+                  assigned_coordinator_id: coordinatorId,
+                  created_by_coordinator_id: coordinatorId,
+                },
+              })
+            : Promise.resolve(),
+        ]);
+      } catch (err) {
+        this.logger.error('Failed to update call/log on accept:', err);
+        return { success: false, error: 'Internal server error during call accept' };
+      }
+
       this.server.to(`call_${callId}`).emit('call_accepted', {
         callId,
         coordinatorId,
         logId: call.log_id,
         communicationMethod: call.communication_method,
       });
-
-      // Fire-and-forget database updates
-      Promise.all([
-        this.prisma.call.update({
-          where: { id: callId },
-          data: {
-            status: 'active',
-            answered_at: new Date(),
-            coordinator_id: coordinatorId,
-          },
-        }),
-        call.log_id
-          ? this.prisma.log.update({
-              where: { id: call.log_id },
-              data: {
-                assigned_coordinator_id: coordinatorId,
-                created_by_coordinator_id: coordinatorId,
-              },
-            })
-          : Promise.resolve(),
-      ]).catch((err) =>
-        this.logger.error('Failed to update call/log on accept:', err),
-      );
 
       return { success: true };
     } else {
@@ -541,6 +543,7 @@ export class CommunicationsService implements OnModuleInit {
 
   async saveMessage(
     callId: string,
+    logId: string | undefined,
     senderType: 'resident' | 'coordinator',
     type: 'text' | 'image' | 'file',
     text?: string,
@@ -549,6 +552,7 @@ export class CommunicationsService implements OnModuleInit {
     const message = await this.prisma.message.create({
       data: {
         call_id: callId,
+        log_id: logId,
         sender_type: senderType,
         type,
         text,

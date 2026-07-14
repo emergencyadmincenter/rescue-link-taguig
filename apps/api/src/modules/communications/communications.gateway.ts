@@ -235,10 +235,43 @@ export class CommunicationsGateway
       attachmentUrl?: string;
     },
   ) {
+    this.logger.log(`Received send_chat_message from ${client.id} (role: ${client.data.role}, userId: ${client.data.userId}) with callId: ${data.callId}`);
+    const call = await this.communicationsService.getCallDetails(data.callId);
+    if (!call) {
+      this.logger.log(`Send failed: Call not found`);
+      return { success: false, error: 'Call not found' };
+    }
+
+    if (client.data.role === 'coordinator') {
+      if (call.coordinator_id !== client.data.userId) {
+        this.logger.log(`Send failed: Unauthorized. Call assigned to ${call.coordinator_id}, but client is ${client.data.userId}`);
+        return {
+          success: false,
+          error: 'Unauthorized: Call is assigned to another coordinator',
+        };
+      }
+    } else {
+      if (client.data.callId !== data.callId) {
+        this.logger.log(`Send failed: Unauthorized resident. Client callId ${client.data.callId} !== ${data.callId}`);
+        return {
+          success: false,
+          error: 'Unauthorized: You have not joined this call room',
+        };
+      }
+    }
+
+    if (call.status !== 'active') {
+      return {
+        success: false,
+        error: 'Messages can only be sent in an active call',
+      };
+    }
+
     const senderType =
       client.data.role === 'coordinator' ? 'coordinator' : 'resident';
     return await this.communicationsService.saveMessage(
       data.callId,
+      call.log_id || undefined,
       senderType,
       data.type,
       data.text,
