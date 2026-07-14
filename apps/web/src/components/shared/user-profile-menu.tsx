@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiUser, FiLogOut, FiSettings } from "react-icons/fi";
+import { FiUser, FiLogOut } from "react-icons/fi";
 import { signOut } from "@/features/auth/api/auth.api";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function UserProfileMenu() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -62,24 +64,14 @@ export function UserProfileMenu() {
         >
           <div className="px-4 py-3 border-b border-gray-50">
             <p className="body-small font-medium text-gray-900 truncate">
-              Administrator
+              {user?.name || "User"}
             </p>
             <p className="text-xs text-gray-500 truncate">
-              admin@rescue-link.com
+              {user?.email || ""}
             </p>
           </div>
 
           <div className="py-1">
-            <button
-              className="w-full text-left px-4 py-2 body-small text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-2 transition-colors"
-              role="menuitem"
-            >
-              <FiSettings className="w-[16px] h-[16px] text-gray-400" />
-              Settings
-            </button>
-          </div>
-
-          <div className="border-t border-gray-50 py-1">
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}

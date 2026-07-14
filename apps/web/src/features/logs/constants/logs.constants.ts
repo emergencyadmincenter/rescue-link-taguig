@@ -43,6 +43,7 @@ export const CALL_STATUS_CONFIG: Record<CallStatus, { label: string; colorClass:
 
 export const LOG_TABS = [
   { label: 'All', value: 'all' as const },
+  { label: 'My Logs', value: 'my_logs' as const },
   { label: 'Active', value: 'active' as LogStatus },
   { label: 'Dispatched', value: 'dispatched' as LogStatus },
   { label: 'Resolved', value: 'resolved' as LogStatus },

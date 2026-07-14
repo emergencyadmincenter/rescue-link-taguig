@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
@@ -184,10 +184,14 @@ export class LogsService {
     });
   }
 
-  async update(id: string, dto: UpdateLogDto) {
+  async update(id: string, dto: UpdateLogDto, userId: string) {
     const existing = await this.prisma.log.findUnique({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`Log with ID ${id} not found`);
+    }
+
+    if (existing.assigned_coordinator_id !== userId && existing.created_by_coordinator_id !== userId) {
+      throw new UnauthorizedException('You do not have permission to edit this log');
     }
 
     const { resource_ids, channels, ...rest } = dto;

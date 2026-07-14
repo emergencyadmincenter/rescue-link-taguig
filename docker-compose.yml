@@ -15,7 +15,7 @@ services:
       CHOKIDAR_INTERVAL: 1000
       DB_HOST: db
       DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?schema=public"
-    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run start:dev"
+    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
     ports:
       - "3001:3000"
     volumes:

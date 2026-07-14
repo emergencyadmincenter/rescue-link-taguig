@@ -93,10 +93,6 @@ model User {
   created_logs  Log[]  @relation("CreatedByCoordinator")
   calls         Call[]
 
-  assigned_logs  Log[] @relation("AssignedCoordinator")
-  created_logs   Log[] @relation("CreatedByCoordinator")
-  calls          Call[]
-
   @@map("users")
 }
 

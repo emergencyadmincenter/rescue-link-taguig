@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FiArrowLeft, FiPhoneCall, FiMessageSquare } from "react-icons/fi";
-import { useIncomingCall } from "@/providers/IncomingCallProvider";
+import { useSocket } from "@/lib/socket";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { Log, Resource, Call } from "@/features/logs/types/logs.types";
 import IncidentFormPanel from "@/features/logs/components/IncidentFormPanel";
@@ -15,7 +15,7 @@ export default function CallSessionPage() {
   const callId = params?.id as string;
   const router = useRouter();
 
-  const { setActiveCallId, socket } = useIncomingCall();
+  const { socket } = useSocket();
   const [log, setLog] = useState<Log | null>(null);
   const [call, setCall] = useState<Call | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);

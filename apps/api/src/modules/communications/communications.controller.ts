@@ -1,17 +1,23 @@
-import { Controller, Post, Get, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, NotFoundException, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { CommunicationsService } from './communications.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import type { Request, Response } from 'express';
 
 @Controller('calls')
 export class CommunicationsController {
   constructor(
     private readonly communicationsService: CommunicationsService,
     private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post('emergency')
   async createEmergencyCall(
     @Body() dto: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number },
+    @Res({ passthrough: true }) res: Response
   ) {
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -42,16 +48,46 @@ export class CommunicationsController {
 
     await this.communicationsService.startRouting(call.id, dto.communicationMethod, log.id);
 
+    res.cookie(`resident_call_${call.id}`, 'true', {
+      httpOnly: true,
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    });
+
     return { success: true, data: { id: call.id } };
   }
 
   @Get(':id')
-  async getCallDetails(@Param('id') id: string) {
+  async getCallDetails(@Param('id') id: string, @Req() req: Request) {
+    const isResident = req.cookies[`resident_call_${id}`] === 'true';
+
+    let user: any = null;
+    const token = req.cookies['access_token'] || (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.split(' ')[1] : undefined);
+    if (token) {
+      try {
+        user = await this.jwtService.verifyAsync(token, { secret: this.configService.get<string>('jwt.secret') });
+      } catch (e) {}
+    }
+
     const call = await this.prisma.call.findUnique({ 
       where: { id },
       include: { log: { include: { calls: { orderBy: { started_at: 'desc' } }, messages: { orderBy: { created_at: 'asc' } } } } } 
     });
     if (!call) throw new NotFoundException('Call not found');
+
+    if (isResident) {
+      return { success: true, data: { call, log: call.log } };
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const isActive = call.status === 'active' || call.status === 'ringing';
+    if (isActive && call.coordinator_id !== user.id) {
+      throw new UnauthorizedException('Access denied: Call is active and assigned to another coordinator');
+    }
+
     return { success: true, data: { call, log: call.log } };
   }
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   FiSearch,
   FiBell,
@@ -10,6 +11,7 @@ import {
   FiMoreHorizontal,
   FiMessageSquare,
   FiX,
+  FiShield,
 } from "react-icons/fi";
 import {
   HiOutlineViewGrid,
@@ -169,12 +171,22 @@ export default function PersonnelPageView() {
             </button>
           )}
 
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light ml-4"
-          >
-            +
-          </button>
+          <div className="flex items-center gap-3 ml-auto pl-4 border-l border-gray-200">
+            <Link
+              href="/personnel/permissions"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 body-small font-medium transition-colors shrink-0"
+            >
+              <FiShield className="w-4 h-4" />
+              <span>Permissions</span>
+            </Link>
+            
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* Personnel List */}

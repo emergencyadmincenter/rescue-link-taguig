@@ -5,6 +5,7 @@ import { FiCheck, FiUser, FiPhone, FiMapPin, FiAlignLeft, FiSave } from "react-i
 import { Log } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface IncidentFormPanelProps {
   log: Log | null;
@@ -12,6 +13,10 @@ interface IncidentFormPanelProps {
 }
 
 export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelProps) {
+  const { user } = useAuth();
+  const isOwner = user && log && (log.assigned_coordinator_id === user.id || log.created_by_coordinator_id === user.id);
+  const isReadOnly = !isOwner;
+
   const [formData, setFormData] = useState({
     caller_name: "",
     caller_contact: "",
@@ -35,11 +40,12 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    if (isReadOnly) return;
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSave = async () => {
-    if (!log) return;
+    if (!log || isReadOnly) return;
     setIsSaving(true);
     try {
       const updated = await logsApi.updateLog(log.id, formData);
@@ -67,7 +73,7 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
         </div>
         <button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isReadOnly}
           className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
         >
           {isSaving ? (
@@ -108,8 +114,9 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
                     value={formData.caller_name}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    disabled={isReadOnly}
                     placeholder="e.g. Juan Dela Cruz"
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -128,8 +135,9 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
                     value={formData.caller_contact}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    disabled={isReadOnly}
                     placeholder="e.g. 09123456789"
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -158,9 +166,10 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
                     value={formData.address}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    disabled={isReadOnly}
                     placeholder="e.g. 123 Quezon St..."
                     rows={2}
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -174,9 +183,10 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
                   value={formData.description}
                   onChange={handleChange}
                   onFocus={(e) => e.target.select()}
+                  disabled={isReadOnly}
                   placeholder="Describe the emergency situation..."
                   rows={5}
-                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed"
+                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed disabled:opacity-70"
                 />
               </div>
             </div>

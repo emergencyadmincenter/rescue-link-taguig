@@ -11,11 +11,13 @@ import ManualLogDialog from "./ManualLogDialog";
 import { useLogs } from "../hooks/useLogs";
 import { logsApi } from "../api/logs.api";
 import { LogStatus, Resource } from "../types/logs.types";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function LogsPageView() {
   const router = useRouter();
   const { logs, loading, params, updateParams, statusCounts, refresh } =
     useLogs();
+  const { user } = useAuth();
 
   const [resources, setResources] = useState<Resource[]>([]);
   const [searchQuery, setSearchQuery] = useState(params.search || "");
@@ -45,8 +47,18 @@ export default function LogsPageView() {
     [updateParams],
   );
 
-  const handleTabChange = (tab: LogStatus | "all") => {
-    updateParams({ status: tab === "all" ? undefined : tab });
+  const activeTab = params.assigned_coordinator_id === user?.id 
+    ? "my_logs" 
+    : params.status || "all";
+
+  const handleTabChange = (tab: string) => {
+    if (tab === "my_logs") {
+      updateParams({ status: undefined, assigned_coordinator_id: user?.id });
+    } else if (tab === "all") {
+      updateParams({ status: undefined, assigned_coordinator_id: undefined });
+    } else {
+      updateParams({ status: tab as any, assigned_coordinator_id: undefined });
+    }
   };
 
   return (
@@ -79,12 +91,8 @@ export default function LogsPageView() {
         />
 
         <LogTabs
-          activeTab={params.status || "all"}
-          onTabChange={(status) =>
-            updateParams({
-              status: status === "all" ? undefined : (status as any),
-            })
-          }
+          activeTab={activeTab as any}
+          onTabChange={handleTabChange}
           counts={statusCounts}
         />
       </div>
