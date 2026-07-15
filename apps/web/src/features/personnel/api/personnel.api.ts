@@ -197,3 +197,30 @@ export async function getRoles(): Promise<RoleOption[]> {
   // Shape: { data: [{ id, name }, ...], ... }
   return json?.data ?? json ?? [];
 }
+
+// ---------------------------------------------------------------------------
+// POST /api/personnel/activate
+// ---------------------------------------------------------------------------
+
+/**
+ * Activate a personnel account by consuming a token and setting a password.
+ */
+export async function activateAccount(payload: { token: string; password: string }) {
+  const res = await fetch(`${apiBase()}/personnel/activate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const msg =
+      Array.isArray(json?.message)
+        ? json.message.join(", ")
+        : (json?.message ?? `POST /personnel/activate failed (${res.status})`);
+    throw new Error(msg);
+  }
+
+  return json?.data ?? json;
+}

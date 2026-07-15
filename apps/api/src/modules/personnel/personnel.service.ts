@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreatePersonnelDto } from './dto/create-personnel.dto';
+import { ActivatePersonnelDto } from './dto/activate-personnel.dto';
 import { MailService } from '../mail/mail.service';
 
 // Define expected interface
@@ -90,6 +93,42 @@ export class PersonnelService {
       status: result.user.status,
       role_id: dto.role_id,
     };
+  }
+
+  async activateAccount(dto: ActivatePersonnelDto) {
+    const userToken = await this.prisma.userToken.findFirst({
+      where: {
+        token: dto.token,
+        type: 'activation',
+        status: 'active',
+      },
+    });
+
+    if (!userToken || userToken.expires_at < new Date()) {
+      throw new BadRequestException('Invalid or expired activation token');
+    }
+
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(dto.password, saltRounds);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userToken.user_id },
+        data: {
+          password_hash: passwordHash,
+          status: 'active',
+        },
+      });
+
+      await tx.userToken.update({
+        where: { id: userToken.id },
+        data: {
+          status: 'used',
+        },
+      });
+    });
+
+    return { message: 'Account activated successfully' };
   }
 
   // Mock data representing the database state

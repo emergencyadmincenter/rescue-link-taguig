@@ -15,14 +15,17 @@ export async function getUser() {
       },
       cache: 'no-store',
     });
-    
-    if (res.ok) {
-      const json = await res.json();
-      return json.data?.user || null;
-    }
-  } catch (error) {
-    console.error('Error fetching user:', error);
+
+    if (!res.ok) return null;
+
+    const text = await res.text();
+    if (!text.trim()) return null;
+
+    const json = JSON.parse(text);
+    return json.data?.user || null;
+  } catch {
+    return null;
   }
-  
+
   return null;
 }
