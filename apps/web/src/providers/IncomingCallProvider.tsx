@@ -11,8 +11,9 @@ import React, {
 import { useSocket } from "@/lib/socket";
 import { getCookie } from "@/lib/cookies";
 import { useRouter, usePathname } from "next/navigation";
-import { FiPhoneIncoming, FiX, FiCheck } from "react-icons/fi";
+import { FiPhoneIncoming, FiX, FiCheck, FiMic, FiMicOff, FiPhone, FiMaximize2 } from "react-icons/fi";
 import { logsApi } from "@/features/logs/api/logs.api";
+import { useWebRTC } from "@/lib/webrtc";
 
 const IncomingCallContext = createContext<any>(null);
 
@@ -32,6 +33,24 @@ export function IncomingCallProvider({
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const ringtoneRef = useRef<any>(null);
+
+  const globalAudioRef = useRef<HTMLAudioElement>(null);
+  const webrtc = useWebRTC(socket || undefined, activeCallId || '', "coordinator");
+
+  useEffect(() => {
+    if (activeCallId) {
+      webrtc.startCall();
+    } else {
+      webrtc.endCall();
+    }
+  }, [activeCallId]);
+
+  useEffect(() => {
+    if (globalAudioRef.current && webrtc?.remoteStream) {
+      globalAudioRef.current.srcObject = webrtc.remoteStream;
+      globalAudioRef.current.play().catch(e => console.log("Global audio play error:", e));
+    }
+  }, [webrtc?.remoteStream]);
 
   // Synchronize activeCallId with localStorage and verify its state
   useEffect(() => {
@@ -263,28 +282,20 @@ export function IncomingCallProvider({
         activeCallId,
         setActiveCallId,
         activeLogId,
+        webrtc,
       }}
     >
+      {/* Global persistent audio element to prevent autoplay dropouts */}
+      <audio ref={globalAudioRef} autoPlay />
       {children}
 
       {activeCallId && !pathname?.startsWith(`/calls/${activeCallId}`) && (
-        <div className="fixed top-0 left-0 w-full z-[9999] bg-danger text-white px-4 py-2 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-            </span>
-            <span className="text-sm font-medium">
-              Active Emergency Session
-            </span>
-          </div>
-          <button
-            onClick={() => router.push(`/calls/${activeCallId}`)}
-            className="text-xs font-bold bg-white text-danger px-3 py-1.5 rounded hover:bg-red-50 transition-colors"
-          >
-            Return to Call
-          </button>
-        </div>
+        <FloatingCallWindow 
+          webrtc={webrtc} 
+          activeCallId={activeCallId} 
+          router={router} 
+          socket={socket} 
+        />
       )}
 
       {/* Incoming Call UI */}
@@ -385,3 +396,134 @@ export function IncomingCallProvider({
 }
 
 export const useIncomingCall = () => useContext(IncomingCallContext);
+
+const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
+  const { remoteStream, hasRemoteVideo, isMuted, toggleMute, endCall } = webrtc;
+  
+  const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+  // Use a callback ref to guarantee the video stream is attached the exact moment the element mounts
+  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node && remoteStream) {
+      node.srcObject = remoteStream;
+      node.play().catch(e => console.log("Floating video play error:", e));
+    }
+  }, [remoteStream, hasRemoteVideo]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !position) {
+      setPosition({ x: window.innerWidth - 300 - 24, y: window.innerHeight - 350 - 24 });
+    }
+  }, [position]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return; // Ignore drag on buttons
+    
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: position?.x || 0,
+      initialY: position?.y || 0
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setPosition({
+      x: dragRef.current.initialX + dx,
+      y: dragRef.current.initialY + dy
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  if (!position) return null;
+
+  const handleEndCall = () => {
+    if (socket) socket.emit("end_call", { callId: activeCallId });
+    endCall();
+  };
+
+  return (
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        cursor: isDragging ? 'grabbing' : 'grab'
+      }}
+      className="fixed top-0 left-0 w-72 bg-black rounded-2xl shadow-2xl z-[9999] overflow-hidden flex flex-col border border-white/10"
+    >
+      {/* Video Area */}
+      <div className="relative w-full aspect-[4/3] bg-gray-900 flex items-center justify-center pointer-events-none">
+        {hasRemoteVideo ? (
+          <video
+            ref={videoCallbackRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-danger/20 flex items-center justify-center">
+            <span className="text-3xl">🏃</span>
+          </div>
+        )}
+        
+        {/* Status Overlay */}
+        <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md">
+          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+          <span className="text-xs font-medium text-white">Active Call</span>
+        </div>
+        
+        {/* Return to Call Button */}
+        <button
+          onClick={() => router.push(`/calls/${activeCallId}`)}
+          className="absolute top-3 right-3 p-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-md text-white transition-colors pointer-events-auto"
+          title="Return to full view"
+        >
+          <FiMaximize2 className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Controls */}
+      <div className="px-4 py-3 bg-background border-t border-background-subtle flex items-center justify-center gap-4">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleMute();
+          }}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm pointer-events-auto ${
+            isMuted
+              ? "bg-danger/10 text-danger"
+              : "bg-background-subtle text-foreground hover:bg-foreground/10"
+          }`}
+        >
+          {isMuted ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+        </button>
+        
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEndCall();
+          }}
+          className="w-12 h-12 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-lg transform pointer-events-auto"
+        >
+          <FiPhone className="w-5 h-5 text-white rotate-[135deg]" />
+        </button>
+      </div>
+    </div>
+  );
+};

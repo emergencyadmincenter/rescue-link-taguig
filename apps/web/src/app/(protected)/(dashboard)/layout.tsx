@@ -2,24 +2,11 @@ import { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FiBell } from "react-icons/fi";
-import { redirect } from "next/navigation";
-
 import { UserProfileMenu } from "@/components/shared/user-profile-menu";
 import { Sidebar } from "@/components/layout/sidebar";
-import { IncomingCallProvider } from "@/providers/IncomingCallProvider";
-import { getUser } from "@/lib/server-auth";
-import { AuthProvider } from "@/providers/AuthProvider";
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const user = await getUser();
-
-  if (!user) {
-    redirect("/sign-in");
-  }
-
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <AuthProvider user={user}>
-      <IncomingCallProvider>
         <div className="h-screen bg-background-subtle font-inter text-foreground flex flex-col overflow-hidden">
         {/* ===== Top Navbar ===== */}
         <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-50 relative shrink-0">
@@ -53,7 +40,5 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <main className="px-5 py-5 flex-1 overflow-y-auto">{children}</main>
         </div>
       </div>
-      </IncomingCallProvider>
-    </AuthProvider>
   );
 }

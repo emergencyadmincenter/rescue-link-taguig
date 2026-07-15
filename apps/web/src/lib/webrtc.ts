@@ -7,9 +7,11 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const isAcquiringMedia = useRef(false);
   const [connectionId, setConnectionId] = useState(Date.now());
 
   // Keep ref in sync with state for synchronous access without dependency loops
@@ -35,13 +37,6 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       localStreamRef.current.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStreamRef.current!);
       });
-    }
-
-    // Add a video transceiver for the coordinator so their offers always request video.
-    // This solves issues with navigating away and returning, or new sessions.
-    if (role === 'coordinator') {
-      peerConnection.addTransceiver('audio', { direction: 'recvonly' });
-      peerConnection.addTransceiver('video', { direction: 'recvonly' });
     }
 
     // Handle remote stream
@@ -79,9 +74,8 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     peerConnection.onnegotiationneeded = async () => {
       try {
         makingOffer = true;
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        socket.emit('webrtc_offer', { callId, offer });
+        await peerConnection.setLocalDescription();
+        socket.emit('webrtc_offer', { callId, offer: peerConnection.localDescription });
       } catch (err) {
         console.error('Error during negotiation:', err);
       } finally {
@@ -97,9 +91,8 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
         if (ignoreOffer) return;
 
         await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnectionRef.current.createAnswer();
-        await peerConnectionRef.current.setLocalDescription(answer);
-        socket.emit('webrtc_answer', { callId, answer });
+        await peerConnectionRef.current.setLocalDescription();
+        socket.emit('webrtc_answer', { callId, answer: peerConnectionRef.current.localDescription });
       } catch (err) {
         console.error('Error handling offer:', err);
       }
@@ -126,6 +119,8 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     const handlePeerReady = (data: any) => {
       if (data.role !== role) {
         // The other peer just mounted! Rebuild our connection to sync!
+        setRemoteStream(null);
+        setHasRemoteVideo(false);
         setConnectionId(Date.now());
       }
     };
@@ -146,7 +141,9 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
   }, [socket, callId, role, connectionId]);
 
   const startCall = async () => {
-    if (localStreamRef.current) return;
+    if (localStreamRef.current || isAcquiringMedia.current) return;
+    
+    isAcquiringMedia.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       setLocalStream(stream);
@@ -159,6 +156,8 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     } catch (e) {
       console.error('Error accessing media devices.', e);
       toast.error('Microphone access denied or unavailable.', { id: 'mic-error' });
+    } finally {
+      isAcquiringMedia.current = false;
     }
   };
 
@@ -173,6 +172,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     setRemoteStream(null);
     setHasRemoteVideo(false);
     setIsVideoEnabled(false);
+    setIsMuted(false);
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
   };
@@ -182,6 +182,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
+        setIsMuted(!audioTrack.enabled);
         return !audioTrack.enabled;
       }
     }
@@ -255,5 +256,5 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     }
   };
 
-  return { localStream, remoteStream, hasRemoteVideo, startCall, endCall, toggleMute, toggleVideo, switchCamera, isVideoEnabled, facingMode };
+  return { localStream, remoteStream, hasRemoteVideo, startCall, endCall, toggleMute, toggleVideo, switchCamera, isVideoEnabled, facingMode, isMuted };
 }
