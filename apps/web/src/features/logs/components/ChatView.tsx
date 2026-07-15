@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { FiMessageSquare, FiImage, FiSend, FiXCircle } from 'react-icons/fi';
-import { Call, Message } from '../types/logs.types';
-import { Socket } from 'socket.io-client';
-import { useState, useEffect, useRef } from 'react';
-import toast from 'react-hot-toast';
+import { FiMessageSquare, FiImage, FiSend, FiXCircle } from "react-icons/fi";
+import { Call, Message } from "../types/logs.types";
+import { Socket } from "socket.io-client";
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 
 interface ChatViewProps {
   messages: Message[];
@@ -13,9 +13,14 @@ interface ChatViewProps {
   call?: Call | null;
 }
 
-export default function ChatView({ messages: initialMessages, logId, socket, call }: ChatViewProps) {
+export default function ChatView({
+  messages: initialMessages,
+  logId,
+  socket,
+  call,
+}: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,49 +29,56 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
     const onChatMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     };
 
     const onCallEnded = (payload: any) => {
-      if (payload?.endedBy === 'resident') {
-        toast('The resident ended the chat.', { icon: '💬' });
-      } else if (payload?.endedBy === 'system') {
-        toast('The chat was ended by the system.', { icon: '⚠️' });
+      if (payload?.endedBy === "resident") {
+        toast("The resident ended the chat.", { icon: "💬" });
+      } else if (payload?.endedBy === "system") {
+        toast("The chat was ended by the system.", { icon: "⚠️" });
       }
     };
 
-    socket.on('chat_message', onChatMessage);
-    socket.on('call_ended', onCallEnded);
+    socket.on("chat_message", onChatMessage);
+    socket.on("call_ended", onCallEnded);
     return () => {
-      socket.off('chat_message', onChatMessage);
-      socket.off('call_ended', onCallEnded);
+      socket.off("chat_message", onChatMessage);
+      socket.off("call_ended", onCallEnded);
     };
   }, [socket, logId]);
 
   const handleSend = () => {
     if (!text.trim() || !socket || !call?.id) return;
     const currentText = text;
-    setText('');
-    socket.emit('send_chat_message', {
-      callId: call.id,
-      type: 'text',
-      text: currentText,
-    }, (response: any) => {
-      if (response && response.success === false) {
-        toast.error(`Message failed: ${response.error}`);
-        setText(currentText);
-      }
-    });
+    setText("");
+    socket.emit(
+      "send_chat_message",
+      {
+        callId: call.id,
+        type: "text",
+        text: currentText,
+      },
+      (response: any) => {
+        if (response && response.success === false) {
+          toast.error(`Message failed: ${response.error}`);
+          setText(currentText);
+        }
+      },
+    );
   };
 
   const handleEndChat = () => {
     if (socket && call?.id) {
-      socket.emit('end_call', { callId: call.id });
+      socket.emit("end_call", { callId: call.id });
     }
   };
 
-  const isEnded = call?.status === 'ended' || call?.status === 'missed' || call?.status === 'rejected';
+  const isEnded =
+    call?.status === "ended" ||
+    call?.status === "missed" ||
+    call?.status === "rejected";
 
   const displayMessages = messages;
   const hasMessages = displayMessages.length > 0;
@@ -76,11 +88,15 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
       {/* Header */}
       <div className="px-lg py-sm border-b border-background-subtle shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isEnded ? 'bg-background-subtle' : 'bg-danger/10'}`}>
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isEnded ? "bg-background-subtle" : "bg-danger/10"}`}
+          >
             <span className="text-xl">🏃</span>
           </div>
           <div className="flex flex-col">
-            <p className="body-medium font-bold text-foreground leading-tight">Resident</p>
+            <p className="body-medium font-bold text-foreground leading-tight">
+              Resident
+            </p>
             {!isEnded ? (
               <p className="body-xsmall text-success flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
@@ -88,14 +104,14 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
               </p>
             ) : (
               <p className="body-xsmall text-foreground/50 font-medium capitalize">
-                Session {call?.status || 'Ended'}
+                Session {call?.status || "Ended"}
               </p>
             )}
           </div>
         </div>
         {!isEnded && (
-          <button 
-            onClick={handleEndChat} 
+          <button
+            onClick={handleEndChat}
             className="w-10 h-10 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger hover:text-white transition-colors shadow-sm"
             title="End Chat"
           >
@@ -109,11 +125,11 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
         {hasMessages ? (
           <div className="flex flex-col gap-3">
             {displayMessages.map((msg) => {
-              const isCoordinator = msg.sender_type === 'coordinator';
+              const isCoordinator = msg.sender_type === "coordinator";
               return (
                 <div
                   key={msg.id}
-                  className={`flex flex-col ${isCoordinator ? 'items-end' : 'items-start'}`}
+                  className={`flex flex-col ${isCoordinator ? "items-end" : "items-start"}`}
                 >
                   <div className="flex items-end gap-2 max-w-[80%]">
                     {!isCoordinator && (
@@ -124,15 +140,18 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
                     <div
                       className={`px-4 py-3 body-small shadow-sm ${
                         isCoordinator
-                          ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm'
-                          : 'bg-background-subtle text-foreground rounded-2xl rounded-tl-sm'
+                          ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+                          : "bg-background-subtle text-foreground rounded-2xl rounded-tl-sm"
                       }`}
                     >
                       {msg.text}
                     </div>
                   </div>
                   <span className="text-[10px] text-foreground/40 mt-1 px-1">
-                    {new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.created_at || Date.now()).toLocaleTimeString(
+                      [],
+                      { hour: "2-digit", minute: "2-digit" },
+                    )}
                   </span>
                 </div>
               );
@@ -142,9 +161,12 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-foreground/40">
             <FiMessageSquare className="w-16 h-16 mb-lg opacity-50" />
-            <p className="title-small font-medium text-foreground/60">No Conversations Yet</p>
-            <p className="body-small text-center mt-2 max-w-xs text-foreground/40">
-              Start a conversation to share information, ask questions, or coordinate response efforts.
+            <p className="title-small font-medium text-foreground/60">
+              No Conversations Yet
+            </p>
+            <p className="body-small text-center mt-2 text-foreground/40">
+              Start a conversation to share information, ask questions, or
+              coordinate response efforts.
             </p>
           </div>
         )}
@@ -153,12 +175,12 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
       {/* Message input */}
       {!isEnded && (
         <div className="px-lg py-sm border-t border-background-subtle shrink-0 bg-white">
-          <div className="flex items-end gap-2 max-w-3xl mx-auto">
+          <div className="flex items-end gap-2 mx-auto">
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSend();
                 }
@@ -168,18 +190,20 @@ export default function ChatView({ messages: initialMessages, logId, socket, cal
               rows={1}
               ref={(el) => {
                 if (el) {
-                  el.style.height = 'auto';
+                  el.style.height = "auto";
                   el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
                 }
               }}
             />
-            <button 
-              onClick={() => toast.error("Image upload is currently unavailable.")}
+            <button
+              onClick={() =>
+                toast.error("Image upload is currently unavailable.")
+              }
               className="p-2 text-foreground/40 hover:text-foreground transition-colors mb-1"
             >
               <FiImage className="w-5 h-5" />
             </button>
-            <button 
+            <button
               onClick={handleSend}
               disabled={!text.trim()}
               className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50 mb-1"

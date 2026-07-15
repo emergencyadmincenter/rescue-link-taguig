@@ -22,7 +22,10 @@ interface VoiceCallViewProps {
   socket?: Socket;
 }
 
-function formatDuration(startTime: string | null, endedAt: string | null): string {
+function formatDuration(
+  startTime: string | null,
+  endedAt: string | null,
+): string {
   if (!startTime) return "0:00";
   const start = new Date(startTime).getTime();
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
@@ -53,7 +56,7 @@ export default function VoiceCallView({
 
   const { startCall, endCall, toggleMute, remoteStream } = useWebRTC(
     socket,
-    logId,
+    call?.id || logId,
     "coordinator",
   );
 
@@ -83,11 +86,21 @@ export default function VoiceCallView({
     };
   }, [call?.status, socket]);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
     if (remoteStream && audioRef.current) {
       audioRef.current.srcObject = remoteStream;
     }
+    if (remoteStream && videoRef.current) {
+      videoRef.current.srcObject = remoteStream;
+    }
   }, [remoteStream]);
+
+  const hasRemoteVideo =
+    remoteStream &&
+    remoteStream.getVideoTracks().length > 0 &&
+    remoteStream.getVideoTracks()[0].enabled;
 
   if (!call) {
     return (
@@ -132,69 +145,123 @@ export default function VoiceCallView({
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        {/* Avatar */}
-        <div
-          className={`w-28 h-28 rounded-full flex items-center justify-center ${
-            isMissed
-              ? "bg-warning/10 ring-4 ring-warning/30"
-              : isActive
-                ? "bg-success/10 ring-4 ring-success/30 animate-pulse"
-                : "bg-danger/10"
-          }`}
-        >
-          <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
-          >
-            <span className="text-4xl">🏃</span>
-          </div>
-        </div>
+      {!hasRemoteVideo ? (
+        <>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            {/* Avatar */}
+            <div
+              className={`w-40 h-40 rounded-full flex items-center justify-center relative ${
+                isMissed
+                  ? "bg-warning/10 ring-4 ring-warning/30"
+                  : isActive
+                    ? "bg-success/10 ring-4 ring-success/30 animate-pulse"
+                    : "bg-danger/10"
+              }`}
+            >
+              <div
+                className={`w-28 h-28 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
+              >
+                <span className="text-5xl">🏃</span>
+              </div>
+            </div>
 
-        <p className="title-small font-bold text-foreground">Resident</p>
+            <p className="title-small font-bold text-foreground">Resident</p>
 
-        {(isEnded || isMissed) && (
-          <p className={`body-medium font-medium ${statusConfig.colorClass}`}>
-            {statusConfig.label}
-          </p>
-        )}
-
-        {isActive && (
-          <p className="body-medium font-medium text-success animate-pulse">
-            {call.status === "ringing" ? "Ringing..." : "Active Call"}
-          </p>
-        )}
-
-        {(isActive || isEnded) && (
-          <p className="body-medium text-foreground/70">
-            {formatDuration(call.answered_at, call.ended_at)}
-          </p>
-        )}
-      </div>
-
-      {/* Call Controls (only when active) */}
-      {isActive && (
-        <div className="flex items-center justify-center gap-xl py-xl border-t border-background-subtle shrink-0">
-          <button
-            onClick={handleToggleMute}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-              isMuted
-                ? "bg-danger/10 text-danger"
-                : "bg-background-subtle text-foreground hover:bg-foreground/10"
-            }`}
-          >
-            {isMuted ? (
-              <FiMicOff className="w-5 h-5" />
-            ) : (
-              <FiMic className="w-5 h-5" />
+            {(isEnded || isMissed) && (
+              <p className={`body-medium font-medium ${statusConfig.colorClass}`}>
+                {statusConfig.label}
+              </p>
             )}
-          </button>
 
-          <button
-            onClick={handleEndCall}
-            className="w-14 h-14 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-lg z-10"
-          >
-            <FiPhoneOff className="w-6 h-6 text-white" />
-          </button>
+            {isActive && (
+              <p className="body-medium font-medium text-success animate-pulse">
+                {call.status === "ringing" ? "Ringing..." : "Active Call"}
+              </p>
+            )}
+
+            {(isActive || isEnded) && (
+              <p className="body-medium text-foreground/70">
+                {formatDuration(call.answered_at, call.ended_at)}
+              </p>
+            )}
+          </div>
+
+          {/* Call Controls (only when active) */}
+          {isActive && (
+            <div className="flex items-center justify-center gap-xl py-xl border-t border-background-subtle shrink-0">
+              <button
+                onClick={handleToggleMute}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  isMuted
+                    ? "bg-danger/10 text-danger"
+                    : "bg-background-subtle text-foreground hover:bg-foreground/10"
+                }`}
+              >
+                {isMuted ? (
+                  <FiMicOff className="w-5 h-5" />
+                ) : (
+                  <FiMic className="w-5 h-5" />
+                )}
+              </button>
+
+              <button
+                onClick={handleEndCall}
+                className="w-14 h-14 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-lg z-10 transform"
+              >
+                <FiPhone className="w-6 h-6 text-white rotate-[135deg]" />
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex-1 relative overflow-hidden bg-black flex flex-col">
+          {/* Video Area */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Floating Overlay with Info and Controls */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between p-3 bg-background/60 backdrop-blur-xl rounded-2xl z-10 shadow-lg border border-white/10">
+            <div className="flex items-center gap-3">
+              {/* Resident Avatar */}
+              <div className="w-11 h-11 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                <span className="text-xl">🏃</span>
+              </div>
+              <div className="flex flex-col">
+                <p className="body-medium font-bold text-foreground">Resident</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <p className="text-xs font-medium text-success">Active Call</p>
+                  <span className="text-foreground/40 text-[10px]">•</span>
+                  <p className="text-xs font-mono text-foreground/80">{formatDuration(call.answered_at, call.ended_at)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleToggleMute}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${
+                  isMuted
+                    ? "bg-danger/90 text-white"
+                    : "bg-background/80 text-foreground hover:bg-background"
+                }`}
+              >
+                {isMuted ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={handleEndCall}
+                className="w-11 h-11 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-sm transform"
+              >
+                <FiPhone className="w-5 h-5 text-white rotate-[135deg]" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
