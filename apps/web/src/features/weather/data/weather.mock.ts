@@ -1,5 +1,5 @@
 /**
- * Mock weather data for all 37 Taguig City barangays.
+ * Mock weather data for all 38 Taguig City barangays.
  *
  * Data Source: Open-Meteo Free Weather API (https://open-meteo.com/)
  * Required Params: latitude, longitude
@@ -37,7 +37,7 @@ function minutesAgo(n: number): string {
 }
 
 /**
- * All 37 Taguig City Barangays with approximate coordinates.
+ * All 38 Taguig City Barangays with approximate coordinates.
  * Coordinates are approximate centroids — verify with official geodata before production use.
  */
 const MOCK_WEATHER_DATA: BarangayWeather[] = [
@@ -205,6 +205,22 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
     precipitationChance: 35,
     precipitation: 0,
     lastUpdated: minutesAgo(4),
+  },
+  {
+    id: "brgy-cembo",
+    name: "Cembo",
+    latitude: 14.5530, // APPROXIMATE - verify with official geodata
+    longitude: 121.0470, // APPROXIMATE - verify with official geodata
+    condition: "partly_cloudy",
+    severity: "normal",
+    temperature: 31,
+    feelsLike: 34,
+    humidity: 67,
+    windSpeed: 11,
+    windDirection: "NE",
+    precipitationChance: 18,
+    precipitation: 0,
+    lastUpdated: minutesAgo(5),
   },
   {
     id: "brgy-central-bicutan",
@@ -645,7 +661,7 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
 
 /**
  * Simulates fetching weather data from the Open-Meteo API.
- * Returns data for all 37 Taguig City barangays.
+ * Returns data for all 38 Taguig City barangays.
  *
  * TODO: BACKEND - Replace with actual API call:
  * 1. Fetch current weather for each barangay lat/long from Open-Meteo

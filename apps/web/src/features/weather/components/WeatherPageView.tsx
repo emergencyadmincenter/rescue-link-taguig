@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { FiSearch, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
+import dynamic from "next/dynamic";
+import { FiSearch, FiRefreshCw, FiAlertTriangle, FiList, FiMap } from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
 import WeatherCard from "./WeatherCard";
 import WeatherCardSkeleton from "./WeatherCardSkeleton";
@@ -12,6 +13,22 @@ import type {
   WeatherFilterTab,
   WeatherSummary,
 } from "../types/weather.types";
+
+// Dynamically import the map view — Leaflet requires browser `window` object
+// and cannot be server-side rendered.
+const WeatherMapView = dynamic(() => import("./WeatherMapView"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="body-small text-gray-500">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
+
+type ViewMode = "list" | "map";
 
 // --- Filter Tabs Config ---
 const FILTER_TABS: { label: string; value: WeatherFilterTab; icon?: React.ElementType }[] = [
@@ -51,6 +68,7 @@ export default function WeatherPageView() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<WeatherFilterTab>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -170,7 +188,7 @@ export default function WeatherPageView() {
 
       {/* Toolbar */}
       <div className="space-y-4 shrink-0 mb-4">
-        {/* Search + Refresh Row */}
+        {/* Search + View Toggle + Refresh Row */}
         <div className="flex items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -182,6 +200,34 @@ export default function WeatherPageView() {
               className="w-full pl-5 pr-10 py-4 border border-gray-200 rounded-full body-small focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-gray-700 placeholder:text-gray-400"
             />
             <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-[15px] h-[15px]" />
+          </div>
+
+          {/* List / Map View Toggle */}
+          <div className="inline-flex p-1 bg-gray-100 rounded-lg shrink-0">
+            <button
+              onClick={() => setViewMode("list")}
+              title="List view"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md body-xsmall font-medium transition-all duration-200 ${
+                viewMode === "list"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+              }`}
+            >
+              <FiList className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">List</span>
+            </button>
+            <button
+              onClick={() => setViewMode("map")}
+              title="Map view"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md body-xsmall font-medium transition-all duration-200 ${
+                viewMode === "map"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+              }`}
+            >
+              <FiMap className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Map</span>
+            </button>
           </div>
 
           {/* Last Refreshed Indicator */}
@@ -266,9 +312,9 @@ export default function WeatherPageView() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-4">
-        {/* Loading State */}
-        {loading && (
+      <div className="flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-4 flex flex-col min-h-0">
+        {/* Loading State (list view only — map has its own loading) */}
+        {loading && viewMode === "list" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <WeatherCardSkeleton key={i} />
@@ -297,32 +343,48 @@ export default function WeatherPageView() {
           </div>
         )}
 
-        {/* Empty State (search/filter yields no results) */}
-        {!loading && !error && sortedData.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-              <FiSearch className="w-6 h-6 text-gray-400" />
-            </div>
-            <div className="text-center">
-              <p className="body-medium text-gray-900 font-medium">
-                No barangays found
-              </p>
-              <p className="body-small text-gray-500 mt-1">
-                {debouncedSearch
-                  ? `No results for "${debouncedSearch}". Try a different search term.`
-                  : "No barangays match the selected filter."}
-              </p>
-            </div>
-          </div>
+        {/* --- LIST VIEW --- */}
+        {!loading && !error && viewMode === "list" && (
+          <>
+            {/* Empty State (search/filter yields no results) */}
+            {sortedData.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                  <FiSearch className="w-6 h-6 text-gray-400" />
+                </div>
+                <div className="text-center">
+                  <p className="body-medium text-gray-900 font-medium">
+                    No barangays found
+                  </p>
+                  <p className="body-small text-gray-500 mt-1">
+                    {debouncedSearch
+                      ? `No results for "${debouncedSearch}". Try a different search term.`
+                      : "No barangays match the selected filter."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Weather Cards Grid */}
+            {sortedData.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {sortedData.map((weather) => (
+                  <WeatherCard key={weather.id} weather={weather} />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Weather Cards Grid */}
-        {!loading && !error && sortedData.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sortedData.map((weather) => (
-              <WeatherCard key={weather.id} weather={weather} />
-            ))}
-          </div>
+        {/* --- MAP VIEW --- */}
+        {/* TODO: BACKEND — The map view uses the same weatherData state as the
+            list view. When wiring to a real API, both views will automatically
+            stay in sync since they share the same data source. */}
+        {!loading && !error && viewMode === "map" && (
+          <WeatherMapView
+            weatherData={weatherData}
+            searchQuery={debouncedSearch}
+          />
         )}
       </div>
     </div>
