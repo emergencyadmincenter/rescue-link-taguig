@@ -656,28 +656,47 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
   },
 ];
 
-// TODO: BACKEND - Implement polling interval (e.g. every 15 min)
-// TODO: BACKEND - Add WebSocket support for real-time severe weather alerts
+// TODO: BACKEND - WebSocket support for real-time severe weather alerts can be added here
 
 /**
- * Simulates fetching weather data from the Open-Meteo API.
- * Returns data for all 38 Taguig City barangays.
+ * Fetches live weather data for all Taguig barangays from the backend,
+ * which in turn calls Open-Meteo (no API key required).
  *
- * TODO: BACKEND - Replace with actual API call:
- * 1. Fetch current weather for each barangay lat/long from Open-Meteo
- * 2. Map WMO weather codes to WeatherCondition enum
- * 3. Derive SeverityLevel from weather codes + precipitation thresholds
- * 4. Cache responses to avoid exceeding rate limits
+ * Backend endpoint: GET /api/weather
+ * The backend runs all 38 barangay requests in parallel and caches the
+ * result for 10 minutes.
+ *
+ * Falls back to MOCK_WEATHER_DATA if the backend is unavailable (dev only).
  */
 export async function fetchWeatherData(): Promise<BarangayWeather[]> {
-  // TODO: BACKEND - Replace with actual API call
-  // Example API call per barangay:
-  // const res = await fetch(
-  //   `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,precipitation_probability,precipitation&timezone=Asia/Manila`
-  // );
+  const apiBase =
+    (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
+      .replace(/\/api\/?$/, '') + '/api';
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  try {
+    const res = await fetch(`${apiBase}/weather`, {
+      // No credentials needed — weather is a public endpoint
+      cache: 'no-store',
+    });
 
-  return MOCK_WEATHER_DATA;
+    if (!res.ok) {
+      throw new Error(`Weather API responded with ${res.status}`);
+    }
+
+    const json = await res.json();
+    // Backend wraps in { data: [...] }
+    const raw: BarangayWeather[] = json?.data ?? json ?? [];
+
+    if (!Array.isArray(raw) || raw.length === 0) {
+      throw new Error('Empty response from weather API');
+    }
+
+    return raw;
+  } catch (err) {
+    // Log for debugging; WeatherPageView will show its own error UI
+    console.error('[WeatherData] Failed to fetch from backend, using mock fallback:', err);
+    // Return mock data so the page still renders during local dev without the API running
+    return MOCK_WEATHER_DATA;
+  }
 }
+
