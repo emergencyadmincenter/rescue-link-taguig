@@ -80,14 +80,24 @@ export default function ActiveSOSView({
   }, [sessionEndReason]);
 
   useEffect(() => {
-    if (remoteStream && audioRef.current) {
-      audioRef.current.srcObject = remoteStream;
+    if (audioRef.current) {
+      if (remoteStream) {
+        audioRef.current.srcObject = null;
+        audioRef.current.srcObject = remoteStream;
+      } else {
+        audioRef.current.srcObject = null;
+      }
     }
   }, [remoteStream]);
 
   useEffect(() => {
-    if (localStream && videoRef.current && isVideoEnabled) {
-      videoRef.current.srcObject = localStream;
+    if (videoRef.current) {
+      if (localStream && isVideoEnabled) {
+        videoRef.current.srcObject = null;
+        videoRef.current.srcObject = localStream;
+      } else {
+        videoRef.current.srcObject = null;
+      }
     }
   }, [localStream, isVideoEnabled]);
 
@@ -130,7 +140,7 @@ export default function ActiveSOSView({
 
   return (
     <div className="min-h-screen bg-black flex flex-col animate-in fade-in">
-      <audio ref={audioRef} autoPlay />
+      <audio key={callId} ref={audioRef} autoPlay />
 
       {/* Header */}
       <div className="p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10">

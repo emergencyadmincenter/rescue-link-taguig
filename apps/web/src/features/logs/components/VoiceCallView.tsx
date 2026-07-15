@@ -76,9 +76,14 @@ export default function VoiceCallView({
   }, [call?.status, socket, startCall, endCall]);
 
   const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    if (node && remoteStream) {
-      node.srcObject = remoteStream;
-      node.play().catch(e => console.log("Video play error:", e));
+    if (node) {
+      if (remoteStream) {
+        node.srcObject = null;
+        node.srcObject = remoteStream;
+        node.play().catch(e => console.log("Video play error:", e));
+      } else {
+        node.srcObject = null;
+      }
     }
   }, [remoteStream]);
 

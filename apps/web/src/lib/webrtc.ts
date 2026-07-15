@@ -22,6 +22,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
   // Announce our presence to force peer sync if they are holding stale connections
   useEffect(() => {
     if (!socket || !callId) return;
+    socket.emit('join_call_room', callId);
     socket.emit('webrtc_peer_ready', { callId, role });
   }, [socket, callId, role]);
 
@@ -147,6 +148,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       setLocalStream(stream);
+      localStreamRef.current = stream;
       
       if (peerConnectionRef.current) {
         stream.getTracks().forEach(track => {
@@ -168,6 +170,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
         track.enabled = false;
       });
       setLocalStream(null);
+      localStreamRef.current = null;
     }
     setRemoteStream(null);
     setHasRemoteVideo(false);
@@ -213,6 +216,7 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
           localStreamRef.current.addTrack(videoTrack);
         } else {
           setLocalStream(videoStream);
+          localStreamRef.current = videoStream;
         }
 
         const streamToUse = localStreamRef.current || videoStream;

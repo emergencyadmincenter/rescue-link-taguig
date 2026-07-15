@@ -46,9 +46,14 @@ export function IncomingCallProvider({
   }, [activeCallId]);
 
   useEffect(() => {
-    if (globalAudioRef.current && webrtc?.remoteStream) {
-      globalAudioRef.current.srcObject = webrtc.remoteStream;
-      globalAudioRef.current.play().catch(e => console.log("Global audio play error:", e));
+    if (globalAudioRef.current) {
+      if (webrtc?.remoteStream) {
+        globalAudioRef.current.srcObject = null;
+        globalAudioRef.current.srcObject = webrtc.remoteStream;
+        globalAudioRef.current.play().catch(e => console.log("Global audio play error:", e));
+      } else {
+        globalAudioRef.current.srcObject = null;
+      }
     }
   }, [webrtc?.remoteStream]);
 
@@ -286,7 +291,7 @@ export function IncomingCallProvider({
       }}
     >
       {/* Global persistent audio element to prevent autoplay dropouts */}
-      <audio ref={globalAudioRef} autoPlay />
+      <audio key={activeCallId || "idle"} ref={globalAudioRef} autoPlay />
       {children}
 
       {activeCallId && !pathname?.startsWith(`/calls/${activeCallId}`) && (
@@ -406,9 +411,14 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
 
   // Use a callback ref to guarantee the video stream is attached the exact moment the element mounts
   const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    if (node && remoteStream) {
-      node.srcObject = remoteStream;
-      node.play().catch(e => console.log("Floating video play error:", e));
+    if (node) {
+      if (remoteStream) {
+        node.srcObject = null;
+        node.srcObject = remoteStream;
+        node.play().catch(e => console.log("Floating video play error:", e));
+      } else {
+        node.srcObject = null;
+      }
     }
   }, [remoteStream, hasRemoteVideo]);
 
