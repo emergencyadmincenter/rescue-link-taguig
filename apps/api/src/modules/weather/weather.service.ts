@@ -166,7 +166,7 @@ export class WeatherService {
         ? (json.hourly.precipitation_probability[currentHourIndex] ?? 0)
         : 0;
 
-    const { condition, conditionLabel, severity } = mapWmoCode(current.weather_code);
+    const { condition, label: conditionLabel, severity } = mapWmoCode(current.weather_code);
 
     return {
       id: b.id,
