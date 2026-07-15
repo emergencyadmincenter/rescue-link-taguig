@@ -119,7 +119,7 @@ export default function ActiveSOSView({
           </p>
           <button
             onClick={() => (window.location.href = "/")}
-            className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-black transition-colors mb-3"
+            className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-hover transition-colors mb-3"
           >
             Go Back Home
           </button>

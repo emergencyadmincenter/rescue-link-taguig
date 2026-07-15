@@ -54,7 +54,7 @@ export default function VoiceCallView({
     return () => clearInterval(interval);
   }, []);
 
-  const { startCall, endCall, toggleMute, remoteStream } = useWebRTC(
+  const { startCall, endCall, toggleMute, remoteStream, hasRemoteVideo } = useWebRTC(
     socket,
     call?.id || logId,
     "coordinator",
@@ -69,9 +69,9 @@ export default function VoiceCallView({
       const onCallEnded = (payload: any) => {
         endCall();
         if (payload?.endedBy === "resident") {
-          toast("The resident ended the call.", { icon: "📞" });
+          toast("The resident ended the call.", { icon: "📞", id: "resident-ended" });
         } else if (payload?.endedBy === "system") {
-          toast("The call was ended by the system.", { icon: "⚠️" });
+          toast("The call was ended by the system.", { icon: "⚠️", id: "system-ended" });
         }
       };
       socket.on("call_ended", onCallEnded);
@@ -88,6 +88,12 @@ export default function VoiceCallView({
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const isActive = call?.status === "active" || call?.status === "ringing";
+  const isMissed = call?.status === "missed";
+  const isEnded = call?.status === "ended" || call?.status === "rejected";
+  
+  const showVideo = hasRemoteVideo && isActive;
+
   useEffect(() => {
     if (remoteStream && audioRef.current) {
       audioRef.current.srcObject = remoteStream;
@@ -95,12 +101,7 @@ export default function VoiceCallView({
     if (remoteStream && videoRef.current) {
       videoRef.current.srcObject = remoteStream;
     }
-  }, [remoteStream]);
-
-  const hasRemoteVideo =
-    remoteStream &&
-    remoteStream.getVideoTracks().length > 0 &&
-    remoteStream.getVideoTracks()[0].enabled;
+  }, [remoteStream, showVideo]);
 
   if (!call) {
     return (
@@ -120,9 +121,6 @@ export default function VoiceCallView({
     label: call.status,
     colorClass: "text-foreground",
   };
-  const isMissed = call.status === "missed";
-  const isActive = call.status === "active" || call.status === "ringing";
-  const isEnded = call.status === "ended" || call.status === "rejected";
 
   const handleEndCall = () => {
     if (socket) {
@@ -145,7 +143,7 @@ export default function VoiceCallView({
         </p>
       </div>
 
-      {!hasRemoteVideo ? (
+      {!showVideo ? (
         <>
           <div className="flex-1 flex flex-col items-center justify-center gap-4">
             {/* Avatar */}

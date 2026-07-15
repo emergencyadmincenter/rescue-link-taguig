@@ -5,6 +5,8 @@ import { useSocket } from "@/lib/socket";
 import { FiLoader, FiPhoneCall, FiAlertCircle } from "react-icons/fi";
 import ActiveSOSView from "./ActiveSOSView";
 import ActiveSOSChatView from "./ActiveSOSChatView";
+import { logsApi } from "@/features/logs/api/logs.api";
+import toast from "react-hot-toast";
 
 export default function ConnectingScreen({ callId }: { callId: string }) {
   const { socket, isConnected } = useSocket();
@@ -65,6 +67,34 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
     };
   }, [socket, isConnected, callId]);
 
+  const handleTryAgain = async () => {
+    try {
+      setStatus("connecting");
+      setStatusMessage("Reconnecting...");
+      const data = await logsApi.getCallDetails(callId);
+      if (data && data.log && data.call) {
+         const newEmergency = await logsApi.createEmergency({
+           communicationMethod: data.call.communication_method as 'voice' | 'chat',
+           latitude: data.log.latitude,
+           longitude: data.log.longitude,
+         });
+         
+         if (newEmergency && newEmergency.id) {
+           window.location.href = `/sos/${newEmergency.id}`;
+         } else {
+           throw new Error("Failed to create new emergency request");
+         }
+      } else {
+         throw new Error("Could not fetch previous call details");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to reconnect. Please try again or call 911.", { id: "reconnect-error" });
+      setStatus("missed");
+      setStatusMessage("Failed to reconnect.");
+    }
+  };
+
   if (status === "accepted" && activeCallData) {
     if (activeCallData.communicationMethod === "chat") {
       return (
@@ -99,7 +129,10 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
             </h1>
             <p className="body-medium text-gray-500 mb-8">{statusMessage}</p>
 
-            <button className="w-full py-3 bg-danger text-white rounded-xl font-medium hover:bg-danger-hover transition-colors mb-3">
+            <button 
+              onClick={handleTryAgain}
+              className="w-full py-3 bg-danger text-white rounded-xl font-medium hover:bg-danger-hover transition-colors mb-3"
+            >
               Try Again
             </button>
             <button

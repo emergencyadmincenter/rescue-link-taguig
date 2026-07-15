@@ -24,7 +24,7 @@ export class CommunicationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(CommunicationsGateway.name);
 
@@ -304,5 +304,13 @@ export class CommunicationsGateway
     client
       .to(`call_${data.callId}`)
       .emit('webrtc_ice_candidate', data.candidate);
+  }
+
+  @SubscribeMessage('webrtc_peer_ready')
+  handlePeerReady(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; role: string },
+  ) {
+    client.to(`call_${data.callId}`).emit('webrtc_peer_ready', data);
   }
 }

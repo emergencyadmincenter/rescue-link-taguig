@@ -5,9 +5,23 @@ import toast from 'react-hot-toast';
 export function useWebRTC(socket: Socket | undefined, callId: string, role: 'resident' | 'coordinator') {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const [connectionId, setConnectionId] = useState(Date.now());
+
+  // Keep ref in sync with state for synchronous access without dependency loops
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
+
+  // Announce our presence to force peer sync if they are holding stale connections
+  useEffect(() => {
+    if (!socket || !callId) return;
+    socket.emit('webrtc_peer_ready', { callId, role });
+  }, [socket, callId, role]);
 
   useEffect(() => {
     if (!socket || !callId) return;
@@ -16,18 +30,39 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     const peerConnection = new RTCPeerConnection(configuration);
     peerConnectionRef.current = peerConnection;
 
+    // Attach existing local tracks to the NEW peer connection if we are rebuilding
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStreamRef.current!);
+      });
+    }
+
+    // Add a video transceiver for the coordinator so their offers always request video.
+    // This solves issues with navigating away and returning, or new sessions.
+    if (role === 'coordinator') {
+      peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+      peerConnection.addTransceiver('video', { direction: 'recvonly' });
+    }
+
     // Handle remote stream
     peerConnection.ontrack = (event) => {
-      const stream = event.streams[0];
+      const stream = event.streams[0] || new MediaStream([event.track]);
       setRemoteStream(stream);
 
-      stream.onaddtrack = () => {
-        setRemoteStream(new MediaStream(stream.getTracks()));
+      const updateVideoState = () => {
+        const videoTracks = stream.getVideoTracks();
+        setHasRemoteVideo(videoTracks.length > 0 && videoTracks[0].enabled);
       };
+
+      updateVideoState();
+
+      stream.onaddtrack = updateVideoState;
+      stream.onremovetrack = updateVideoState;
       
-      stream.onremovetrack = () => {
-        setRemoteStream(new MediaStream(stream.getTracks()));
-      };
+      stream.getVideoTracks().forEach(track => {
+        track.onunmute = updateVideoState;
+        track.onmute = updateVideoState;
+      });
     };
 
     // Handle ICE candidates
@@ -54,50 +89,64 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       }
     };
 
-    socket.on('webrtc_offer', async (offer) => {
-      if (!peerConnection) return;
+    const handleOffer = async (offer: any) => {
+      if (!peerConnectionRef.current) return;
       try {
-        const offerCollision = makingOffer || peerConnection.signalingState !== 'stable';
+        const offerCollision = makingOffer || peerConnectionRef.current.signalingState !== 'stable';
         ignoreOffer = !isPolite && offerCollision;
         if (ignoreOffer) return;
 
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
+        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnectionRef.current.createAnswer();
+        await peerConnectionRef.current.setLocalDescription(answer);
         socket.emit('webrtc_answer', { callId, answer });
       } catch (err) {
         console.error('Error handling offer:', err);
       }
-    });
+    };
 
-    socket.on('webrtc_answer', async (answer) => {
-      if (!peerConnection) return;
+    const handleAnswer = async (answer: any) => {
+      if (!peerConnectionRef.current) return;
       try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
       } catch (err) {
         console.error('Error handling answer:', err);
       }
-    });
+    };
 
-    socket.on('webrtc_ice_candidate', async (candidate) => {
-      if (!peerConnection) return;
+    const handleIceCandidate = async (candidate: any) => {
+      if (!peerConnectionRef.current) return;
       try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
       } catch (e) {
         if (!ignoreOffer) console.error('Error adding received ice candidate', e);
       }
-    });
+    };
+
+    const handlePeerReady = (data: any) => {
+      if (data.role !== role) {
+        // The other peer just mounted! Rebuild our connection to sync!
+        setConnectionId(Date.now());
+      }
+    };
+
+    socket.on('webrtc_offer', handleOffer);
+    socket.on('webrtc_answer', handleAnswer);
+    socket.on('webrtc_ice_candidate', handleIceCandidate);
+    socket.on('webrtc_peer_ready', handlePeerReady);
 
     // Clean up on unmount
     return () => {
-      socket.off('webrtc_offer');
-      socket.off('webrtc_answer');
-      socket.off('webrtc_ice_candidate');
+      socket.off('webrtc_offer', handleOffer);
+      socket.off('webrtc_answer', handleAnswer);
+      socket.off('webrtc_ice_candidate', handleIceCandidate);
+      socket.off('webrtc_peer_ready', handlePeerReady);
       peerConnection.close();
     };
-  }, [socket, callId, role]);
+  }, [socket, callId, role, connectionId]);
 
   const startCall = async () => {
+    if (localStreamRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       setLocalStream(stream);
@@ -109,18 +158,28 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       }
     } catch (e) {
       console.error('Error accessing media devices.', e);
-      toast.error('Microphone access denied or unavailable.');
+      toast.error('Microphone access denied or unavailable.', { id: 'mic-error' });
     }
   };
 
   const endCall = () => {
-    localStream?.getTracks().forEach(track => track.stop());
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        track.stop();
+        track.enabled = false;
+      });
+      setLocalStream(null);
+    }
+    setRemoteStream(null);
+    setHasRemoteVideo(false);
+    setIsVideoEnabled(false);
     peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
   };
 
   const toggleMute = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
       if (audioTrack) {
         audioTrack.enabled = !audioTrack.enabled;
         return !audioTrack.enabled;
@@ -133,10 +192,10 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
     if (role !== 'resident') return false;
 
     if (isVideoEnabled) {
-      const videoTrack = localStream?.getVideoTracks()[0];
+      const videoTrack = localStreamRef.current?.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.stop();
-        localStream?.removeTrack(videoTrack);
+        localStreamRef.current?.removeTrack(videoTrack);
         const sender = peerConnectionRef.current?.getSenders().find(s => s.track?.kind === 'video');
         if (sender && peerConnectionRef.current) {
           peerConnectionRef.current.removeTrack(sender);
@@ -149,20 +208,21 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
         const videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
         const videoTrack = videoStream.getVideoTracks()[0];
         
-        if (localStream) {
-          localStream.addTrack(videoTrack);
+        if (localStreamRef.current) {
+          localStreamRef.current.addTrack(videoTrack);
         } else {
           setLocalStream(videoStream);
         }
 
+        const streamToUse = localStreamRef.current || videoStream;
         if (peerConnectionRef.current) {
-          peerConnectionRef.current.addTrack(videoTrack, localStream!);
+          peerConnectionRef.current.addTrack(videoTrack, streamToUse);
         }
         setIsVideoEnabled(true);
         return true;
       } catch (e) {
         console.error('Error accessing camera.', e);
-        toast.error('Camera access denied or unavailable.');
+        toast.error('Camera access denied or unavailable.', { id: 'camera-error' });
         return false;
       }
     }
@@ -177,13 +237,13 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       const videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: newFacingMode } });
       const newVideoTrack = videoStream.getVideoTracks()[0];
       
-      const oldVideoTrack = localStream?.getVideoTracks()[0];
+      const oldVideoTrack = localStreamRef.current?.getVideoTracks()[0];
       if (oldVideoTrack) {
         oldVideoTrack.stop();
-        localStream?.removeTrack(oldVideoTrack);
+        localStreamRef.current?.removeTrack(oldVideoTrack);
       }
       
-      localStream?.addTrack(newVideoTrack);
+      localStreamRef.current?.addTrack(newVideoTrack);
       
       const sender = peerConnectionRef.current?.getSenders().find(s => s.track?.kind === 'video');
       if (sender) {
@@ -191,9 +251,9 @@ export function useWebRTC(socket: Socket | undefined, callId: string, role: 'res
       }
     } catch (e) {
       console.error('Error switching camera.', e);
-      toast.error('Could not switch camera.');
+      toast.error('Could not switch camera.', { id: 'camera-switch-error' });
     }
   };
 
-  return { localStream, remoteStream, startCall, endCall, toggleMute, toggleVideo, switchCamera, isVideoEnabled, facingMode };
+  return { localStream, remoteStream, hasRemoteVideo, startCall, endCall, toggleMute, toggleVideo, switchCamera, isVideoEnabled, facingMode };
 }

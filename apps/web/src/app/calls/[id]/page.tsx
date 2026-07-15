@@ -134,22 +134,21 @@ export default function CallSessionPage() {
 
       <div className="flex-1 flex flex-row overflow-hidden">
         {/* Left Panel: Toggles between Communication and Location */}
-        <div className="flex-1 flex flex-col h-full bg-background border-r border-background-subtle animate-in fade-in slide-in-from-left-4 min-w-0 overflow-hidden">
-          {activeTab === "details" ? (
+        <div className="flex-1 flex flex-col h-full bg-background border-r border-background-subtle animate-in fade-in slide-in-from-left-4 min-w-0 overflow-hidden relative">
+          <div className={`w-full h-full flex flex-col ${activeTab === "details" ? "flex" : "hidden"}`}>
             <CommunicationPanel log={log} socket={socket || undefined} />
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-background/50">
-              <div className="text-center">
-                <span className="text-4xl mb-4 block">🗺️</span>
-                <h3 className="title-medium text-foreground">
-                  Location Tracking
-                </h3>
-                <p className="body-medium text-foreground/50 mt-2">
-                  Map view and live location tracking will be implemented here.
-                </p>
-              </div>
+          </div>
+          <div className={`w-full h-full items-center justify-center bg-background/50 ${activeTab === "location" ? "flex" : "hidden"}`}>
+            <div className="text-center">
+              <span className="text-4xl mb-4 block">🗺️</span>
+              <h3 className="title-medium text-foreground">
+                Location Tracking
+              </h3>
+              <p className="body-medium text-foreground/50 mt-2">
+                Map view and live location tracking will be implemented here.
+              </p>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Right Panel: Incident Details Form (ALWAYS VISIBLE) */}
