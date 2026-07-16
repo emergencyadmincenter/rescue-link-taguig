@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 export async function seedUsers(prisma: PrismaService) {
   const adminEmail = 'rescuelinktaguig@gmail.com';
-  const passwordHash = await bcrypt.hash('RescueLinkTaguig_BSCS3A', 10);
+  const passwordHash = await bcrypt.hash('bscs3a', 10);
 
   // Default Admin
   await prisma.user.upsert({

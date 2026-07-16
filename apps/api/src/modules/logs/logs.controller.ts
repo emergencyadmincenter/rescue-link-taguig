@@ -58,8 +58,8 @@ export class LogsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto) {
-    const result = await this.logsService.update(id, updateLogDto);
+  async update(@Param('id') id: string, @Body() updateLogDto: UpdateLogDto, @CurrentUser() user: JwtPayload) {
+    const result = await this.logsService.update(id, updateLogDto, user.sub);
     return ApiResponse.success(result);
   }
 

@@ -8,10 +8,10 @@ interface CommunicationPanelProps {
   log: Log;
 }
 
-import { useIncomingCall } from "@/providers/IncomingCallProvider";
+import { useSocket } from "@/lib/socket";
 
 export default function CommunicationPanel({ log }: CommunicationPanelProps) {
-  const { socket } = useIncomingCall();
+  const { socket } = useSocket();
 
   const latestCall =
     log.calls?.length > 0
@@ -26,7 +26,7 @@ export default function CommunicationPanel({ log }: CommunicationPanelProps) {
       <ChatView
         messages={log.messages || []}
         logId={log.id}
-        socket={socket}
+        socket={socket || undefined}
         call={latestCall}
       />
     );
@@ -36,7 +36,7 @@ export default function CommunicationPanel({ log }: CommunicationPanelProps) {
     latestCall?.communication_method === "voice" ||
     log.source === "voice_call"
   ) {
-    return <VoiceCallView call={latestCall} logId={log.id} socket={socket} />;
+    return <VoiceCallView call={latestCall} logId={log.id} socket={socket || undefined} />;
   }
 
   return null;

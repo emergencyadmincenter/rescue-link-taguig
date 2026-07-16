@@ -28,6 +28,7 @@ import StatusSelector from "./StatusSelector";
 import { toast } from "react-hot-toast";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import SelectorDialog, { SelectorOption } from "./SelectorDialog";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LogDetailsPanelProps {
   log: Log | null;
@@ -79,6 +80,10 @@ export default function LogDetailsPanel({
   onBack,
   onUpdate,
 }: LogDetailsPanelProps) {
+  const { user } = useAuth();
+  const isOwner = user && log && (log.assigned_coordinator_id === user.id || log.created_by_coordinator_id === user.id);
+  const isReadOnly = !isOwner;
+
   const [formData, setFormData] = useState({
     caller_name: "",
     caller_contact: "",
@@ -165,6 +170,7 @@ export default function LogDetailsPanel({
   if (!log) return null;
 
   const handleChange = (field: string, value: string) => {
+    if (isReadOnly) return;
     setFormData((prev) => ({ ...prev, [field]: value }));
     const requiredFields = ["caller_name", "caller_contact", "address"];
     if (requiredFields.includes(field) && !value.trim()) return;
@@ -172,6 +178,7 @@ export default function LogDetailsPanel({
   };
 
   const executeStatusChange = async (status: string) => {
+    if (isReadOnly) return;
     try {
       const updated = await logsApi.updateLog(log.id, {
         status: status as any,
@@ -184,6 +191,7 @@ export default function LogDetailsPanel({
   };
 
   const handleStatusChange = (status: string) => {
+    if (isReadOnly) return;
     if (status === "cancelled" || status === "resolved") {
       setConfirmDialog({ isOpen: true, status });
     } else {
@@ -192,6 +200,7 @@ export default function LogDetailsPanel({
   };
 
   const toggleChannel = (id: string) => {
+    if (isReadOnly) return;
     let newChannels = [...selectedChannels];
     if (newChannels.find((c) => c.id === id)) {
       newChannels = newChannels.filter((c) => c.id !== id);
@@ -204,12 +213,14 @@ export default function LogDetailsPanel({
   };
 
   const removeChannel = (id: string) => {
+    if (isReadOnly) return;
     const newChannels = selectedChannels.filter((c) => c.id !== id);
     setSelectedChannels(newChannels);
     immediateSave({ channels: newChannels.map((c) => c.label) });
   };
 
   const addCustomChannel = (label: string) => {
+    if (isReadOnly) return;
     const id = `custom_${label}`;
     const newChannels = [...selectedChannels, { id, label }];
     setSelectedChannels(newChannels);
@@ -217,6 +228,7 @@ export default function LogDetailsPanel({
   };
 
   const toggleNeed = (id: string) => {
+    if (isReadOnly) return;
     let newNeeds = [...selectedNeeds];
     if (newNeeds.find((n) => n.id === id)) {
       newNeeds = newNeeds.filter((n) => n.id !== id);
@@ -229,12 +241,14 @@ export default function LogDetailsPanel({
   };
 
   const removeNeed = (id: string) => {
+    if (isReadOnly) return;
     const newNeeds = selectedNeeds.filter((n) => n.id !== id);
     setSelectedNeeds(newNeeds);
     immediateSave({ resource_ids: newNeeds.map((n) => n.id) });
   };
 
   const addCustomNeed = (label: string) => {
+    if (isReadOnly) return;
     const id = `custom_${label}`;
     const newNeeds = [...selectedNeeds, { id, label }];
     setSelectedNeeds(newNeeds);
@@ -329,7 +343,7 @@ export default function LogDetailsPanel({
         <StatusSelector
           currentStatus={log.status}
           onStatusChange={handleStatusChange}
-          disabled={false}
+          disabled={isReadOnly}
         />
       </div>
 
@@ -361,8 +375,9 @@ export default function LogDetailsPanel({
                     type="text"
                     value={formData.caller_name}
                     onChange={(e) => handleChange("caller_name", e.target.value)}
+                    disabled={isReadOnly}
                     placeholder="e.g. John Doe"
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -379,8 +394,9 @@ export default function LogDetailsPanel({
                     type="text"
                     value={formData.caller_contact}
                     onChange={(e) => handleChange("caller_contact", e.target.value)}
+                    disabled={isReadOnly}
                     placeholder="e.g. 09123456789"
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -407,9 +423,10 @@ export default function LogDetailsPanel({
                   <textarea
                     value={formData.address}
                     onChange={(e) => handleChange("address", e.target.value)}
+                    disabled={isReadOnly}
                     placeholder="Exact location..."
                     rows={2}
-                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20"
+                    className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>
               </div>
@@ -422,8 +439,9 @@ export default function LogDetailsPanel({
                   rows={5}
                   value={formData.description}
                   onChange={(e) => handleChange("description", e.target.value)}
+                  disabled={isReadOnly}
                   placeholder="Provide any additional context or details..."
-                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed"
+                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed disabled:opacity-70"
                 />
               </div>
             </div>
@@ -446,22 +464,26 @@ export default function LogDetailsPanel({
                       <span className="opacity-70 shrink-0">{n.icon}</span>
                     )}
                     <span className="truncate max-w-[160px]">{n.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeNeed(n.id)}
-                      className="opacity-50 hover:opacity-100 hover:text-danger ml-1 shrink-0 p-0.5 rounded-full transition-colors"
-                    >
-                      <FiX className="w-4 h-4" />
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeNeed(n.id)}
+                        className="opacity-50 hover:opacity-100 hover:text-danger ml-1 shrink-0 p-0.5 rounded-full transition-colors"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    )}
                   </span>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setIsNeedsOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
-                >
-                  <FiPlus className="w-4 h-4" /> Add Need
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => setIsNeedsOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
+                  >
+                    <FiPlus className="w-4 h-4" /> Add Need
+                  </button>
+                )}
               </div>
               {selectedNeeds.length === 0 && (
                 <p className="body-small text-foreground/40 mt-3 italic pl-1">
@@ -488,22 +510,26 @@ export default function LogDetailsPanel({
                       <span className="opacity-70 shrink-0">{c.icon}</span>
                     )}
                     <span className="truncate max-w-[160px]">{c.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeChannel(c.id)}
-                      className="opacity-50 hover:opacity-100 hover:text-info ml-1 shrink-0 p-0.5 rounded-full transition-colors"
-                    >
-                      <FiX className="w-4 h-4" />
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeChannel(c.id)}
+                        className="opacity-50 hover:opacity-100 hover:text-info ml-1 shrink-0 p-0.5 rounded-full transition-colors"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    )}
                   </span>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => setIsChannelsOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
-                >
-                  <FiPlus className="w-4 h-4" /> Add Channel
-                </button>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => setIsChannelsOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
+                  >
+                    <FiPlus className="w-4 h-4" /> Add Channel
+                  </button>
+                )}
               </div>
               {selectedChannels.length === 0 && (
                 <p className="body-small text-foreground/40 mt-3 italic pl-1">

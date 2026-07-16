@@ -4,14 +4,15 @@ import { LogStatus, StatusCounts } from '../types/logs.types';
 import { LOG_TABS } from '../constants/logs.constants';
 
 interface LogTabsProps {
-  activeTab: LogStatus | 'all';
-  onTabChange: (tab: LogStatus | 'all') => void;
+  activeTab: LogStatus | 'all' | 'my_logs';
+  onTabChange: (tab: string) => void;
   counts: StatusCounts;
 }
 
 export default function LogTabs({ activeTab, onTabChange, counts }: LogTabsProps) {
   const getCount = (value: string) => {
     if (value === 'all') return counts.total;
+    if (value === 'my_logs') return null;
     return counts[value as LogStatus] ?? 0;
   };
 
@@ -23,7 +24,7 @@ export default function LogTabs({ activeTab, onTabChange, counts }: LogTabsProps
         return (
           <button
             key={tab.value}
-            onClick={() => onTabChange(tab.value as LogStatus | 'all')}
+            onClick={() => onTabChange(tab.value)}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               isActive
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -31,9 +32,11 @@ export default function LogTabs({ activeTab, onTabChange, counts }: LogTabsProps
             }`}
           >
             {tab.label}
-            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isActive ? 'bg-primary/10 text-primary' : 'bg-gray-200 text-gray-500'}`}>
-              {count}
-            </span>
+            {count !== null && (
+              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${isActive ? 'bg-primary/10 text-primary' : 'bg-gray-200 text-gray-500'}`}>
+                {count}
+              </span>
+            )}
           </button>
         );
       })}

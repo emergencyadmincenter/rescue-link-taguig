@@ -96,12 +96,23 @@ export class CommunicationsGateway
 
   @SubscribeMessage('join_call_room')
   async handleJoinCallRoom(@ConnectedSocket() client: Socket, @MessageBody() callId: string) {
+    const call = await this.communicationsService.getCallDetails(callId);
+    if (!call) return { success: false, error: 'Call not found' };
+
+    if (client.data.role === 'coordinator') {
+      if ((call.status === 'active' || call.status === 'ringing') && call.coordinator_id !== client.data.userId) {
+        return { success: false, error: 'Unauthorized: Call is assigned to another coordinator' };
+      }
+    } else {
+      // Resident is authorized by possessing the UUID
+      this.logger.log(`Resident accessing call room with UUID: ${callId}`);
+    }
+
     client.join(`call_${callId}`);
     client.data.callId = callId;
     this.logger.log(`Client ${client.id} joined room call_${callId}`);
 
     // Rehydrate state if they are reconnecting
-    const call = await this.communicationsService.getCallDetails(callId);
     if (call) {
       if (call.status === 'active') {
         client.emit('call_accepted', { 

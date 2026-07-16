@@ -3,7 +3,7 @@ WORKDIR /app
 
 FROM base AS dev
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 

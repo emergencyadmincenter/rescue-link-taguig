@@ -41,7 +41,7 @@ export default function SignInForm() {
         text: "Sign-in successful! Redirecting...",
       });
 
-      router.push("/personnel");
+      router.push("/dashboard");
     } catch (err: any) {
       setFeedback({
         type: "error",
