@@ -4,8 +4,8 @@ import { Unauthorized } from "@/components/shared/unauthorized";
 
 export default async function Page() {
   const user = await getUser();
-  
-  if (!user || !user.roles.includes('admin')) {
+
+  if (!user || !user.roles.includes("admin")) {
     return <Unauthorized />;
   }
 

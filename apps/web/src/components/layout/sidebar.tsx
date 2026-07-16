@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiFileText } from "react-icons/fi";
 import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
+import { TiWeatherPartlySunny } from "react-icons/ti";
 import { useAuth } from "@/providers/AuthProvider";
 
 type NavItem = {
@@ -28,6 +29,12 @@ const NAVIGATION: NavItem[] = [
     roles: ["coordinator", "admin"],
   },
   {
+    label: "Weather",
+    href: "/weather",
+    icon: TiWeatherPartlySunny,
+    roles: ["coordinator", "admin"],
+  },
+  {
     label: "Personnel",
     href: "/personnel",
     icon: HiOutlineUserGroup,
@@ -39,7 +46,7 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
   const { user } = useAuth();
-  
+
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   // Check if a nav item is active (either directly or via a child route)
@@ -89,7 +96,9 @@ export function Sidebar() {
 
       <nav className="flex flex-col mt-1 flex-1 overflow-y-auto overflow-x-hidden px-2 gap-1 pb-4">
         {NAVIGATION.filter(
-          (item) => !item.roles || (user?.roles && item.roles.some((r) => user.roles.includes(r))),
+          (item) =>
+            !item.roles ||
+            (user?.roles && item.roles.some((r) => user.roles.includes(r))),
         ).map((item) => (
           <SidebarItem
             key={item.href}

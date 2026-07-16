@@ -63,7 +63,8 @@ export default function PersonnelPageView() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { groups, isLoading, error } = usePersonnel({
+  // `refresh` triggers a re-fetch of the personnel list (e.g. after creating a new account)
+  const { groups, isLoading, error, refresh } = usePersonnel({
     search: debouncedSearchQuery,
     status: statusFilter,
   });
@@ -307,7 +308,11 @@ export default function PersonnelPageView() {
       {/* ===== Add Personnel Dialog ===== */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <AddPersonnelForm onCancel={() => setShowAddForm(false)} />
+          {/* onSuccess triggers a list refresh after the account is created */}
+          <AddPersonnelForm
+            onCancel={() => setShowAddForm(false)}
+            onSuccess={refresh}
+          />
         </div>
       )}
 

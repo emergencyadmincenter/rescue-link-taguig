@@ -9,8 +9,10 @@ interface CommunicationPanelProps {
   socket?: any;
 }
 
-export default function CommunicationPanel({ log, socket }: CommunicationPanelProps) {
-
+export default function CommunicationPanel({
+  log,
+  socket,
+}: CommunicationPanelProps) {
   const latestCall =
     log.calls?.length > 0
       ? [...log.calls].sort(
@@ -34,7 +36,13 @@ export default function CommunicationPanel({ log, socket }: CommunicationPanelPr
     latestCall?.communication_method === "voice" ||
     log.source === "voice_call"
   ) {
-    return <VoiceCallView call={latestCall} logId={log.id} socket={socket || undefined} />;
+    return (
+      <VoiceCallView
+        call={latestCall}
+        logId={log.id}
+        socket={socket || undefined}
+      />
+    );
   }
 
   return null;

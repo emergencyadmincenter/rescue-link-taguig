@@ -73,6 +73,12 @@ export class CommunicationsController {
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
     });
 
+    res.cookie(`resident_call_${call.id}`, 'true', {
+      httpOnly: true,
+      path: '/',
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    });
+
     return { success: true, data: { id: call.id } };
   }
 
