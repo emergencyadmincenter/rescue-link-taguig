@@ -8,6 +8,7 @@ import { logsApi } from "@/features/logs/api/logs.api";
 import { Log, Resource, Call } from "@/features/logs/types/logs.types";
 import IncidentFormPanel from "@/features/logs/components/IncidentFormPanel";
 import CommunicationPanel from "@/features/logs/components/CommunicationPanel";
+import LocationPanel from "@/features/logs/components/LocationPanel";
 import toast from "react-hot-toast";
 
 export default function CallSessionPage() {
@@ -57,8 +58,19 @@ export default function CallSessionPage() {
     };
 
     socket.on("call_ended", onCallEnded);
+    
+    const onLocationUpdated = (data: { latitude: number; longitude: number }) => {
+      setLog(prev => {
+        if (!prev) return prev;
+        return { ...prev, latitude: data.latitude, longitude: data.longitude };
+      });
+    };
+    
+    socket.on("location_updated", onLocationUpdated);
+
     return () => {
       socket.off("call_ended", onCallEnded);
+      socket.off("location_updated", onLocationUpdated);
     };
   }, [socket, callId]);
 
@@ -151,17 +163,9 @@ export default function CallSessionPage() {
             <CommunicationPanel log={log} socket={socket || undefined} />
           </div>
           <div
-            className={`w-full h-full items-center justify-center bg-background/50 ${activeTab === "location" ? "flex" : "hidden"}`}
+            className={`w-full h-full flex flex-col bg-background ${activeTab === "location" ? "flex" : "hidden"}`}
           >
-            <div className="text-center">
-              <span className="text-4xl mb-4 block">🗺️</span>
-              <h3 className="title-medium text-foreground">
-                Location Tracking
-              </h3>
-              <p className="body-medium text-foreground/50 mt-2">
-                Map view and live location tracking will be implemented here.
-              </p>
-            </div>
+            <LocationPanel latitude={log.latitude ?? null} longitude={log.longitude ?? null} />
           </div>
         </div>
 

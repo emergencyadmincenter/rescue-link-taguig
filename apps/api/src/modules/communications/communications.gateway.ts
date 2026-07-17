@@ -285,6 +285,31 @@ export class CommunicationsGateway
     );
   }
 
+  @SubscribeMessage('update_location')
+  async handleUpdateLocation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; latitude: number; longitude: number },
+  ) {
+    // Basic authorization check
+    if (client.data.role !== 'resident' || client.data.callId !== data.callId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Broadcast the new coordinates to the call room (coordinator)
+    client.to(`call_${data.callId}`).emit('location_updated', {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Optionally update the DB in the background to persist the latest location
+    this.communicationsService.updateCallLocation(data.callId, data.latitude, data.longitude).catch(err => {
+      this.logger.error(`Failed to update DB location for call ${data.callId}`, err);
+    });
+
+    return { success: true };
+  }
+
   // WebRTC Signaling
   @SubscribeMessage('webrtc_offer')
   handleOffer(

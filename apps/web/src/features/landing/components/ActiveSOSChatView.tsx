@@ -5,6 +5,7 @@ import { Socket } from "socket.io-client";
 import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { logsApi } from "@/features/logs/api/logs.api";
+import { useLiveLocation } from "../hooks/useLiveLocation";
 
 interface ActiveSOSChatViewProps {
   callId: string;
@@ -23,6 +24,8 @@ export default function ActiveSOSChatView({
     "resident" | "coordinator" | "system" | null
   >(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useLiveLocation(socket, callId, !sessionEndReason);
 
   useEffect(() => {
     if (callData.logId) {

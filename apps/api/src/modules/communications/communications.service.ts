@@ -563,4 +563,21 @@ export class CommunicationsService implements OnModuleInit {
     this.server.to(`call_${callId}`).emit('chat_message', message);
     return message;
   }
+
+  async updateCallLocation(callId: string, latitude: number, longitude: number) {
+    const call = await this.prisma.call.findUnique({ where: { id: callId } });
+    if (!call) return;
+    
+    await this.prisma.call.update({
+      where: { id: callId },
+      data: { latitude, longitude }
+    });
+
+    if (call.log_id) {
+      await this.prisma.log.update({
+        where: { id: call.log_id },
+        data: { latitude, longitude }
+      });
+    }
+  }
 }

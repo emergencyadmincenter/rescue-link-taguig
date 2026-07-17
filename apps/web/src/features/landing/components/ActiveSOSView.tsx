@@ -14,6 +14,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import { useWebRTC } from "@/lib/webrtc";
+import { useLiveLocation } from "../hooks/useLiveLocation";
 
 interface ActiveSOSViewProps {
   callId: string;
@@ -34,6 +35,8 @@ export default function ActiveSOSView({
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useLiveLocation(socket, callId, !sessionEndReason);
 
   const {
     startCall,
