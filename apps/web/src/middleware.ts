@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const token = request.cookies.get("access_token")?.value;
   const { pathname } = request.nextUrl;
 
@@ -13,7 +13,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/api") ||
     pathname.startsWith("/images") ||
     pathname.startsWith("/calls") ||
-    pathname.startsWith("/sos");
+    pathname.startsWith("/sos") ||
+    pathname.startsWith("/activate");
 
   if (isPublicRoute) {
     return NextResponse.next();

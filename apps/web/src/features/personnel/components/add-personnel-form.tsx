@@ -23,6 +23,7 @@
 
 import { useState, useEffect } from "react";
 import { FiUser, FiLoader } from "react-icons/fi";
+import toast from "react-hot-toast";
 import { createPersonnel, getRoles, RoleOption } from "../api/personnel.api";
 
 interface AddPersonnelFormProps {
@@ -96,6 +97,7 @@ export default function AddPersonnelForm({
 
     try {
       await createPersonnel({ name: name.trim(), email: email.trim(), role_id: roleId });
+      toast.success("Personnel account created successfully. Activation email sent.");
       // Notify parent to refresh the personnel list, then close
       onSuccess?.();
       onCancel?.();
@@ -198,16 +200,19 @@ export default function AddPersonnelForm({
                       : "border-gray-300 focus:border-gray-900"
                   }`}
                   disabled={isSubmitting || rolesLoading}
+                  required
                 >
                   <option value="" disabled>
-                    {rolesLoading ? "Loading roles…" : "Role"}
+                    {rolesLoading ? "Loading roles…" : "Select role"}
                   </option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {/* Display in Title Case */}
-                      {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
-                    </option>
-                  ))}
+                  {roles
+                    .filter((r) => r.name.toLowerCase() === "coordinator")
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {/* Display in Title Case */}
+                        {r.name.charAt(0).toUpperCase() + r.name.slice(1)}
+                      </option>
+                    ))}
                 </select>
                 <svg
                   className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"

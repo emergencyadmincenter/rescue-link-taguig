@@ -15,13 +15,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  GeoJSON,
-  Popup,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -217,7 +211,7 @@ export default function WeatherMapView({
       const mappedName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       return weatherDataByName.get(mappedName.toLowerCase());
     },
-    [weatherDataByName]
+    [weatherDataByName],
   );
 
   // --- Load GeoJSON ---
@@ -235,9 +229,7 @@ export default function WeatherMapView({
         const response = await fetch("/taguig-barangays.geojson");
 
         if (!response.ok) {
-          throw new Error(
-            `Failed to load map data (HTTP ${response.status})`
-          );
+          throw new Error(`Failed to load map data (HTTP ${response.status})`);
         }
 
         const data: GeoJSON.FeatureCollection = await response.json();
@@ -250,7 +242,7 @@ export default function WeatherMapView({
           setGeoJsonError(
             err instanceof Error
               ? err.message
-              : "Failed to load barangay boundaries."
+              : "Failed to load barangay boundaries.",
           );
         }
       } finally {
@@ -305,7 +297,7 @@ export default function WeatherMapView({
         dashArray: "",
       };
     },
-    [colorMode, findWeatherForFeature]
+    [colorMode, findWeatherForFeature],
   );
 
   // --- Feature Interaction Handlers ---
@@ -347,7 +339,7 @@ export default function WeatherMapView({
             direction: "top",
             offset: [0, -10],
             className: "weather-map-tooltip",
-          }
+          },
         );
       }
 
@@ -376,38 +368,80 @@ export default function WeatherMapView({
         },
       });
     },
-    [findWeatherForFeature]
+    [findWeatherForFeature],
   );
 
   // --- Legend Data ---
   const legendItems = useMemo(() => {
     if (colorMode === "severity") {
+      let severe = 0;
+      let advisory = 0;
+      let normal = 0;
+      let noDataCount = 0;
+
+      if (geoJsonData) {
+        geoJsonData.features.forEach((feature) => {
+          if (!feature.properties?.name) return;
+          const w = findWeatherForFeature(feature.properties.name);
+          if (w) {
+            if (w.severity === "severe") severe++;
+            else if (w.severity === "warning" || w.severity === "advisory") advisory++;
+            else normal++;
+          } else {
+            noDataCount++;
+          }
+        });
+      }
+
       return [
-        { label: "Severe", color: "#ef4444" },
-        { label: "Advisory", color: "#f59e0b" },
-        { label: "Normal", color: "#10b981" },
-        { label: "No Data", color: "#e5e7eb" },
+        { label: `Severe (${severe})`, color: "#ef4444" },
+        { label: `Advisory (${advisory})`, color: "#f59e0b" },
+        { label: `Normal (${normal})`, color: "#10b981" },
+        { label: `No Data (${noDataCount})`, color: "#e5e7eb" },
       ];
     } else {
+      let high = 0;
+      let elevated = 0;
+      let moderate = 0;
+      let low = 0;
+      let noDataCount = 0;
+
+      if (geoJsonData) {
+        geoJsonData.features.forEach((feature) => {
+          if (!feature.properties?.name) return;
+          const w = findWeatherForFeature(feature.properties.name);
+          if (w) {
+            const risk = calculateFloodRisk(w);
+            if (risk.level === "high") high++;
+            else if (risk.level === "elevated") elevated++;
+            else if (risk.level === "moderate") moderate++;
+            else low++;
+          } else {
+            noDataCount++;
+          }
+        });
+      }
+
       return [
-        { label: "High", color: "#ef4444" },
-        { label: "Elevated", color: "#f97316" },
-        { label: "Moderate", color: "#f59e0b" },
-        { label: "Low", color: "#10b981" },
-        { label: "No Data", color: "#e5e7eb" },
+        { label: `High (${high})`, color: "#ef4444" },
+        { label: `Elevated (${elevated})`, color: "#f97316" },
+        { label: `Moderate (${moderate})`, color: "#f59e0b" },
+        { label: `Low (${low})`, color: "#10b981" },
+        { label: `No Data (${noDataCount})`, color: "#e5e7eb" },
       ];
     }
-  }, [colorMode]);
+  }, [colorMode, geoJsonData, findWeatherForFeature]);
 
   // --- Loading State ---
   if (geoJsonLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="body-small text-gray-500">
-            Loading map data...
-          </p>
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center justify-between mb-3 shrink-0 flex-wrap gap-2">
+          <div className="w-[200px] h-8 bg-gray-200 animate-pulse rounded-md"></div>
+          <div className="w-[300px] h-4 bg-gray-200 animate-pulse rounded-md"></div>
+        </div>
+        <div className="flex-1 flex gap-4 min-h-0">
+          <div className="flex-1 rounded-xl bg-gray-200 animate-pulse border border-gray-100 min-h-[600px] h-[70vh]"></div>
         </div>
       </div>
     );
@@ -492,7 +526,7 @@ export default function WeatherMapView({
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Map Container */}
         <div
-          className={`flex-1 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
+          className={`mb-10 flex-1 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
             selectedBarangay ? "hidden lg:block" : ""
           }`}
         >
@@ -500,13 +534,14 @@ export default function WeatherMapView({
             center={TAGUIG_CENTER}
             zoom={DEFAULT_ZOOM}
             className="h-full w-full"
-            style={{ minHeight: "400px" }}
+            style={{ minHeight: "600px", height: "70vh" }}
             scrollWheelZoom={true}
             zoomControl={true}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              className="dark-map-tiles"
             />
 
             {geoJsonData && (
