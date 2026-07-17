@@ -63,4 +63,4 @@ USER node
 EXPOSE 3000
 
 # Execute Node directly as PID 1 so OS signals (SIGTERM) pass straight to NestJS
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]

@@ -133,7 +133,7 @@ const StreetViewControl = ({
   useEffect(() => {
     if (!hasStreetView) return;
 
-    const control = L.control({ position: "topleft" });
+    const control = new L.Control({ position: "topleft" });
     control.onAdd = () => {
       const container = L.DomUtil.create("div", "leaflet-bar leaflet-control");
       const button = L.DomUtil.create("a", "", container);

@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 
@@ -13,6 +14,15 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
+
+  app.enableShutdownHooks();
 
   // Trust proxy is required for rate limiting if behind a reverse proxy (like Docker/Nginx)
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
