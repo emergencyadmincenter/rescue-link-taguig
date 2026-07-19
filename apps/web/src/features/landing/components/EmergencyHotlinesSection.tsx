@@ -106,12 +106,15 @@ export function EmergencyHotlinesSection() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-600">{hotline.description}</p>
+                    <p className="text-gray-600 hidden md:block">{hotline.description}</p>
+                    <p className="font-outfit font-bold text-3xl sm:text-4xl text-gray-900 tracking-tight mt-1 md:hidden">
+                      {hotline.number}
+                    </p>
                   </div>
                 </div>
                 
-                <div className="md:text-right pl-20 md:pl-0">
-                  <span className="font-outfit font-bold text-2xl md:text-3xl text-gray-900 tracking-tight">
+                <div className="hidden md:block md:text-right">
+                  <span className="font-outfit font-bold text-3xl text-gray-900 tracking-tight">
                     {hotline.number}
                   </span>
                 </div>

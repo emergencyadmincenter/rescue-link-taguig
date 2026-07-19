@@ -25,5 +25,32 @@ export async function seedUsers(prisma: PrismaService) {
     },
   });
 
+  // Coordinators (Development only)
+  if (process.env.NODE_ENV !== 'production') {
+    // Coordinator 1
+    await prisma.user.upsert({
+      where: { email: 'coordinator1@example.com' },
+      update: {},
+      create: {
+        name: 'Coordinator One',
+        email: 'coordinator1@example.com',
+        password_hash: passwordHash,
+        status: UserStatus.active,
+      },
+    });
+
+    // Coordinator 2
+    await prisma.user.upsert({
+      where: { email: 'coordinator2@example.com' },
+      update: {},
+      create: {
+        name: 'Coordinator Two',
+        email: 'coordinator2@example.com',
+        password_hash: passwordHash,
+        status: UserStatus.active,
+      },
+    });
+  }
+
   console.log('✅ Users seeded');
 }
