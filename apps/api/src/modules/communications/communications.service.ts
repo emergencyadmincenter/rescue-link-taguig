@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnApplicationShutdown } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
 
@@ -21,13 +21,14 @@ export interface RoutingState {
 }
 
 @Injectable()
-export class CommunicationsService implements OnModuleInit {
+export class CommunicationsService implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(CommunicationsService.name);
   private server: Server;
 
   private coordinators = new Map<string, CoordinatorPresence>();
   private activeRoutings = new Map<string, RoutingState>();
   private coordinatorAssignments = new Map<string, number>();
+  private pendingTimeouts = new Set<NodeJS.Timeout>();
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -55,6 +56,20 @@ export class CommunicationsService implements OnModuleInit {
   }
   setServer(server: Server) {
     this.server = server;
+  }
+
+  async onApplicationShutdown() {
+    this.logger.log('Graceful shutdown: clearing active routing timeouts');
+    for (const state of this.activeRoutings.values()) {
+      if (state.timerId) {
+        clearTimeout(state.timerId);
+      }
+    }
+    for (const timer of this.pendingTimeouts) {
+      clearTimeout(timer);
+    }
+    this.pendingTimeouts.clear();
+    this.activeRoutings.clear();
   }
 
   async handleCoordinatorConnect(socket: Socket, userId: string) {
@@ -123,7 +138,8 @@ export class CommunicationsService implements OnModuleInit {
       }
 
       // Clean up any ghost active calls. Wait a few seconds to allow for page navigation/reconnections.
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        this.pendingTimeouts.delete(timer);
         // If the coordinator has reconnected within the 5 seconds, do NOT end their active calls.
         // This prevents the return banner from disappearing when they are just viewing another page.
         let isReconnected = false;
@@ -159,6 +175,7 @@ export class CommunicationsService implements OnModuleInit {
             this.logger.error('Failed to query ghost calls:', err),
           );
       }, 5000);
+      this.pendingTimeouts.add(timer);
     }
   }
 
@@ -182,7 +199,8 @@ export class CommunicationsService implements OnModuleInit {
   handleResidentDisconnect(callId: string) {
     this.logger.log(`Handling resident disconnect for Call ${callId}`);
 
-    setTimeout(async () => {
+    const timer = setTimeout(async () => {
+      this.pendingTimeouts.delete(timer);
       // Give resident 5 seconds to reconnect
       const room = this.server.sockets.adapter.rooms.get(`call_${callId}`);
       // Find if there are any resident sockets left
@@ -233,6 +251,7 @@ export class CommunicationsService implements OnModuleInit {
         }
       }
     }, 5000);
+    this.pendingTimeouts.add(timer);
   }
 
   private triggerPendingRoutings() {

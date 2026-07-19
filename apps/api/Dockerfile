@@ -45,6 +45,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Trust the AWS RDS CA bundle for all Node.js TLS connections.
+# This ensures `prisma migrate deploy` (which runs before the app) can also
+# connect to RDS over verified TLS without needing explicit ssl config in code.
+ENV NODE_EXTRA_CA_CERTS=/app/prisma/global-bundle.pem
+
 # Install openssl in production runner for Prisma compatibility
 RUN apk add --no-cache openssl
 
@@ -53,14 +58,20 @@ RUN chown -R node:node /app
 
 # Copy runtime node_modules and compiled code
 COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
-COPY --chown=node:node --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package*.json ./
+
+# Copy the Prisma schema, migrations, and AWS RDS CA certificate bundle
+COPY --chown=node:node prisma ./prisma
+
+# Copy the Prisma config for CLI commands (prisma migrate deploy)
+# This file contains the datasource.url that the CLI needs to connect to the database.
+COPY --chown=node:node prisma.config.ts ./
 
 # Drop root privileges and switch to the built-in secure non-root user
 USER node
 
 EXPOSE 3000
 
-# Execute Node directly as PID 1 so OS signals (SIGTERM) pass straight to NestJS
-CMD ["node", "dist/src/main"]
+# Safely deploy production migrations, then start the NestJS server
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]

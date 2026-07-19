@@ -39,15 +39,17 @@ export class AuthController {
     @Body() signInDto: SignInDto,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const dto = new SignInDto(signInDto);
-    const result = await this.authService.signIn(dto);
+    const result = await this.authService.signIn(signInDto);
 
     // Set HTTP-only cookie
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+    
     response.cookie('access_token', result.token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax', // Use 'strict' or 'lax'
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: cookieDomain,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
@@ -60,10 +62,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async signOut(@Res({ passthrough: true }) response: Response) {
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: cookieDomain,
       path: '/',
     });
 
