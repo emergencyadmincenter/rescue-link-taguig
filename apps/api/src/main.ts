@@ -8,8 +8,15 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
+  const allowedOrigins =
+    process.env.NODE_ENV === 'production'
+      ? (process.env.ALLOWED_ORIGINS?.split(',').map((origin) =>
+          origin.trim(),
+        ) ?? [])
+      : ['http://localhost:3000'];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: allowedOrigins,
     credentials: true,
   });
 
