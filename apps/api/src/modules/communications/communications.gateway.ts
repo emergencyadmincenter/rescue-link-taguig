@@ -24,7 +24,7 @@ export class CommunicationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(CommunicationsGateway.name);
 
@@ -40,44 +40,76 @@ export class CommunicationsGateway
   }
 
   async handleConnection(client: Socket) {
-    this.logger.log(`Socket connecting: ${client.id}. Headers: ${JSON.stringify(client.handshake.headers)}`);
-    let token = client.handshake.auth?.token || client.handshake.headers?.authorization?.split(' ')[1];
-    
+    this.logger.log(
+      `Socket connecting: ${client.id}. Headers: ${JSON.stringify(client.handshake.headers)}`,
+    );
+    let token =
+      client.handshake.auth?.token ||
+      client.handshake.headers?.authorization?.split(' ')[1];
+
     // Parse from cookie if available
     const cookieHeader = client.handshake.headers.cookie;
     this.logger.log(`Cookie header: ${cookieHeader}`);
     if (!token && cookieHeader) {
-      const cookies = cookieHeader.split(';').reduce((acc: any, cookie: string) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-      token = cookies['Authentication'] || cookies['access_token'] || cookies['token']; // depends on backend cookie name
+      const cookies = cookieHeader
+        .split(';')
+        .reduce((acc: any, cookie: string) => {
+          const [key, value] = cookie.trim().split('=');
+          acc[key] = value;
+          return acc;
+        }, {});
+      token =
+        cookies['Authentication'] ||
+        cookies['access_token'] ||
+        cookies['token']; // depends on backend cookie name
     }
-    
+
     if (token) {
       try {
         const decoded = this.jwtService.verify(token);
         if (decoded && decoded.sub) {
           // Verify user actually exists in the database to prevent ghost connections
           // after a database wipe or environment reset.
-          const user = await this.prisma.user.findUnique({ where: { id: decoded.sub } });
-          
+          const user = await this.prisma.user.findUnique({
+            where: { id: decoded.sub },
+            include: {
+              user_roles: {
+                include: { role: true },
+              },
+            },
+          });
+
           if (user) {
-            // This is a coordinator
             client.data.userId = decoded.sub;
-            client.data.role = 'coordinator';
-            await this.communicationsService.handleCoordinatorConnect(client, decoded.sub);
-            return;
+            const roles = user.user_roles?.map((ur) => ur.role?.name) || [];
+
+            if (roles.includes('coordinator')) {
+              // This is a coordinator
+              client.data.role = 'coordinator';
+              await this.communicationsService.handleCoordinatorConnect(
+                client,
+                decoded.sub,
+              );
+              return;
+            } else {
+              // Admin or other roles who shouldn't receive calls
+              client.data.role = roles.length > 0 ? roles[0] : 'user';
+              this.logger.log(
+                `Authenticated user ${decoded.sub} connected with role ${client.data.role}. Not adding to coordinator pool.`,
+              );
+              return;
+            }
           } else {
-            this.logger.warn(`User ${decoded.sub} from token does not exist in database (ghost session). Socket: ${client.id}`);
+            this.logger.warn(
+              `User ${decoded.sub} from token does not exist in database (ghost session). Socket: ${client.id}`,
+            );
           }
         }
       } catch (e) {
         this.logger.warn(`Invalid token for socket ${client.id}`);
       }
     }
-    
+
     // Resident or unauthenticated client
     client.data.role = 'resident';
     this.logger.log(`Resident/Anonymous client connected: ${client.id}`);
@@ -95,13 +127,22 @@ export class CommunicationsGateway
   }
 
   @SubscribeMessage('join_call_room')
-  async handleJoinCallRoom(@ConnectedSocket() client: Socket, @MessageBody() callId: string) {
+  async handleJoinCallRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() callId: string,
+  ) {
     const call = await this.communicationsService.getCallDetails(callId);
     if (!call) return { success: false, error: 'Call not found' };
 
     if (client.data.role === 'coordinator') {
-      if ((call.status === 'active' || call.status === 'ringing') && call.coordinator_id !== client.data.userId) {
-        return { success: false, error: 'Unauthorized: Call is assigned to another coordinator' };
+      if (
+        (call.status === 'active' || call.status === 'ringing') &&
+        call.coordinator_id !== client.data.userId
+      ) {
+        return {
+          success: false,
+          error: 'Unauthorized: Call is assigned to another coordinator',
+        };
       }
     } else {
       // Resident is authorized by possessing the UUID
@@ -115,18 +156,28 @@ export class CommunicationsGateway
     // Rehydrate state if they are reconnecting
     if (call) {
       if (call.status === 'active') {
-        client.emit('call_accepted', { 
-          callId, 
+        client.emit('call_accepted', {
+          callId,
           coordinatorId: call.coordinator_id,
           logId: call.log_id,
-          communicationMethod: call.communication_method
+          communicationMethod: call.communication_method,
         });
       } else if (call.status === 'ended' || call.status === 'missed') {
-        client.emit(call.status === 'missed' ? 'routing_timeout' : 'call_ended', { 
-          callId, message: call.status === 'missed' ? 'No coordinators available at the moment.' : undefined 
-        });
+        client.emit(
+          call.status === 'missed' ? 'routing_timeout' : 'call_ended',
+          {
+            callId,
+            message:
+              call.status === 'missed'
+                ? 'No coordinators available at the moment.'
+                : undefined,
+          },
+        );
       } else if (call.status === 'ringing') {
-        client.emit('routing_status', { status: 'ringing', message: 'Connecting to a coordinator...' });
+        client.emit('routing_status', {
+          status: 'ringing',
+          message: 'Connecting to a coordinator...',
+        });
       }
     }
 
@@ -136,27 +187,33 @@ export class CommunicationsGateway
   @SubscribeMessage('coordinator_response')
   async handleCoordinatorResponse(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { callId: string; accept: boolean; rejectReason?: string }
+    @MessageBody()
+    data: { callId: string; accept: boolean; rejectReason?: string },
   ) {
-    if (client.data.role !== 'coordinator') return { success: false, error: 'Unauthorized' };
+    if (client.data.role !== 'coordinator')
+      return { success: false, error: 'Unauthorized' };
 
     return await this.communicationsService.handleCoordinatorResponse(
       data.callId,
       client.data.userId,
       data.accept,
-      data.rejectReason
+      data.rejectReason,
     );
   }
 
   @SubscribeMessage('end_call')
-  async handleEndCall(@ConnectedSocket() client: Socket, @MessageBody() data: { callId?: string; logId?: string }) {
-    const role = client.data.role === 'coordinator' ? 'coordinator' : 'resident';
-    
+  async handleEndCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId?: string; logId?: string },
+  ) {
+    const role =
+      client.data.role === 'coordinator' ? 'coordinator' : 'resident';
+
     let callId = data.callId;
     if (!callId && data.logId) {
       const call = await this.communicationsService['prisma'].call.findFirst({
         where: { log_id: data.logId },
-        orderBy: { started_at: 'desc' }
+        orderBy: { started_at: 'desc' },
       });
       if (call) callId = call.id;
     }
@@ -170,31 +227,121 @@ export class CommunicationsGateway
   @SubscribeMessage('send_chat_message')
   async handleSendChatMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { callId: string; type: 'text' | 'image' | 'file'; text?: string; attachmentUrl?: string }
+    @MessageBody()
+    data: {
+      callId: string;
+      type: 'text' | 'image' | 'file';
+      text?: string;
+      attachmentUrl?: string;
+    },
   ) {
-    const senderType = client.data.role === 'coordinator' ? 'coordinator' : 'resident';
+    this.logger.log(
+      `Received send_chat_message from ${client.id} (role: ${client.data.role}, userId: ${client.data.userId}) with callId: ${data.callId}`,
+    );
+    const call = await this.communicationsService.getCallDetails(data.callId);
+    if (!call) {
+      this.logger.log(`Send failed: Call not found`);
+      return { success: false, error: 'Call not found' };
+    }
+
+    if (client.data.role === 'coordinator') {
+      if (call.coordinator_id !== client.data.userId) {
+        this.logger.log(
+          `Send failed: Unauthorized. Call assigned to ${call.coordinator_id}, but client is ${client.data.userId}`,
+        );
+        return {
+          success: false,
+          error: 'Unauthorized: Call is assigned to another coordinator',
+        };
+      }
+    } else {
+      if (client.data.callId !== data.callId) {
+        this.logger.log(
+          `Send failed: Unauthorized resident. Client callId ${client.data.callId} !== ${data.callId}`,
+        );
+        return {
+          success: false,
+          error: 'Unauthorized: You have not joined this call room',
+        };
+      }
+    }
+
+    if (call.status !== 'active') {
+      return {
+        success: false,
+        error: 'Messages can only be sent in an active call',
+      };
+    }
+
+    const senderType =
+      client.data.role === 'coordinator' ? 'coordinator' : 'resident';
     return await this.communicationsService.saveMessage(
       data.callId,
+      call.log_id || undefined,
       senderType,
       data.type,
       data.text,
-      data.attachmentUrl
+      data.attachmentUrl,
     );
+  }
+
+  @SubscribeMessage('update_location')
+  async handleUpdateLocation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; latitude: number; longitude: number },
+  ) {
+    // Basic authorization check
+    if (client.data.role !== 'resident' || client.data.callId !== data.callId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Broadcast the new coordinates to the call room (coordinator)
+    client.to(`call_${data.callId}`).emit('location_updated', {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Optionally update the DB in the background to persist the latest location
+    this.communicationsService.updateCallLocation(data.callId, data.latitude, data.longitude).catch(err => {
+      this.logger.error(`Failed to update DB location for call ${data.callId}`, err);
+    });
+
+    return { success: true };
   }
 
   // WebRTC Signaling
   @SubscribeMessage('webrtc_offer')
-  handleOffer(@ConnectedSocket() client: Socket, @MessageBody() data: { callId: string; offer: any }) {
+  handleOffer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; offer: any },
+  ) {
     client.to(`call_${data.callId}`).emit('webrtc_offer', data.offer);
   }
 
   @SubscribeMessage('webrtc_answer')
-  handleAnswer(@ConnectedSocket() client: Socket, @MessageBody() data: { callId: string; answer: any }) {
+  handleAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; answer: any },
+  ) {
     client.to(`call_${data.callId}`).emit('webrtc_answer', data.answer);
   }
 
   @SubscribeMessage('webrtc_ice_candidate')
-  handleIceCandidate(@ConnectedSocket() client: Socket, @MessageBody() data: { callId: string; candidate: any }) {
-    client.to(`call_${data.callId}`).emit('webrtc_ice_candidate', data.candidate);
+  handleIceCandidate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; candidate: any },
+  ) {
+    client
+      .to(`call_${data.callId}`)
+      .emit('webrtc_ice_candidate', data.candidate);
+  }
+
+  @SubscribeMessage('webrtc_peer_ready')
+  handlePeerReady(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; role: string },
+  ) {
+    client.to(`call_${data.callId}`).emit('webrtc_peer_ready', data);
   }
 }

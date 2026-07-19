@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, HttpCode, HttpStatus, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -14,7 +23,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getMe(@CurrentUser() user: any) {
-    return ApiResponse.success({ user });
+    const userData = { ...user, id: user.sub };
+    return ApiResponse.success({ user: userData });
   }
 
   @Throttle({
@@ -25,20 +35,25 @@ export class AuthController {
   })
   @Post('sign-in')
   @HttpCode(HttpStatus.OK)
-  async signIn(@Body() signInDto: SignInDto, @Res({ passthrough: true }) response: Response) {
-    const dto = new SignInDto(signInDto);
-    const result = await this.authService.signIn(dto);
-    
+  async signIn(
+    @Body() signInDto: SignInDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.signIn(signInDto);
+
     // Set HTTP-only cookie
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+    
     response.cookie('access_token', result.token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax', // Use 'strict' or 'lax'
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: cookieDomain,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
-    
+
     // Do not return token in the body
     return ApiResponse.success({ user: result.user });
   }
@@ -47,13 +62,16 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async signOut(@Res({ passthrough: true }) response: Response) {
     const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: cookieDomain,
       path: '/',
     });
-    
+
     return ApiResponse.success({ message: 'Signed out successfully' });
   }
 }

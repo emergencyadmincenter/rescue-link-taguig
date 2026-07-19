@@ -69,10 +69,10 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          // Proceed without location
+          // Proceed without location if denied or timed out
           createLogAndRedirect();
         },
-        { timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     } else {
       createLogAndRedirect();

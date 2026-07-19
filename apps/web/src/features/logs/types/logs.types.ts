@@ -105,6 +105,7 @@ export interface StatusCounts {
   dispatched: number;
   resolved: number;
   cancelled: number;
+  my_logs: number;
 }
 
 export interface CreateLogPayload {

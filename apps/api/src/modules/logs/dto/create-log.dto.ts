@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
 
 export class CreateLogDto {
   @IsString()
@@ -34,5 +40,4 @@ export class CreateLogDto {
   @IsArray()
   @IsString({ each: true })
   channels?: string[];
-
 }

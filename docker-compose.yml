@@ -9,21 +9,11 @@ services:
     env_file:
       - ./.env
     environment:
-      NODE_ENV: development
       PORT: 3000
       CHOKIDAR_USEPOLLING: "true"
       CHOKIDAR_INTERVAL: 1000
       DB_HOST: db
       DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?schema=public"
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_FROM: ${SMTP_FROM}
-      FRONTEND_URL: ${FRONTEND_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
-      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
     command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"
     ports:
       - "3001:3000"

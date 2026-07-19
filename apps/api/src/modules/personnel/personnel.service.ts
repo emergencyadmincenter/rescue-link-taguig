@@ -9,14 +9,14 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreatePersonnelDto } from './dto/create-personnel.dto';
 import { ActivatePersonnelDto } from './dto/activate-personnel.dto';
+import { UpdatePersonnelDto } from './dto/update-personnel.dto';
 import { MailService } from '../mail/mail.service';
 
-// Define expected interface
 export interface PersonnelItem {
   id: string;
   name: string;
   email: string;
-  status: 'pending_activation' | 'active' | 'inactive';
+  status: string;
   createdAt: string;
 }
 
@@ -46,6 +46,12 @@ export class PersonnelService {
     });
     if (!role) {
       throw new NotFoundException('Selected role does not exist');
+    }
+
+    if (role.name !== 'coordinator') {
+      throw new BadRequestException(
+        'Role selection is limited to the Coordinator role',
+      );
     }
 
     const activationToken = randomBytes(32).toString('hex');
@@ -131,95 +137,247 @@ export class PersonnelService {
     return { message: 'Account activated successfully' };
   }
 
-  // Mock data representing the database state
-  private mockUsers: (PersonnelItem & { role: string })[] = [
-    {
-      id: '1',
-      name: 'Mark Dennis Concha',
-      email: 'markdennisconcha@resculink.com',
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      role: 'Coordinator',
-    },
-    {
-      id: '2',
-      name: 'Liam Patel',
-      email: 'liampatel@resculink.com',
-      status: 'pending_activation',
-      createdAt: new Date().toISOString(),
-      role: 'Coordinator',
-    },
-    {
-      id: '3',
-      name: 'Ava Thompson',
-      email: 'avathompson@resculink.com',
-      status: 'pending_activation',
-      createdAt: new Date().toISOString(),
-      role: 'Coordinator',
-    },
-    {
-      id: '4',
-      name: 'Alice Admin',
-      email: 'admin@resculink.com',
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      role: 'Admin',
-    },
-    {
-      id: '5',
-      name: 'Bob Inactive',
-      email: 'bob@resculink.com',
-      status: 'inactive',
-      createdAt: new Date().toISOString(),
-      role: 'Admin',
-    },
-  ];
+  async getPersonnel(
+    search?: string,
+    status?: string,
+  ): Promise<{ groups: PersonnelGroup[] }> {
+    const whereClause: any = {
+      status: { not: 'removed' },
+    };
 
-  getPersonnel(search?: string, status?: string): { groups: PersonnelGroup[] } {
-    let filteredUsers = this.mockUsers;
-
-    // Apply search filter (case-insensitive partial match on name or email)
-    if (search) {
-      const lowerSearch = search.toLowerCase();
-      filteredUsers = filteredUsers.filter(
-        (u) =>
-          u.name.toLowerCase().includes(lowerSearch) ||
-          u.email.toLowerCase().includes(lowerSearch),
-      );
-    }
-
-    // Apply status filter
     if (status) {
-      filteredUsers = filteredUsers.filter((u) => u.status === status);
+      whereClause.status = status as any;
     }
 
-    // Group by role
-    const grouped = filteredUsers.reduce((acc, user) => {
-      const roleName = user.role;
-      if (!acc[roleName]) {
-        acc[roleName] = [];
-      }
-      acc[roleName].push({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        status: user.status,
-        createdAt: user.createdAt,
-      });
-      return acc;
-    }, {} as Record<string, PersonnelItem[]>);
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
-    // Format to expected response shape
-    const allRoles = ['Coordinator', 'Admin']; // Ensures we return empty groups for roles if they have no matches
-    const groups: PersonnelGroup[] = allRoles.map((role) => {
-      const personnel = grouped[role] || [];
-      return {
-        role,
-        count: personnel.length,
-        personnel,
-      };
+    const users = await this.prisma.user.findMany({
+      where: whereClause,
+      include: {
+        user_roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
     });
 
-    return { groups };
+    const roles = await this.prisma.role.findMany({
+      orderBy: { name: 'asc' },
+    });
+
+    const groups: Record<string, PersonnelGroup> = {};
+    for (const role of roles) {
+      groups[role.name] = {
+        role: role.name,
+        count: 0,
+        personnel: [],
+      };
+    }
+
+    for (const user of users) {
+      if (user.user_roles.length > 0) {
+        const roleName = user.user_roles[0].role.name;
+        if (groups[roleName]) {
+          groups[roleName].personnel.push({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            status: user.status,
+            createdAt: user.created_at.toISOString(),
+          });
+          groups[roleName].count++;
+        }
+      }
+    }
+
+    return { groups: Object.values(groups) };
+  }
+
+  async resendActivation(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.status !== 'pending_activation') {
+      throw new BadRequestException('Account is not pending activation');
+    }
+
+    const activationToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    await this.prisma.$transaction(async (tx) => {
+      // Invalidate existing active tokens
+      await tx.userToken.updateMany({
+        where: {
+          user_id: user.id,
+          type: 'activation',
+          status: 'active',
+        },
+        data: {
+          status: 'revoked',
+        },
+      });
+
+      // Create new token
+      await tx.userToken.create({
+        data: {
+          user_id: user.id,
+          type: 'activation',
+          token: activationToken,
+          status: 'active',
+          expires_at: expiresAt,
+        },
+      });
+    });
+
+    await this.mailService.sendActivationEmail(
+      user.email,
+      user.name,
+      activationToken,
+    );
+
+    return { message: 'Activation email resent successfully' };
+  }
+
+  async updatePersonnel(id: string, dto: UpdatePersonnelDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (dto.email && dto.email !== user.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (existingUser) {
+        throw new ConflictException(
+          'An account with this email already exists',
+        );
+      }
+
+      const activationToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id },
+          data: {
+            name: dto.name || user.name,
+            email: dto.email,
+            status: 'pending_activation',
+            password_hash: null, // Reset password since it's a new email
+          },
+        });
+
+        // Invalidate old tokens
+        await tx.userToken.updateMany({
+          where: {
+            user_id: user.id,
+            type: 'activation',
+            status: 'active',
+          },
+          data: {
+            status: 'revoked',
+          },
+        });
+
+        // Create new token
+        await tx.userToken.create({
+          data: {
+            user_id: user.id,
+            type: 'activation',
+            token: activationToken,
+            status: 'active',
+            expires_at: expiresAt,
+          },
+        });
+      });
+
+      await this.mailService.sendActivationEmail(
+        dto.email,
+        dto.name || user.name,
+        activationToken,
+      );
+
+      return { message: 'Personnel updated. New activation email sent.' };
+    }
+
+    // Just update name
+    if (dto.name && dto.name !== user.name) {
+      await this.prisma.user.update({
+        where: { id },
+        data: { name: dto.name },
+      });
+    }
+
+    return { message: 'Personnel updated successfully' };
+  }
+
+  async deactivatePersonnel(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.status === 'removed')
+      throw new BadRequestException('User is removed');
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { status: 'inactive' },
+    });
+
+    return { message: 'Personnel deactivated successfully' };
+  }
+
+  async reactivatePersonnel(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.status === 'removed')
+      throw new BadRequestException('User is removed');
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { status: 'active' },
+    });
+
+    return { message: 'Personnel reactivated successfully' };
+  }
+
+  async removePersonnel(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: {
+          status: 'removed',
+          removed_at: new Date(),
+          email: `removed-${Date.now()}-${user.email}`, // Free up email
+        },
+      });
+
+      // Revoke any active tokens
+      await tx.userToken.updateMany({
+        where: { user_id: id, status: 'active' },
+        data: { status: 'revoked' },
+      });
+    });
+
+    return { message: 'Personnel removed successfully' };
   }
 }

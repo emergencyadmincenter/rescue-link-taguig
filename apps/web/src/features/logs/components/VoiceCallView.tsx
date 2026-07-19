@@ -11,10 +11,10 @@ import {
 import { Call } from "../types/logs.types";
 import { CALL_STATUS_CONFIG } from "../constants/logs.constants";
 import { Socket } from "socket.io-client";
-import { useEffect, useState, useRef } from "react";
-import { useWebRTC } from "@/lib/webrtc";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { useIncomingCall } from "@/providers/IncomingCallProvider";
 
 interface VoiceCallViewProps {
   call: Call | null;
@@ -22,8 +22,12 @@ interface VoiceCallViewProps {
   socket?: Socket;
 }
 
-function formatDuration(startedAt: string, endedAt: string | null): string {
-  const start = new Date(startedAt).getTime();
+function formatDuration(
+  startTime: string | null,
+  endedAt: string | null,
+): string {
+  if (!startTime) return "0:00";
+  const start = new Date(startTime).getTime();
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
   const seconds = Math.floor((end - start) / 1000);
   const mins = Math.floor(seconds / 60);
@@ -40,9 +44,6 @@ export default function VoiceCallView({
     call?.communication_method === "voice" ? "Voice Call" : "In-app Call";
   const prefix = call?.status === "missed" ? "From" : "Source";
 
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOn, setIsVideoOn] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -50,43 +51,47 @@ export default function VoiceCallView({
     return () => clearInterval(interval);
   }, []);
 
-  const { startCall, endCall, toggleMute, remoteStream } = useWebRTC(
-    socket,
-    logId,
-    "coordinator",
-  );
+  const { webrtc } = useIncomingCall();
+  const { startCall, endCall, toggleMute, isMuted, remoteStream, hasRemoteVideo } = webrtc || {};
 
   useEffect(() => {
-    if (call?.status === "active") {
+    if (call?.status === "active" && startCall) {
       startCall();
     }
 
     if (socket) {
       const onCallEnded = (payload: any) => {
-        endCall();
+        if (endCall) endCall();
         if (payload?.endedBy === "resident") {
-          toast("The resident ended the call.", { icon: "📞" });
+          toast("The resident ended the call.", { icon: "📞", id: "resident-ended" });
         } else if (payload?.endedBy === "system") {
-          toast("The call was ended by the system.", { icon: "⚠️" });
+          toast("The call was ended by the system.", { icon: "⚠️", id: "system-ended" });
         }
       };
       socket.on("call_ended", onCallEnded);
       return () => {
         socket.off("call_ended", onCallEnded);
-        endCall();
       };
     }
+  }, [call?.status, socket, startCall, endCall]);
 
-    return () => {
-      endCall();
-    };
-  }, [call?.status, socket]);
-
-  useEffect(() => {
-    if (remoteStream && audioRef.current) {
-      audioRef.current.srcObject = remoteStream;
+  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    if (node) {
+      if (remoteStream) {
+        node.srcObject = null;
+        node.srcObject = remoteStream;
+        node.play().catch(e => console.log("Video play error:", e));
+      } else {
+        node.srcObject = null;
+      }
     }
   }, [remoteStream]);
+
+  const isActive = call?.status === "active" || call?.status === "ringing";
+  const isMissed = call?.status === "missed";
+  const isEnded = call?.status === "ended" || call?.status === "rejected";
+  
+  const showVideo = hasRemoteVideo && isActive;
 
   if (!call) {
     return (
@@ -106,94 +111,139 @@ export default function VoiceCallView({
     label: call.status,
     colorClass: "text-foreground",
   };
-  const isMissed = call.status === "missed";
-  const isActive = call.status === "active" || call.status === "ringing";
-  const isEnded = call.status === "ended" || call.status === "rejected";
 
   const handleEndCall = () => {
     if (socket) {
       socket.emit("end_call", { callId: call.id });
     }
-    endCall();
+    if (endCall) endCall();
   };
 
   const handleToggleMute = () => {
-    const muted = toggleMute();
-    setIsMuted(muted);
+    if (toggleMute) toggleMute();
   };
 
   return (
     <div className="flex flex-col h-full bg-background border-r border-background-subtle">
-      <audio ref={audioRef} autoPlay />
       <div className="px-lg py-sm border-b border-background-subtle shrink-0">
         <p className="body-small text-foreground/50">
           {prefix}: {sourceLabel}
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        {/* Avatar */}
-        <div
-          className={`w-28 h-28 rounded-full flex items-center justify-center ${
-            isMissed
-              ? "bg-warning/10 ring-4 ring-warning/30"
-              : isActive
-                ? "bg-success/10 ring-4 ring-success/30 animate-pulse"
-                : "bg-danger/10"
-          }`}
-        >
-          <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
-          >
-            <span className="text-4xl">🏃</span>
-          </div>
-        </div>
+      {!showVideo ? (
+        <>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div
+              className={`w-40 h-40 rounded-full flex items-center justify-center relative ${
+                isMissed
+                  ? "bg-warning/10 ring-4 ring-warning/30"
+                  : isActive
+                    ? "bg-success/10 ring-4 ring-success/30 animate-pulse"
+                    : "bg-danger/10"
+              }`}
+            >
+              <div
+                className={`w-28 h-28 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
+              >
+                <span className="text-5xl">🏃</span>
+              </div>
+            </div>
 
-        <p className="title-small font-bold text-foreground">Resident</p>
+            <p className="title-small font-bold text-foreground">Resident</p>
 
-        {(isEnded || isMissed) && (
-          <p className={`body-medium font-medium ${statusConfig.colorClass}`}>
-            {statusConfig.label}
-          </p>
-        )}
-
-        {isActive && (
-          <p className="body-medium font-medium text-success animate-pulse">
-            {call.status === "ringing" ? "Ringing..." : "Active Call"}
-          </p>
-        )}
-
-        {(isActive || isEnded) && (
-          <p className="body-medium text-foreground/70">
-            {formatDuration(call.started_at, call.ended_at)}
-          </p>
-        )}
-      </div>
-
-      {/* Call Controls (only when active) */}
-      {isActive && (
-        <div className="flex items-center justify-center gap-xl py-xl border-t border-background-subtle shrink-0">
-          <button
-            onClick={handleToggleMute}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-              isMuted
-                ? "bg-danger/10 text-danger"
-                : "bg-background-subtle text-foreground hover:bg-foreground/10"
-            }`}
-          >
-            {isMuted ? (
-              <FiMicOff className="w-5 h-5" />
-            ) : (
-              <FiMic className="w-5 h-5" />
+            {(isEnded || isMissed) && (
+              <p className={`body-medium font-medium ${statusConfig.colorClass}`}>
+                {statusConfig.label}
+              </p>
             )}
-          </button>
 
-          <button
-            onClick={handleEndCall}
-            className="w-14 h-14 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-lg z-10"
-          >
-            <FiPhoneOff className="w-6 h-6 text-white" />
-          </button>
+            {isActive && (
+              <p className="body-medium font-medium text-success animate-pulse">
+                {call.status === "ringing" ? "Ringing..." : "Active Call"}
+              </p>
+            )}
+
+            {(isActive || isEnded) && (
+              <p className="body-medium text-foreground/70">
+                {formatDuration(call.answered_at, call.ended_at)}
+              </p>
+            )}
+          </div>
+
+          {isActive && (
+            <div className="flex items-center justify-center gap-xl py-xl border-t border-background-subtle shrink-0">
+              <button
+                onClick={handleToggleMute}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  isMuted
+                    ? "bg-danger/10 text-danger"
+                    : "bg-background-subtle text-foreground hover:bg-foreground/10"
+                }`}
+              >
+                {isMuted ? (
+                  <FiMicOff className="w-5 h-5" />
+                ) : (
+                  <FiMic className="w-5 h-5" />
+                )}
+              </button>
+
+              <button
+                onClick={handleEndCall}
+                className="w-14 h-14 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-lg z-10 transform"
+              >
+                <FiPhone className="w-6 h-6 text-white rotate-[135deg]" />
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex-1 relative overflow-hidden bg-black flex flex-col">
+          <video
+            ref={videoCallbackRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between p-3 bg-background/60 backdrop-blur-xl rounded-2xl z-10 shadow-lg border border-white/10">
+            <div className="flex items-center gap-3">
+              {/* Resident Avatar */}
+              <div className="w-11 h-11 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                <span className="text-xl">🏃</span>
+              </div>
+              <div className="flex flex-col">
+                <p className="body-medium font-bold text-foreground">Resident</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <p className="text-xs font-medium text-success">Active Call</p>
+                  <span className="text-foreground/40 text-[10px]">•</span>
+                  <p className="text-xs font-mono text-foreground/80">{formatDuration(call.answered_at, call.ended_at)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleToggleMute}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${
+                  isMuted
+                    ? "bg-danger/90 text-white"
+                    : "bg-background/80 text-foreground hover:bg-background"
+                }`}
+              >
+                {isMuted ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={handleEndCall}
+                className="w-11 h-11 rounded-full bg-danger flex items-center justify-center hover:bg-danger-hover transition-colors shadow-sm transform"
+              >
+                <FiPhone className="w-5 h-5 text-white rotate-[135deg]" />
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

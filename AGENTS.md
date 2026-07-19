@@ -117,3 +117,33 @@ To maintain a polished, professional, and production-ready interface, strictly a
     - List-detail interfaces should maintain layout stability during state changes.
     - Feature-specific UI states should be implemented as reusable components rather than page-specific logic.
     - Components should be designed with future real-time integration in mind.
+15. **Avoid Arbitrary `max-w-*` Constraints**
+
+- **Do NOT** indiscriminately apply Tailwind utilities such as `max-w-xs`, `max-w-sm`, `max-w-md`, `max-w-lg`, `max-w-xl`, etc. to dialogs, cards, titles, paragraphs, forms, sections, or other layout containers simply to constrain their width.
+
+- Excessive use of these utilities often results in:
+
+  - Unnecessary text wrapping.
+  - Wasted horizontal space.
+  - Poor readability on larger screens.
+  - Inconsistent layouts across the application.
+  - Components appearing artificially narrow or "cheap."
+
+- Instead, design components according to their content and context:
+
+  - Dialogs should size naturally based on their content while respecting sensible minimum and maximum viewport constraints.
+  - Titles and descriptions should utilize the available space before wrapping onto additional lines.
+  - Cards and content containers should fill the layout appropriately instead of being arbitrarily constrained.
+  - Forms should prioritize usability and readability over narrow fixed widths.
+
+- Before introducing a `max-w-*` utility, first ask whether the width restriction is actually necessary for the component.
+
+- **Only use `max-w-*` when it has a clear UX purpose**, for example:
+
+  - Long-form reading content (documentation, articles, blog posts).
+  - Hero content intended for optimal reading measure.
+  - Intentionally compact UI elements where limiting width improves usability.
+
+- Do **not** use `max-w-*` as a default styling pattern or as a quick fix for layout issues. If a layout appears incorrect, fix the layout itself instead of masking the problem by constraining widths.
+
+- Prefer responsive layouts using flexbox, grid, spacing tokens, and the project's design system so components naturally adapt across mobile, tablet, and desktop viewports without unnecessary width constraints.

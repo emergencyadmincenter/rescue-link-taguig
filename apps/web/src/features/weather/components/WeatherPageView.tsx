@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { FiSearch, FiRefreshCw, FiAlertTriangle, FiList, FiMap } from "react-icons/fi";
+import {
+  FiSearch,
+  FiRefreshCw,
+  FiAlertTriangle,
+  FiList,
+  FiMap,
+} from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
 import WeatherCard from "./WeatherCard";
 import WeatherCardSkeleton from "./WeatherCardSkeleton";
@@ -19,10 +25,13 @@ import type {
 const WeatherMapView = dynamic(() => import("./WeatherMapView"), {
   ssr: false,
   loading: () => (
-    <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="body-small text-gray-500">Loading map...</p>
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex items-center justify-between mb-3 shrink-0 flex-wrap gap-2">
+        <div className="w-[200px] h-8 bg-gray-200 animate-pulse rounded-md"></div>
+        <div className="w-[300px] h-4 bg-gray-200 animate-pulse rounded-md"></div>
+      </div>
+      <div className="flex-1 flex gap-4 min-h-0">
+        <div className="flex-1 rounded-xl bg-gray-200 animate-pulse border border-gray-100 min-h-[600px] h-[70vh]"></div>
       </div>
     </div>
   ),
@@ -31,7 +40,11 @@ const WeatherMapView = dynamic(() => import("./WeatherMapView"), {
 type ViewMode = "list" | "map";
 
 // --- Filter Tabs Config ---
-const FILTER_TABS: { label: string; value: WeatherFilterTab; icon?: React.ElementType }[] = [
+const FILTER_TABS: {
+  label: string;
+  value: WeatherFilterTab;
+  icon?: React.ElementType;
+}[] = [
   { label: "All", value: "all" },
   { label: "Severe", value: "severe" },
   { label: "Advisory", value: "advisory" },
@@ -42,7 +55,7 @@ const FILTER_TABS: { label: string; value: WeatherFilterTab; icon?: React.Elemen
 function computeSummary(data: BarangayWeather[]): WeatherSummary {
   const severeCount = data.filter((d) => d.severity === "severe").length;
   const advisoryCount = data.filter(
-    (d) => d.severity === "advisory" || d.severity === "warning"
+    (d) => d.severity === "advisory" || d.severity === "warning",
   ).length;
   const floodRiskCount = data.filter((d) => {
     const risk = calculateFloodRisk(d);
@@ -50,7 +63,9 @@ function computeSummary(data: BarangayWeather[]): WeatherSummary {
   }).length;
   const avgTemp =
     data.length > 0
-      ? Math.round(data.reduce((sum, d) => sum + d.temperature, 0) / data.length)
+      ? Math.round(
+          data.reduce((sum, d) => sum + d.temperature, 0) / data.length,
+        )
       : 0;
 
   return {
@@ -68,7 +83,7 @@ export default function WeatherPageView() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<WeatherFilterTab>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -117,13 +132,12 @@ export default function WeatherPageView() {
   };
 
   // --- Filtering logic ---
-  const filteredData = weatherData.filter((item) => {
-    // Search filter
-    const matchesSearch = item.name
-      .toLowerCase()
-      .includes(debouncedSearch.toLowerCase());
+  // Base data after search but before tab filter
+  const searchFilteredData = weatherData.filter((item) =>
+    item.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
+  );
 
-    // Tab filter
+  const filteredData = searchFilteredData.filter((item) => {
     let matchesTab = true;
     if (activeTab === "severe") {
       matchesTab = item.severity === "severe";
@@ -133,8 +147,7 @@ export default function WeatherPageView() {
       const risk = calculateFloodRisk(item);
       matchesTab = risk.level === "elevated" || risk.level === "high";
     }
-
-    return matchesSearch && matchesTab;
+    return matchesTab;
   });
 
   // Sort: severe first, then advisory, then normal
@@ -149,14 +162,17 @@ export default function WeatherPageView() {
     return severityOrder[a.severity] - severityOrder[b.severity];
   });
 
-  const summary = computeSummary(weatherData);
-
   // Tab counts
   const tabCounts: Record<WeatherFilterTab, number> = {
-    all: weatherData.length,
-    severe: summary.severeCount,
-    advisory: summary.advisoryCount,
-    flood_risk: summary.floodRiskCount,
+    all: searchFilteredData.length,
+    severe: searchFilteredData.filter((d) => d.severity === "severe").length,
+    advisory: searchFilteredData.filter(
+      (d) => d.severity === "advisory" || d.severity === "warning",
+    ).length,
+    flood_risk: searchFilteredData.filter((d) => {
+      const risk = calculateFloodRisk(d);
+      return risk.level === "elevated" || risk.level === "high";
+    }).length,
   };
 
   // Format last refreshed timestamp
@@ -205,18 +221,6 @@ export default function WeatherPageView() {
           {/* List / Map View Toggle */}
           <div className="inline-flex p-1 bg-gray-100 rounded-lg shrink-0">
             <button
-              onClick={() => setViewMode("list")}
-              title="List view"
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-md body-xsmall font-medium transition-all duration-200 ${
-                viewMode === "list"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-              }`}
-            >
-              <FiList className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">List</span>
-            </button>
-            <button
               onClick={() => setViewMode("map")}
               title="Map view"
               className={`flex items-center gap-1.5 px-3 py-2 rounded-md body-xsmall font-medium transition-all duration-200 ${
@@ -227,6 +231,18 @@ export default function WeatherPageView() {
             >
               <FiMap className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Map</span>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              title="List view"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md body-xsmall font-medium transition-all duration-200 ${
+                viewMode === "list"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+              }`}
+            >
+              <FiList className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">List</span>
             </button>
           </div>
 
@@ -248,77 +264,62 @@ export default function WeatherPageView() {
           </button>
         </div>
 
-        {/* Filter Tabs + Summary Stats */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          {/* Tabs */}
-          <div className="inline-flex p-1 bg-gray-100 rounded-lg">
-            {FILTER_TABS.map((tab) => {
-              const isActive = activeTab === tab.value;
-              const count = tabCounts[tab.value];
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                  }`}
-                >
-                  {tab.label}
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+        {/* Filter Tabs */}
+        {viewMode === "list" && (
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="inline-flex p-1 bg-gray-100 rounded-lg">
+              {FILTER_TABS.map((tab) => {
+                const isActive = activeTab === tab.value;
+                const count = tabCounts[tab.value];
+                return (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "bg-gray-200 text-gray-500"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
                     }`}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Summary Stats */}
-          {!loading && !error && (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-danger" />
-                <span className="body-xsmall text-gray-600">
-                  {summary.severeCount} Severe
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-warning" />
-                <span className="body-xsmall text-gray-600">
-                  {summary.advisoryCount} Advisory
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="body-xsmall text-gray-600">
-                  {summary.floodRiskCount} Flood Risk
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="body-xsmall text-gray-400">
-                  Avg: {summary.averageTemperature}°C
-                </span>
-              </div>
+                    {tab.label}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-4 flex flex-col min-h-0">
-        {/* Loading State (list view only — map has its own loading) */}
+      <div className="border-t border-gray-100 pt-4 flex flex-col">
+        {/* Loading State for List View */}
         {loading && viewMode === "list" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 12 }).map((_, i) => (
               <WeatherCardSkeleton key={i} />
             ))}
+          </div>
+        )}
+
+        {/* Loading State for Map View */}
+        {loading && viewMode === "map" && (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-3 shrink-0 flex-wrap gap-2">
+              <div className="w-[200px] h-8 bg-gray-200 animate-pulse rounded-md"></div>
+              <div className="w-[300px] h-4 bg-gray-200 animate-pulse rounded-md"></div>
+            </div>
+            <div className="flex-1 flex gap-4 min-h-0">
+              <div className="flex-1 rounded-xl bg-gray-200 animate-pulse border border-gray-100 min-h-[600px] h-[70vh]"></div>
+            </div>
           </div>
         )}
 
@@ -367,7 +368,7 @@ export default function WeatherPageView() {
 
             {/* Weather Cards Grid */}
             {sortedData.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
                 {sortedData.map((weather) => (
                   <WeatherCard key={weather.id} weather={weather} />
                 ))}
@@ -377,9 +378,6 @@ export default function WeatherPageView() {
         )}
 
         {/* --- MAP VIEW --- */}
-        {/* TODO: BACKEND — The map view uses the same weatherData state as the
-            list view. When wiring to a real API, both views will automatically
-            stay in sync since they share the same data source. */}
         {!loading && !error && viewMode === "map" && (
           <WeatherMapView
             weatherData={weatherData}

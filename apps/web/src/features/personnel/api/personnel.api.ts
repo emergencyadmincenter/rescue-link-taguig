@@ -224,3 +224,69 @@ export async function activateAccount(payload: { token: string; password: string
 
   return json?.data ?? json;
 }
+
+// ---------------------------------------------------------------------------
+// NEW METHODS
+// ---------------------------------------------------------------------------
+
+export async function resendActivationEmail(id: string) {
+  const res = await fetch(`${apiBase()}/personnel/${id}/resend-activation`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.message ?? "Failed to resend activation email");
+  }
+  return res.json();
+}
+
+export async function updatePersonnel(id: string, payload: { name?: string; email?: string }) {
+  const res = await fetch(`${apiBase()}/personnel/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.message ?? "Failed to update personnel");
+  }
+  return res.json();
+}
+
+export async function deactivatePersonnel(id: string) {
+  const res = await fetch(`${apiBase()}/personnel/${id}/deactivate`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.message ?? "Failed to deactivate personnel");
+  }
+  return res.json();
+}
+
+export async function reactivatePersonnel(id: string) {
+  const res = await fetch(`${apiBase()}/personnel/${id}/reactivate`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.message ?? "Failed to reactivate personnel");
+  }
+  return res.json();
+}
+
+export async function removePersonnel(id: string) {
+  const res = await fetch(`${apiBase()}/personnel/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json?.message ?? "Failed to remove personnel");
+  }
+  return res.json();
+}

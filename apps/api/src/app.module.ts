@@ -14,6 +14,7 @@ import { jwtConfig, throttlerConfig } from './config/env.config';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { PersonnelModule } from './modules/personnel/personnel.module';
 import { WeatherModule } from './modules/weather/weather.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WeatherModule } from './modules/weather/weather.module';
     CommunicationsModule,
     PersonnelModule,
     WeatherModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

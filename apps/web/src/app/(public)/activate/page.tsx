@@ -5,14 +5,15 @@ import { redirect } from "next/navigation";
 export default async function ActivatePage({
   searchParams,
 }: {
-  searchParams: { token?: string };
+  searchParams: Promise<{ token?: string }>;
 }) {
   const user = await getUser();
   if (user) {
     redirect("/dashboard");
   }
 
-  const token = searchParams.token;
+  const resolvedSearchParams = await searchParams;
+  const token = resolvedSearchParams.token;
 
   if (!token) {
     return (

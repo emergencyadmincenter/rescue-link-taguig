@@ -60,3 +60,8 @@
   font-family: var(--font-inter), Inter, sans-serif;
   z-index: 0;
 }
+
+/* High-contrast dark mode inversion for OSM tiles */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(100%) contrast(105%) grayscale(20%);
+}

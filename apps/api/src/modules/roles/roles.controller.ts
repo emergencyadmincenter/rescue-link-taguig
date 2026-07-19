@@ -33,7 +33,10 @@ export class RolesController {
     if (!dto || !Array.isArray(dto.permissionIds)) {
       throw new Error('permissionIds must be an array');
     }
-    const permissions = await this.rolesService.updateRolePermissions(id, dto.permissionIds);
+    const permissions = await this.rolesService.updateRolePermissions(
+      id,
+      dto.permissionIds,
+    );
     return ApiResponse.success(permissions);
   }
 }
