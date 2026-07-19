@@ -1,0 +1,311 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  pending_activation
+  active
+  inactive
+  removed
+}
+
+enum TokenType {
+  activation
+  password_reset
+}
+
+enum TokenStatus {
+  active
+  used
+  revoked
+  expired
+}
+
+enum LogStatus {
+  active
+  dispatched
+  resolved
+  cancelled
+}
+
+enum LogSource {
+  manual
+  voice_call
+  chat
+}
+
+enum CommunicationMethod {
+  voice
+  chat
+}
+
+enum CallStatus {
+  ringing
+  active
+  ended
+  missed
+  rejected
+}
+
+enum MessageSenderType {
+  resident
+  coordinator
+  system
+}
+
+enum MessageType {
+  text
+  image
+  file
+}
+
+enum ResourceCategory {
+  responder
+  medical
+  relief
+  utility
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+
+  name  String
+  email String @unique
+
+  password_hash String?
+
+  status UserStatus
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  removed_at DateTime?
+
+  tokens     UserToken[]
+  user_roles UserRole[]
+
+  assigned_logs Log[]  @relation("AssignedCoordinator")
+  created_logs  Log[]  @relation("CreatedByCoordinator")
+  calls         Call[]
+
+  @@map("users")
+}
+
+model Role {
+  id String @id @default(uuid()) @db.Uuid
+
+  name        String  @unique
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user_roles       UserRole[]
+  role_permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id String @id @default(uuid()) @db.Uuid
+
+  name String @unique
+
+  resource String
+  action   String
+
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  role_permissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  user_id String @db.Uuid
+  role_id String @db.Uuid
+
+  assigned_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role_id])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  role_id       String @db.Uuid
+  permission_id String @db.Uuid
+
+  role       Role       @relation(fields: [role_id], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permission_id], references: [id], onDelete: Cascade)
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model UserToken {
+  id String @id @default(uuid()) @db.Uuid
+
+  user_id String @db.Uuid
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  type TokenType
+
+  token String @unique
+
+  status TokenStatus
+
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@map("user_tokens")
+}
+
+model Log {
+  id String @id @default(uuid()) @db.Uuid
+
+  reference_no String @unique
+
+  assigned_coordinator_id String? @db.Uuid
+  assigned_coordinator    User?   @relation("AssignedCoordinator", fields: [assigned_coordinator_id], references: [id], onDelete: SetNull)
+
+  created_by_coordinator_id String? @db.Uuid
+  created_by_coordinator    User?   @relation("CreatedByCoordinator", fields: [created_by_coordinator_id], references: [id], onDelete: SetNull)
+
+  status LogStatus
+
+  source LogSource
+
+  caller_name    String?
+  caller_contact String?
+
+  address String?
+
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  description String?
+
+  cancellation_reason String?
+
+  last_activity_at DateTime?
+
+  channels String[] @default([])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  resident_visible_until DateTime?
+
+  resolved_at DateTime?
+
+  calls Call[]
+
+  messages Message[]
+
+  resource_assignments LogResourceAssignment[]
+
+  @@index([status])
+  @@index([assigned_coordinator_id])
+  @@index([created_by_coordinator_id])
+  @@index([created_at])
+  @@index([source])
+  @@map("logs")
+}
+
+model Resource {
+  id String @id @default(uuid()) @db.Uuid
+
+  name String @unique
+
+  category ResourceCategory
+
+  description String?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  log_assignments LogResourceAssignment[]
+
+  @@map("resources")
+}
+
+model LogResourceAssignment {
+  log_id      String @db.Uuid
+  resource_id String @db.Uuid
+
+  log Log @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  resource Resource @relation(fields: [resource_id], references: [id], onDelete: Cascade)
+
+  @@id([log_id, resource_id])
+  @@index([resource_id])
+  @@map("log_resource_assignments")
+}
+
+model Call {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String? @db.Uuid
+  log    Log?    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  coordinator_id String? @db.Uuid
+  coordinator    User?   @relation(fields: [coordinator_id], references: [id], onDelete: SetNull)
+
+  communication_method CommunicationMethod
+
+  status CallStatus
+
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+
+  rejection_reason String?
+
+  started_at DateTime @default(now())
+
+  answered_at DateTime?
+
+  ended_at DateTime?
+
+  messages Message[]
+
+  @@index([status])
+  @@index([coordinator_id])
+  @@index([log_id])
+  @@map("calls")
+}
+
+model Message {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String? @db.Uuid
+  log    Log?    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  call_id String? @db.Uuid
+  call    Call?   @relation(fields: [call_id], references: [id], onDelete: Cascade)
+
+  sender_type MessageSenderType
+
+  type MessageType
+
+  text String?
+
+  attachment_url String?
+
+  created_at DateTime @default(now())
+
+  @@index([log_id])
+  @@index([call_id])
+  @@index([created_at])
+  @@map("messages")
+}

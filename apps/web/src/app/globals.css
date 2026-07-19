@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@import "../design-system/foundations/spacing.css";
+@import "../design-system/foundations/radius.css";
+@import "../design-system/foundations/stroke.css";
+
+@import "../design-system/themes/dark.css";
+@import "../design-system/themes/light.css";
+
+@import "../design-system/tokens.css";
+@import "../design-system/components.css";
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--background-subtle);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-subtle);
+}
+
+/* --- Leaflet Map Overrides --- */
+
+.weather-map-tooltip {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  font-family: var(--font-inter), Inter, sans-serif !important;
+}
+
+.weather-map-tooltip::before {
+  border-top-color: #e5e7eb !important;
+}
+
+/* Ensure Leaflet map container respects our layout */
+.leaflet-container {
+  font-family: var(--font-inter), Inter, sans-serif;
+  z-index: 0;
+}
+
+/* High-contrast dark mode inversion for OSM tiles */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(100%) contrast(105%) grayscale(20%);
+}

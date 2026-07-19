@@ -1,0 +1,18 @@
+{
+  "name": "rescue-link-taguig-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "docker compose up -d db api",
+    "dev:frontend": "npm run dev --prefix apps/web",
+    "dev": "npm run dev:backend && npm run dev:frontend"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
+  }
+}

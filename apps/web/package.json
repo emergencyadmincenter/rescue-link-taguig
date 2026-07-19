@@ -1,0 +1,47 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "jest",
+    "test:ci": "jest --ci"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
+    "@types/leaflet": "^1.9.21",
+    "axios": "^1.18.1",
+    "leaflet": "^1.9.4",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.81.0",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.7.0",
+    "react-leaflet": "^5.0.0",
+    "resend": "^6.17.2",
+    "shared-schemas": "*",
+    "socket.io-client": "^4.8.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
+    "tailwindcss": "^4",
+    "ts-jest": "^29.4.11",
+    "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.3.2"
+  }
+}
