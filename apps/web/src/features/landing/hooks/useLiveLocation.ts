@@ -37,7 +37,7 @@ export const useLiveLocation = (
         socket.emit("update_location", { callId, latitude: lat, longitude: lng });
       },
       (err) => console.warn("Initial live location error:", err),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+      { enableHighAccuracy: true, maximumAge: 60000, timeout: 30000 }
     );
 
     const watchId = navigator.geolocation.watchPosition(
@@ -48,8 +48,8 @@ export const useLiveLocation = (
         const lng = position.coords.longitude;
         const accuracy = position.coords.accuracy;
 
-        // Ignore highly inaccurate readings (> 50 meters)
-        if (accuracy > 50) return;
+        // Ignore completely useless readings (> 2000 meters)
+        if (accuracy > 2000) return;
 
         if (lastLocationRef.current) {
           const dist = getDistanceInMeters(
@@ -67,7 +67,7 @@ export const useLiveLocation = (
         socket.emit("update_location", { callId, latitude: lat, longitude: lng });
       },
       (err) => console.warn("Live location watch error:", err),
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
     );
 
     return () => {

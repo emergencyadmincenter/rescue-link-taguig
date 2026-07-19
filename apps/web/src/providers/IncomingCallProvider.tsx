@@ -29,6 +29,7 @@ export function IncomingCallProvider({
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [activeCallId, setActiveCallIdState] = useState<string | null>(null);
   const [activeLogId, setActiveLogIdState] = useState<string | null>(null);
+  const [activeCallMethod, setActiveCallMethodState] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
@@ -38,16 +39,16 @@ export function IncomingCallProvider({
   const webrtc = useWebRTC(socket || undefined, activeCallId || '', "coordinator");
 
   useEffect(() => {
-    if (activeCallId) {
+    if (activeCallId && activeCallMethod === "voice") {
       webrtc.startCall();
     } else {
       webrtc.endCall();
     }
-  }, [activeCallId]);
+  }, [activeCallId, activeCallMethod]);
 
   useEffect(() => {
     if (globalAudioRef.current) {
-      if (webrtc?.remoteStream) {
+      if (webrtc?.remoteStream && activeCallMethod === "voice") {
         globalAudioRef.current.srcObject = null;
         globalAudioRef.current.srcObject = webrtc.remoteStream;
         globalAudioRef.current.play().catch(e => console.log("Global audio play error:", e));
@@ -55,7 +56,7 @@ export function IncomingCallProvider({
         globalAudioRef.current.srcObject = null;
       }
     }
-  }, [webrtc?.remoteStream]);
+  }, [webrtc?.remoteStream, activeCallMethod]);
 
   // Synchronize activeCallId with localStorage and verify its state
   useEffect(() => {
@@ -63,12 +64,20 @@ export function IncomingCallProvider({
       const stored = localStorage.getItem("activeCallId");
       if (stored) {
         setActiveCallIdState(stored);
+        
+        const storedMethod = localStorage.getItem("activeCallMethod");
+        if (storedMethod) setActiveCallMethodState(storedMethod);
 
         // Verify if the call is still active on the server
         logsApi
           .getCallDetails(stored)
           .then((data) => {
             const status = data?.call?.status;
+            const method = data?.call?.communication_method;
+            if (method) {
+              setActiveCallMethodState(method);
+              localStorage.setItem("activeCallMethod", method);
+            }
             if (
               status === "ended" ||
               status === "rejected" ||
@@ -76,8 +85,10 @@ export function IncomingCallProvider({
             ) {
               setActiveCallIdState(null);
               setActiveLogIdState(null);
+              setActiveCallMethodState(null);
               localStorage.removeItem("activeCallId");
               localStorage.removeItem("activeLogId");
+              localStorage.removeItem("activeCallMethod");
             }
           })
           .catch((err) => {
@@ -86,8 +97,10 @@ export function IncomingCallProvider({
             if (err?.response?.status === 404) {
               setActiveCallIdState(null);
               setActiveLogIdState(null);
+              setActiveCallMethodState(null);
               localStorage.removeItem("activeCallId");
               localStorage.removeItem("activeLogId");
+              localStorage.removeItem("activeCallMethod");
             }
           });
       }
@@ -98,9 +111,11 @@ export function IncomingCallProvider({
   }, []);
 
   const setActiveCallId = useCallback(
-    (id: string | null, logId?: string | null) => {
+    (id: string | null, logId?: string | null, method?: string | null) => {
       setActiveCallIdState(id);
       setActiveLogIdState(logId || null);
+      setActiveCallMethodState(method || null);
+      
       if (id) {
         localStorage.setItem("activeCallId", id);
       } else {
@@ -110,6 +125,11 @@ export function IncomingCallProvider({
         localStorage.setItem("activeLogId", logId);
       } else {
         localStorage.removeItem("activeLogId");
+      }
+      if (method) {
+        localStorage.setItem("activeCallMethod", method);
+      } else {
+        localStorage.removeItem("activeCallMethod");
       }
     },
     [],
@@ -252,7 +272,8 @@ export function IncomingCallProvider({
 
     const callId = incomingCall.callId;
     const logId = incomingCall.logId;
-    setActiveCallId(callId, logId);
+    const method = incomingCall.communicationMethod;
+    setActiveCallId(callId, logId, method);
     setIncomingCall(null);
     router.push(`/calls/${callId}`);
   };

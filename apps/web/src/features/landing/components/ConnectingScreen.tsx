@@ -145,22 +145,16 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
         ) : (
           <>
             <div className="relative mb-8">
-              <div className="w-24 h-24 bg-danger/10 rounded-full flex items-center justify-center relative z-10">
-                {status === "ringing" ? (
-                  <FiPhoneCall className="w-10 h-10 text-danger animate-pulse" />
-                ) : (
-                  <FiLoader className="w-10 h-10 text-danger animate-spin" />
-                )}
+              <div className="w-24 h-24 bg-danger/10 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
+                <FiLoader className="w-10 h-10 text-danger animate-spin" />
               </div>
-              <div className="absolute inset-0 bg-danger/5 rounded-full animate-ping z-0"></div>
+              <div className="absolute inset-0 bg-danger/20 rounded-full animate-ping z-0"></div>
             </div>
 
             <h1 className="title-medium text-gray-900 mb-2">
-              {status === "ringing"
-                ? "Finding an available coordinator..."
-                : "Connecting..."}
+              Connecting to Emergency Services...
             </h1>
-            <p className="body-medium text-gray-500">{statusMessage}</p>
+            <p className="body-medium text-gray-500">Please wait while we secure a connection with an available coordinator.</p>
 
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-8 overflow-hidden">
               <div className="bg-danger h-full rounded-full w-2/3 animate-pulse"></div>
