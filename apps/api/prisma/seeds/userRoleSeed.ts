@@ -16,7 +16,7 @@ export async function seedUserRoles(prisma: PrismaService) {
   });
 
   if (!adminRole || !user) {
-    throw new Error('Admin role or target user not found. Run other seeds first.');
+    throw new Error('Admin role or target users not found. Run other seeds first.');
   }
 
   await prisma.userRole.upsert({
@@ -32,6 +32,51 @@ export async function seedUserRoles(prisma: PrismaService) {
       role_id: adminRole.id,
     },
   });
+
+  // Coordinator roles (Development only)
+  if (process.env.NODE_ENV !== 'production') {
+    const coordinatorRole = await prisma.role.findUnique({
+      where: { name: 'coordinator' },
+    });
+
+    const coordinator1 = await prisma.user.findUnique({
+      where: { email: 'coordinator1@example.com' },
+    });
+
+    const coordinator2 = await prisma.user.findUnique({
+      where: { email: 'coordinator2@example.com' },
+    });
+
+    if (coordinatorRole && coordinator1 && coordinator2) {
+      await prisma.userRole.upsert({
+        where: {
+          user_id_role_id: {
+            user_id: coordinator1.id,
+            role_id: coordinatorRole.id,
+          },
+        },
+        update: {},
+        create: {
+          user_id: coordinator1.id,
+          role_id: coordinatorRole.id,
+        },
+      });
+
+      await prisma.userRole.upsert({
+        where: {
+          user_id_role_id: {
+            user_id: coordinator2.id,
+            role_id: coordinatorRole.id,
+          },
+        },
+        update: {},
+        create: {
+          user_id: coordinator2.id,
+          role_id: coordinatorRole.id,
+        },
+      });
+    }
+  }
 
   console.log('✅ UserRoles seeded');
 }

@@ -120,7 +120,7 @@ export default function ActiveSOSChatView({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col animate-in fade-in">
+    <div className="h-[100dvh] bg-gray-50 flex flex-col animate-in fade-in">
       <div className="p-4 flex justify-between items-center bg-white border-b border-gray-200 shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shadow-inner">

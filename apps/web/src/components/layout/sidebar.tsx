@@ -7,6 +7,8 @@ import { FiFileText } from "react-icons/fi";
 import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { useAuth } from "@/providers/AuthProvider";
+import { signOut } from "@/features/auth/api/auth.api";
+import { FiLogOut } from "react-icons/fi";
 
 type NavItem = {
   label: string;
@@ -52,6 +54,16 @@ export function Sidebar() {
   // Check if a nav item is active (either directly or via a child route)
   const isItemActive = (href: string) => {
     return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.warn("Logout API failed, continuing with client logout.", error);
+    } finally {
+      window.location.href = "/sign-in";
+    }
   };
 
   return (
@@ -108,6 +120,19 @@ export function Sidebar() {
           />
         ))}
       </nav>
+
+      <div className="p-2 mt-auto border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-danger hover:bg-danger/10 transition-all duration-200 ease-in-out group"
+          title={isCollapsed ? "Logout" : undefined}
+        >
+          <FiLogOut className="w-5 h-5 shrink-0" />
+          {!isCollapsed && (
+            <span className="body-medium font-medium">Logout</span>
+          )}
+        </button>
+      </div>
     </aside>
   );
 }

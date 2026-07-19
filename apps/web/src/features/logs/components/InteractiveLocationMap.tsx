@@ -107,6 +107,19 @@ const MapBoundsFitter = ({
   return null;
 };
 
+// Component to resize map when its container resizes (e.g. from display: none to block)
+const MapResizer = () => {
+  const map = useMap();
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    resizeObserver.observe(map.getContainer());
+    return () => resizeObserver.disconnect();
+  }, [map]);
+  return null;
+};
+
 // Component to handle View mode changes and resizing
 const MapViewSync = ({
   isStreetViewActive,
@@ -232,6 +245,7 @@ export default function InteractiveLocationMap({
   // Street view states
   const [hasCheckedStreetView, setHasCheckedStreetView] = useState(false);
   const [hasStreetView, setHasStreetView] = useState(false);
+  const [streetViewLocation, setStreetViewLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isStreetViewActive, setIsStreetViewActive] = useState(false);
 
   useEffect(() => {
@@ -252,14 +266,19 @@ export default function InteractiveLocationMap({
       ) {
         const sv = new (window as any).google.maps.StreetViewService();
         sv.getPanorama(
-          { location: { lat: latitude, lng: longitude }, radius: 50 },
+          { location: { lat: latitude, lng: longitude }, radius: 1000 },
           (data: any, status: string) => {
             if (!isMounted) return;
-            if (status === "OK") {
+            if (status === "OK" && data && data.location && data.location.latLng) {
               setHasStreetView(true);
+              setStreetViewLocation({
+                lat: data.location.latLng.lat(),
+                lng: data.location.latLng.lng()
+              });
               setIsStreetViewActive(true); // Default to true if available
             } else {
               setHasStreetView(false);
+              setStreetViewLocation(null);
               setIsStreetViewActive(false);
             }
             setHasCheckedStreetView(true);
@@ -407,6 +426,7 @@ export default function InteractiveLocationMap({
           zoomControl={true}
           className="w-full h-full z-0 absolute inset-0"
         >
+          <MapResizer />
           <MapViewSync isStreetViewActive={isStreetViewActive} />
           <StreetViewControl
             hasStreetView={hasStreetView}
@@ -494,7 +514,7 @@ export default function InteractiveLocationMap({
               </button>
             </div>
             <iframe
-              src={`https://maps.google.com/maps?layer=c&cbll=${latitude},${longitude}&cbp=11,0,0,0,0&output=svembed`}
+              src={`https://maps.google.com/maps?layer=c&cbll=${streetViewLocation?.lat || latitude},${streetViewLocation?.lng || longitude}&cbp=11,0,0,0,0&output=svembed`}
               width="100%"
               height="100%"
               style={{ border: 0 }}
