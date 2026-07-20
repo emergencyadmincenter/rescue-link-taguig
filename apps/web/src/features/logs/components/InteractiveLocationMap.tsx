@@ -24,6 +24,8 @@ import {
   FiShield,
   FiActivity,
   FiHome,
+  FiMaximize,
+  FiMinimize,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
@@ -175,7 +177,152 @@ const StreetViewControl = ({
   return null;
 };
 
-// --- Mock Data Generator ---
+const StreetViewOverlay = ({
+  lat,
+  lng,
+  onClose,
+  isFullScreen,
+  onToggleFullScreen,
+  title,
+}: {
+  lat: number;
+  lng: number;
+  onClose: () => void;
+  isFullScreen: boolean;
+  onToggleFullScreen: () => void;
+  title?: string;
+}) => {
+  const [showUI, setShowUI] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetTimeout = () => {
+    setShowUI(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setShowUI(false);
+    }, 1000);
+  };
+
+  useEffect(() => {
+    // Keep UI visible always as requested
+    return () => {};
+  }, []);
+
+  return (
+    <div className={`${isFullScreen ? "fixed inset-0 z-[9999]" : "absolute inset-0 z-[2000]"} bg-gray-100 flex flex-col`}>
+      <div className="absolute top-6 left-4 z-[2010] flex flex-col gap-3">
+        <button
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 bg-black/70 hover:bg-black text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-md transition-all duration-200 body-xsmall font-medium group"
+          title="Return to Map View"
+        >
+          <svg className="w-5 h-5 text-white/80 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Map
+        </button>
+      </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[2010] pointer-events-none">
+        <div className="bg-black/60 text-white/90 px-4 py-2 rounded-full body-xsmall backdrop-blur-sm flex items-center gap-2 shadow-lg">
+          <FiAlertCircle className="w-4 h-4 text-warning shrink-0" />
+          {title || "Street View location is approximate and may not reflect the exact coordinate."}
+        </div>
+      </div>
+      <iframe
+        src={`https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=11,0,0,0,0&output=svembed`}
+        width="100%"
+        height="100%"
+        style={{ border: 0 }}
+        allowFullScreen
+        loading="lazy"
+        title="Interactive Street View"
+      />
+    </div>
+  );
+};
+
+const fetchRealFacilities = async (lat: number, lng: number): Promise<Facility[]> => {
+  try {
+    const overpassQuery = `
+      [out:json];
+      (
+        node["amenity"~"hospital|clinic|police|fire_station"](around:5000,${lat},${lng});
+        way["amenity"~"hospital|clinic|police|fire_station"](around:5000,${lat},${lng});
+        node["emergency"="evacuation_centre"](around:5000,${lat},${lng});
+        way["emergency"="evacuation_centre"](around:5000,${lat},${lng});
+        node["amenity"="school"](around:5000,${lat},${lng});
+        way["amenity"="school"](around:5000,${lat},${lng});
+      );
+      out center;
+    `;
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: overpassQuery,
+    });
+    
+    if (!res.ok) throw new Error("Failed to fetch from Overpass API");
+    const data = await res.json();
+    
+    const facilities: Facility[] = [];
+    const R = 6371; // Earth radius in km
+
+    data.elements.forEach((el: any) => {
+      const tags = el.tags || {};
+      let type: FacilityType | null = null;
+      
+      if (tags.amenity === "police") type = "Police Station";
+      else if (tags.amenity === "fire_station") type = "Fire Station";
+      else if (tags.amenity === "hospital" || tags.amenity === "clinic") type = "Hospital";
+      else if (tags.emergency === "evacuation_centre" || tags.amenity === "school") type = "Evacuation Center";
+
+      if (!type) return;
+
+      const fLat = el.lat || el.center?.lat;
+      const fLng = el.lon || el.center?.lon;
+      
+      if (!fLat || !fLng) return;
+
+      const dLat = ((fLat - lat) * Math.PI) / 180;
+      const dLng = ((fLng - lng) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat * Math.PI) / 180) *
+          Math.cos((fLat * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      facilities.push({
+        id: `osm-${el.id}`,
+        name: tags.name || `Unnamed ${type}`,
+        type,
+        address: tags["addr:full"] || tags["addr:street"] || "Address not available",
+        contact: tags["contact:phone"] || tags.phone || "N/A",
+        lat: fLat,
+        lng: fLng,
+        distance,
+        travelTime: (distance / 30) * 60, // Rough estimate (30 km/h avg)
+      });
+    });
+
+    const types: FacilityType[] = ["Police Station", "Fire Station", "Hospital", "Evacuation Center"];
+    const bestFacilities: Facility[] = [];
+
+    types.forEach((type) => {
+      const ofType = facilities.filter((f) => f.type === type);
+      ofType.sort((a, b) => a.distance - b.distance);
+      // Grab up to 3 closest of each type
+      bestFacilities.push(...ofType.slice(0, 3));
+    });
+
+    return bestFacilities.sort((a, b) => a.distance - b.distance);
+  } catch (error) {
+    console.warn("Overpass API failed, falling back to mock data.", error);
+    return generateMockFacilities(lat, lng);
+  }
+};
+
 const generateMockFacilities = (lat: number, lng: number): Facility[] => {
   const types: FacilityType[] = [
     "Fire Station",
@@ -183,37 +330,38 @@ const generateMockFacilities = (lat: number, lng: number): Facility[] => {
     "Police Station",
     "Evacuation Center",
   ];
-  const facilities: Facility[] = [];
+  const allFacilities: Facility[] = [];
 
   const names = {
-    "Fire Station": "Taguig Central Fire Station",
-    Hospital: "Taguig Pateros District Hospital",
-    "Police Station": "Taguig Police Sub-Station",
-    "Evacuation Center": "Hagonoy Evacuation Center",
+    "Fire Station": ["Taguig Central Fire Station", "Western Bicutan Fire Sub-Station", "Cembo Fire Station"],
+    Hospital: ["Taguig Pateros District Hospital", "Medical Center Taguig", "St. Luke's Medical Center BGC"],
+    "Police Station": ["Taguig Police Station 1", "BGC Police Sub-Station", "Maharlika Police Sub-Station"],
+    "Evacuation Center": ["Hagonoy Evacuation Center", "Bagumbayan Sports Complex", "Tipas Elementary School"],
   };
 
-  types.forEach((type, index) => {
-    const latOffset = (Math.random() - 0.5) * 0.03;
-    const lngOffset = (Math.random() - 0.5) * 0.03;
-    const fLat = lat + latOffset;
-    const fLng = lng + lngOffset;
+  types.forEach((type) => {
+    // Generate 3 random locations for each type
+    for (let i = 0; i < 3; i++) {
+      const latOffset = (Math.random() - 0.5) * 0.04;
+      const lngOffset = (Math.random() - 0.5) * 0.04;
+      const fLat = lat + latOffset;
+      const fLng = lng + lngOffset;
 
-    const R = 6371;
-    const dLat = ((fLat - lat) * Math.PI) / 180;
-    const dLng = ((fLng - lng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat * Math.PI) / 180) *
-        Math.cos((fLat * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
+      const R = 6371;
+      const dLat = ((fLat - lat) * Math.PI) / 180;
+      const dLng = ((fLng - lng) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat * Math.PI) / 180) *
+          Math.cos((fLat * Math.PI) / 180) *
+          Math.sin(dLng / 2) *
+          Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
 
-    if (distance < 5) {
-      facilities.push({
-        id: `fac-${index}`,
-        name: names[type],
+      allFacilities.push({
+        id: `fac-${type.replace(" ", "-").toLowerCase()}-${i}`,
+        name: names[type][i],
         type,
         address: `${Math.floor(Math.random() * 100) + 1} Main St, Taguig City`,
         contact: `+63 2 8${Math.floor(1000000 + Math.random() * 9000000)}`,
@@ -225,7 +373,17 @@ const generateMockFacilities = (lat: number, lng: number): Facility[] => {
     }
   });
 
-  return facilities.sort((a, b) => a.distance - b.distance);
+  // Prioritize proximity while ensuring category relevance
+  const bestFacilities: Facility[] = [];
+  types.forEach((type) => {
+    const ofType = allFacilities.filter((f) => f.type === type);
+    ofType.sort((a, b) => a.distance - b.distance);
+    if (ofType[0]) {
+      bestFacilities.push(ofType[0]);
+    }
+  });
+
+  return bestFacilities.sort((a, b) => a.distance - b.distance);
 };
 
 export default function InteractiveLocationMap({
@@ -247,10 +405,17 @@ export default function InteractiveLocationMap({
   const [hasStreetView, setHasStreetView] = useState(false);
   const [streetViewLocation, setStreetViewLocation] = useState<{lat: number, lng: number} | null>(null);
   const [isStreetViewActive, setIsStreetViewActive] = useState(false);
+  const [isStreetViewFullScreen, setIsStreetViewFullScreen] = useState(false);
+  
+  // Separate state for nearby facility street view
+  const [facilityStreetView, setFacilityStreetView] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
-    const found = generateMockFacilities(latitude, longitude);
-    setFacilities(found);
+    let isMounted = true;
+    fetchRealFacilities(latitude, longitude).then(found => {
+      if (isMounted) setFacilities(found);
+    });
+    return () => { isMounted = false; };
   }, [latitude, longitude]);
 
   // Check if Street View is available without requiring an API key
@@ -273,7 +438,7 @@ export default function InteractiveLocationMap({
               setHasStreetView(true);
               setStreetViewLocation({
                 lat: data.location.latLng.lat(),
-                lng: data.location.latLng.lng()
+                lng: data.location.latLng.lng(),
               });
               setIsStreetViewActive(true); // Default to true if available
             } else {
@@ -488,41 +653,33 @@ export default function InteractiveLocationMap({
           )}
         </MapContainer>
 
+        {/* Facility Street View Overlay */}
+        {facilityStreetView && (
+           <StreetViewOverlay
+             lat={facilityStreetView.lat}
+             lng={facilityStreetView.lng}
+             onClose={() => {
+               setFacilityStreetView(null);
+               setIsStreetViewFullScreen(false);
+             }}
+             isFullScreen={isStreetViewFullScreen}
+             onToggleFullScreen={() => setIsStreetViewFullScreen(!isStreetViewFullScreen)}
+             title="Facility Street View"
+           />
+        )}
+
         {/* Immersive Street View Overlay inside the map boundary */}
-        {isStreetViewActive && hasStreetView && (
-          <div className="absolute inset-0 z-[2000] bg-gray-100 flex flex-col">
-            <div className="absolute top-20 left-0 z-[2010]">
-              <button
-                onClick={() => setIsStreetViewActive(false)}
-                className="flex items-center gap-2 bg-black/70 hover:bg-black text-white px-4 py-2 rounded-lg shadow-lg backdrop-blur-md transition-all duration-200 body-xsmall font-medium group"
-                title="Return to Map View"
-              >
-                <svg
-                  className="w-5 h-5 text-white/80 group-hover:-translate-x-1 transition-transform"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Back to Map
-              </button>
-            </div>
-            <iframe
-              src={`https://maps.google.com/maps?layer=c&cbll=${streetViewLocation?.lat || latitude},${streetViewLocation?.lng || longitude}&cbp=11,0,0,0,0&output=svembed`}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              title="Interactive Street View"
-            />
-          </div>
+        {isStreetViewActive && hasStreetView && !facilityStreetView && (
+           <StreetViewOverlay
+             lat={streetViewLocation?.lat || latitude}
+             lng={streetViewLocation?.lng || longitude}
+             onClose={() => {
+               setIsStreetViewActive(false);
+               setIsStreetViewFullScreen(false);
+             }}
+             isFullScreen={isStreetViewFullScreen}
+             onToggleFullScreen={() => setIsStreetViewFullScreen(!isStreetViewFullScreen)}
+           />
         )}
 
         {/* Floating Route Info Panel */}
@@ -630,18 +787,42 @@ export default function InteractiveLocationMap({
                   />
                 </MapContainer>
               </div>
-              <button
-                onClick={() => handlePreviewRoute(selectedFacility)}
-                disabled={isRouting}
-                className="w-full py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg body-small font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70"
-              >
-                {isRouting ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <FiNavigation className="w-4 h-4" />
-                )}
-                {isRouting ? "Calculating Route..." : "Preview Route"}
-              </button>
+              <div className="flex gap-2 w-full mt-3">
+                <button
+                  onClick={() => handlePreviewRoute(selectedFacility)}
+                  disabled={isRouting}
+                  className="flex-1 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg body-small font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isRouting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FiNavigation className="w-4 h-4" />
+                  )}
+                  {isRouting ? "Calculating Route..." : "Preview Route"}
+                </button>
+                <button
+                  onClick={() => {
+                     const sv = new (window as any).google.maps.StreetViewService();
+                     sv.getPanorama(
+                       { location: { lat: selectedFacility.lat, lng: selectedFacility.lng }, radius: 1000 },
+                       (data: any, status: string) => {
+                         if (status === "OK" && data && data.location && data.location.latLng) {
+                           setFacilityStreetView({
+                             lat: data.location.latLng.lat(),
+                             lng: data.location.latLng.lng(),
+                           });
+                         } else {
+                           toast.error("Street View not available for this location");
+                         }
+                       }
+                     );
+                  }}
+                  className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg body-small font-medium transition-all duration-200 flex items-center justify-center gap-2 shrink-0"
+                  title="View in Street View"
+                >
+                  <FiMap className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}

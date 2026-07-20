@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FiCheck, FiUser, FiPhone, FiMapPin, FiAlignLeft, FiSave } from "react-icons/fi";
+import { FiCheck, FiUser, FiPhone, FiMapPin, FiAlignLeft, FiSave, FiAlertTriangle } from "react-icons/fi";
 import { Log } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
@@ -14,7 +14,11 @@ interface IncidentFormPanelProps {
 
 export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelProps) {
   const { user } = useAuth();
-  const isOwner = user && log && (log.assigned_coordinator_id === user.id || log.created_by_coordinator_id === user.id);
+  const isOwner = user && log && (
+    log.assigned_coordinator_id === user.id || 
+    log.created_by_coordinator_id === user.id ||
+    !log.assigned_coordinator_id
+  );
   const isReadOnly = !isOwner;
 
   const [formData, setFormData] = useState({
@@ -26,16 +30,38 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const [hasAutoPopulatedId, setHasAutoPopulatedId] = useState<string | null>(null);
+
   useEffect(() => {
     if (log) {
-      setFormData({
-        caller_name: log.caller_name || "",
-        caller_contact: log.caller_contact || "",
-        address: log.address || "",
-        description: log.description || "",
-      });
+      setFormData((prev) => ({
+        // We only override with log's value if we don't have local edits or if log has a new truthy value.
+        caller_name: log.caller_name || prev.caller_name || "",
+        caller_contact: log.caller_contact || prev.caller_contact || "",
+        address: log.address || prev.address || "",
+        description: log.description || prev.description || "",
+      }));
+
+      // Auto-populate address from lat/lng if not present
+      if (!log.address && log.latitude && log.longitude && !isReadOnly && hasAutoPopulatedId !== log.id) {
+        setHasAutoPopulatedId(log.id);
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${log.latitude}&lon=${log.longitude}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.display_name) {
+              setFormData(prev => ({
+                ...prev,
+                address: prev.address || data.display_name
+              }));
+              toast.success("Location auto-populated from coordinates.");
+            }
+          })
+          .catch(err => {
+            console.error("Failed to reverse geocode", err);
+          });
+      }
     }
-  }, [log]);
+  }, [log, isReadOnly, hasAutoPopulatedId]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -91,6 +117,18 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-background-subtle/20">
         <div className="space-y-4 pb-8">
           
+          {isReadOnly && (
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 flex items-start gap-2.5 text-warning-hover shadow-sm">
+              <FiAlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-xs">View-Only Mode</h3>
+                <p className="text-[10px] mt-0.5 opacity-90 text-warning-hover leading-tight">
+                  This log is currently owned by {log.assigned_coordinator?.name || "another coordinator"}.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Caller Information Card */}
           <section className="bg-white rounded-xl border border-background-subtle shadow-sm overflow-hidden">
             <div className="px-3 py-2.5 border-b border-background-subtle/50 bg-gray-50/50">

@@ -61,6 +61,8 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
     };
 
     if ('geolocation' in navigator) {
+      // Unconditionally request position here so the prompt occurs before transitioning.
+      // This ensures the resident sees the prompt clearly on the landing page.
       navigator.geolocation.getCurrentPosition(
         (position) => {
           latitude = position.coords.latitude;
@@ -69,10 +71,9 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          // Proceed without location if denied or timed out
           createLogAndRedirect();
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
       );
     } else {
       createLogAndRedirect();
@@ -124,9 +125,9 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
             <button
               onClick={() => handleAction('chat')}
               disabled={isSubmitting}
-              className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-3xl hover:border-primary/30 hover:bg-primary/[0.02] hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group"
+              className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl hover:border-primary hover:bg-primary/[0.02] hover:shadow-lg transition-all duration-300 group"
             >
-              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300 mb-5 shadow-sm">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-primary/10 group-hover:scale-105 transition-all duration-300 mb-5 shadow-sm">
                 <FiMessageSquare className="w-7 h-7 text-gray-400 group-hover:text-primary transition-colors" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors mb-2">Live Chat</h3>
@@ -136,14 +137,13 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
             <button
               onClick={() => handleAction('voice')}
               disabled={isSubmitting}
-              className="flex flex-col items-center justify-center p-8 bg-gradient-to-b from-white to-danger/[0.02] border-2 border-danger/20 rounded-3xl hover:border-danger hover:shadow-[0_8px_30px_rgb(225,29,72,0.15)] transition-all duration-300 group relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl hover:border-danger hover:bg-danger/[0.02] hover:shadow-lg transition-all duration-300 group"
             >
-              <div className="absolute inset-0 bg-danger/0 group-hover:bg-danger/[0.03] transition-colors duration-300"></div>
-              <div className="w-16 h-16 bg-danger/10 rounded-2xl flex items-center justify-center group-hover:bg-danger group-hover:scale-110 transition-all duration-300 mb-5 relative z-10 shadow-sm group-hover:shadow-[0_0_20px_rgb(225,29,72,0.4)]">
-                <FiPhoneCall className="w-7 h-7 text-danger group-hover:text-white transition-colors" />
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-danger/10 group-hover:scale-105 transition-all duration-300 mb-5 shadow-sm">
+                <FiPhoneCall className="w-7 h-7 text-gray-400 group-hover:text-danger transition-colors" />
               </div>
-              <h3 className="text-lg font-bold text-danger transition-colors mb-2 relative z-10">Voice Call</h3>
-              <p className="text-sm text-gray-600 text-center leading-relaxed relative z-10">Speak directly with a coordinator</p>
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-danger transition-colors mb-2">Voice Call</h3>
+              <p className="text-sm text-gray-500 text-center leading-relaxed">Speak directly with a coordinator</p>
             </button>
 
           </div>

@@ -319,6 +319,7 @@ export function IncomingCallProvider({
         <FloatingCallWindow 
           webrtc={webrtc} 
           activeCallId={activeCallId} 
+          activeCallMethod={activeCallMethod}
           router={router} 
           socket={socket} 
         />
@@ -423,7 +424,7 @@ export function IncomingCallProvider({
 
 export const useIncomingCall = () => useContext(IncomingCallContext);
 
-const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
+const FloatingCallWindow = ({ webrtc, activeCallId, activeCallMethod, router, socket }: any) => {
   const { remoteStream, hasRemoteVideo, isMuted, toggleMute, endCall } = webrtc;
   
   const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
@@ -484,6 +485,39 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
     if (socket) socket.emit("end_call", { callId: activeCallId });
     endCall();
   };
+
+  if (activeCallMethod === 'chat') {
+    return (
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+        className="fixed top-0 left-0 w-72 bg-white rounded-2xl shadow-2xl z-[9999] overflow-hidden flex flex-col border border-gray-100"
+      >
+        <div className="bg-primary/5 p-4 border-b border-primary/10 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="text-sm font-semibold text-primary">Active Chat Session</span>
+          </div>
+          <button
+            onClick={() => router.push(`/calls/${activeCallId}`)}
+            className="p-1.5 bg-white hover:bg-gray-50 rounded-md text-gray-500 transition-colors shadow-sm pointer-events-auto"
+            title="Return to Chat"
+          >
+            <FiMaximize2 className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-4 flex items-center justify-center bg-gray-50">
+           <p className="text-xs text-gray-500 text-center leading-relaxed">Return to the workspace to continue messaging the resident.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

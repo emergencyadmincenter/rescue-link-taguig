@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from "react-leaflet";
+import { FiMaximize, FiMinimize } from "react-icons/fi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -189,6 +190,7 @@ export default function WeatherMapView({
   const [colorMode, setColorMode] = useState<MapColorMode>("severity");
   const [selectedBarangay, setSelectedBarangay] =
     useState<BarangayWeather | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
 
   // --- Build lookup: barangay name → weather data ---
@@ -526,15 +528,23 @@ export default function WeatherMapView({
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Map Container */}
         <div
-          className={`mb-10 flex-1 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
-            selectedBarangay ? "hidden lg:block" : ""
-          }`}
+          className={`mb-10 flex-1 overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
+            selectedBarangay && !isFullScreen ? "hidden lg:block" : ""
+          } ${isFullScreen ? "fixed inset-0 z-[9999] mb-0 rounded-none bg-white" : "rounded-xl"}`}
         >
+          <button
+            onClick={() => setIsFullScreen(!isFullScreen)}
+            className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
+            title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+          >
+            {isFullScreen ? <FiMinimize className="w-5 h-5" /> : <FiMaximize className="w-5 h-5" />}
+          </button>
+          
           <MapContainer
             center={TAGUIG_CENTER}
             zoom={DEFAULT_ZOOM}
             className="h-full w-full"
-            style={{ minHeight: "600px", height: "70vh" }}
+            style={{ minHeight: isFullScreen ? "100vh" : "600px", height: isFullScreen ? "100vh" : "70vh" }}
             scrollWheelZoom={true}
             zoomControl={true}
           >
@@ -566,7 +576,7 @@ export default function WeatherMapView({
         </div>
 
         {/* Detail Side Panel — shows the WeatherCard for the clicked barangay */}
-        {selectedBarangay && (
+        {selectedBarangay && !isFullScreen && (
           <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0 animate-fade-in">
             <div className="flex items-center justify-between mb-2">
               <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">

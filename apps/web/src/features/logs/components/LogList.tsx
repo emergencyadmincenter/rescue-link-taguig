@@ -9,6 +9,7 @@ interface LogListProps {
   loading: boolean;
   activeLogId?: string;
   onLogClick: (id: string) => void;
+  onStatusChange?: (id: string, status: LogStatus) => void;
 }
 
 function LogSkeleton() {
@@ -33,6 +34,7 @@ export default function LogList({
   loading,
   activeLogId,
   onLogClick,
+  onStatusChange,
 }: LogListProps) {
   if (loading && logs.length === 0) {
     return (
@@ -60,6 +62,7 @@ export default function LogList({
           key={log.id}
           log={log}
           onClick={onLogClick}
+          onStatusChange={onStatusChange}
           isActive={activeLogId === log.id}
         />
       ))}

@@ -40,4 +40,8 @@ export class CreateLogDto {
   @IsArray()
   @IsString({ each: true })
   channels?: string[];
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

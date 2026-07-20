@@ -8,6 +8,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CommunicationsService } from './communications.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
@@ -123,7 +124,7 @@ export class CommunicationsController {
 
     const isActive = call.status === 'active' || call.status === 'ringing';
     if (isActive && call.coordinator_id !== user.sub) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'Access denied: Call is active and assigned to another coordinator',
       );
     }

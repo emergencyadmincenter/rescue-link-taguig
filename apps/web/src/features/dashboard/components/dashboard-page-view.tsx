@@ -239,7 +239,7 @@ function AdminDashboard({
                 {activeEmergencies.slice(0, 5).map((log) => (
                   <Link
                     key={log.id}
-                    href={`/calls/${log.id}`}
+                    href={`/logs/${log.id}`}
                     className="block"
                   >
                     <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group cursor-pointer">
@@ -401,7 +401,7 @@ function CoordinatorDashboard({
                 {assignedLogs.map((log) => (
                   <Link
                     key={log.id}
-                    href={`/calls/${log.id}`}
+                    href={`/logs/${log.id}`}
                     className="block"
                   >
                     <div className="flex items-center justify-between p-4 rounded-2xl border border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10 transition-all group cursor-pointer shadow-sm">
@@ -468,7 +468,7 @@ function CoordinatorDashboard({
               {recentLogs.slice(0, 4).map((log) => (
                 <Link
                   key={log.id}
-                  href={`/calls/${log.id}`}
+                  href={`/logs/${log.id}`}
                   className="flex flex-col p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">

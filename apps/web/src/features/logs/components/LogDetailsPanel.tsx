@@ -20,6 +20,7 @@ import {
   FiX,
   FiPlus,
   FiAlignLeft,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { Log, Resource } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
@@ -81,7 +82,13 @@ export default function LogDetailsPanel({
   onUpdate,
 }: LogDetailsPanelProps) {
   const { user } = useAuth();
-  const isOwner = user && log && (log.assigned_coordinator_id === user.id || log.created_by_coordinator_id === user.id);
+  const isAdmin = user?.roles?.includes("admin");
+  const isOwner = user && log && (
+    isAdmin ||
+    log.assigned_coordinator_id === user.id || 
+    log.created_by_coordinator_id === user.id ||
+    !log.assigned_coordinator_id
+  );
   const isReadOnly = !isOwner;
 
   const [formData, setFormData] = useState({
@@ -324,6 +331,29 @@ export default function LogDetailsPanel({
           </div>
         </div>
       )}
+
+      {log.source === "manual" && (!log.calls || log.calls.length === 0) && (
+        <div className="col-span-2 mt-2">
+          <p className="body-xsmall text-foreground/50 font-medium uppercase tracking-wider mb-2">
+            Source Information
+          </p>
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-background-subtle/30 border border-background-subtle/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <FiAlignLeft />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-foreground">
+                  Manually Created Log
+                </span>
+                <span className="body-small text-foreground/60">
+                  Entered directly by a coordinator
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -338,7 +368,9 @@ export default function LogDetailsPanel({
           >
             <FiChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="title-medium text-foreground">Incident Details</h2>
+          <div className="flex flex-col gap-1">
+            <h2 className="title-medium text-foreground leading-none">Incident Details</h2>
+          </div>
         </div>
         <StatusSelector
           currentStatus={log.status}
@@ -349,7 +381,18 @@ export default function LogDetailsPanel({
 
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
+        {isReadOnly && (
+          <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-3 text-warning-hover shadow-sm">
+            <FiAlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-sm">View-Only Mode</h3>
+              <p className="text-xs mt-0.5 opacity-90 text-warning-hover">
+                This log is currently owned by {log.assigned_coordinator?.name || "another coordinator"}. You cannot make changes to it.
+              </p>
+            </div>
+          </div>
+        )}
         {renderMetadata()}
 
         <div className="w-full space-y-6 pb-8">

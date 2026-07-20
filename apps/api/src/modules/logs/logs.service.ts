@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  UnauthorizedException,
+  ForbiddenException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -176,7 +176,7 @@ export class LogsService {
         ...rest,
         reference_no,
         source: LogSource.manual,
-        status: LogStatus.active,
+        status: (rest.status as LogStatus) || LogStatus.active,
         created_by_coordinator_id: userId,
         assigned_coordinator_id: userId,
         last_activity_at: new Date(),
@@ -205,11 +205,19 @@ export class LogsService {
       throw new NotFoundException(`Log with ID ${id} not found`);
     }
 
+    const userRecord = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { user_roles: { include: { role: true } } },
+    });
+    const isAdmin = userRecord?.user_roles?.some((ur) => ur.role.name === 'admin');
+
     if (
+      !isAdmin &&
+      existing.assigned_coordinator_id &&
       existing.assigned_coordinator_id !== userId &&
       existing.created_by_coordinator_id !== userId
     ) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to edit this log',
       );
     }
