@@ -2,42 +2,51 @@
 
 import { useState } from "react";
 import { FiEdit2 } from "react-icons/fi";
-
-const ROLES = ["Admin", "Dispatcher", "Responder", "Coordinator"];
+import { updatePersonnel } from "../api/personnel.api";
+import { toast } from "react-hot-toast";
 
 interface EditPersonnelFormProps {
-  initialName?: string;
-  initialEmail?: string;
-  initialRole?: string;
-  onCancel?: () => void;
-  onSave?: (data: { name: string; email: string; role: string }) => void;
+  id: string;
+  initialName: string;
+  initialEmail: string;
+  initialRole: string;
+  onCancel: () => void;
+  onSuccess: () => void;
 }
 
 export default function EditPersonnelForm({ 
-  initialName = "", 
-  initialEmail = "", 
-  initialRole = "", 
+  id,
+  initialName, 
+  initialEmail, 
+  initialRole, 
   onCancel,
-  onSave
+  onSuccess
 }: EditPersonnelFormProps) {
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
-  const [role, setRole] = useState(initialRole);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !role) return;
+    if (!name || !email) return;
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await updatePersonnel(id, { name, email });
+      toast.success(
+        email !== initialEmail 
+          ? "Personnel updated. New activation email sent." 
+          : "Personnel updated successfully"
+      );
+      onSuccess();
+      onCancel();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to update personnel");
+    } finally {
       setIsSubmitting(false);
-      onSave?.({ name, email, role });
-      onCancel?.();
-    }, 1500);
+    }
   };
 
   return (
@@ -52,6 +61,7 @@ export default function EditPersonnelForm({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
+            <label className="block body-xsmall text-gray-500 mb-1">Name</label>
             <input
               type="text"
               value={name}
@@ -64,6 +74,7 @@ export default function EditPersonnelForm({
 
           {/* Email */}
           <div>
+            <label className="block body-xsmall text-gray-500 mb-1">Email</label>
             <input
               type="email"
               value={email}
@@ -74,22 +85,15 @@ export default function EditPersonnelForm({
             />
           </div>
 
-          {/* Role */}
-          <div className="relative">
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-0 py-2 body-small text-gray-900 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent appearance-none cursor-pointer transition-colors"
-              required
-            >
-              <option value="" disabled>Coordinator</option>
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-            <svg className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+          {/* Role (Read-only) */}
+          <div>
+            <label className="block body-xsmall text-gray-500 mb-1">Role</label>
+            <input
+              type="text"
+              value={initialRole}
+              readOnly
+              className="w-full px-0 py-2 body-small text-gray-500 border-0 border-b border-gray-200 bg-transparent outline-none cursor-not-allowed"
+            />
           </div>
 
           {/* Actions */}

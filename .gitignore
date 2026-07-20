@@ -41,7 +41,7 @@ out/
 tmp/
 temp/
 .cache/
-logs/
+/logs/
 *.log
 *.pid
 *.pid.lock

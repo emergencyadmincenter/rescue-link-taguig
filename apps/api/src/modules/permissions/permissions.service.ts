@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreatePermissionDto, UpdatePermissionDto } from './dto/permission.dto';
 
@@ -8,10 +12,7 @@ export class PermissionsService {
 
   async findAll() {
     return this.prisma.permission.findMany({
-      orderBy: [
-        { resource: 'asc' },
-        { action: 'asc' },
-      ],
+      orderBy: [{ resource: 'asc' }, { action: 'asc' }],
     });
   }
 
@@ -23,7 +24,10 @@ export class PermissionsService {
     if (existing) {
       throw new ConflictException({
         success: false,
-        error: { code: 'DUPLICATE_ENTRY', message: 'Permission name already exists' },
+        error: {
+          code: 'DUPLICATE_ENTRY',
+          message: 'Permission name already exists',
+        },
       });
     }
 
@@ -38,7 +42,10 @@ export class PermissionsService {
       if (existing && existing.id !== id) {
         throw new ConflictException({
           success: false,
-          error: { code: 'DUPLICATE_ENTRY', message: 'Permission name already exists' },
+          error: {
+            code: 'DUPLICATE_ENTRY',
+            message: 'Permission name already exists',
+          },
         });
       }
     }

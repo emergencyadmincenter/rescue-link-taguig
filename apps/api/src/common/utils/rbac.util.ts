@@ -8,7 +8,10 @@ export function hasRole(userRoles: string[], requiredRole: string): boolean {
 /**
  * Check if a user has at least one of the required roles.
  */
-export function hasAnyRole(userRoles: string[], requiredRoles: string[]): boolean {
+export function hasAnyRole(
+  userRoles: string[],
+  requiredRoles: string[],
+): boolean {
   return requiredRoles.some((role) => userRoles.includes(role));
 }
 

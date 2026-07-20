@@ -20,15 +20,15 @@ export default function LandingPage() {
   const closeEmergencyDialog = () => setIsEmergencyDialogOpen(false);
 
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-primary/30">
+    <div className="min-h-screen bg-white font-sans selection:bg-primary/30 overflow-x-hidden w-full max-w-full">
       <LandingHeader />
-      
+
       <main>
         <HeroSection onRequestAssistance={openEmergencyDialog} />
+        <EmergencyHotlinesSection />
         <FeaturesSection />
         <HowItWorksSection />
         <WhyChooseUsSection />
-        <EmergencyHotlinesSection />
         <EmergencyTipsSection />
         <FAQSection />
         <CTASection onRequestAssistance={openEmergencyDialog} />
@@ -36,9 +36,9 @@ export default function LandingPage() {
 
       <LandingFooter />
 
-      <EmergencyDialog 
-        isOpen={isEmergencyDialogOpen} 
-        onClose={closeEmergencyDialog} 
+      <EmergencyDialog
+        isOpen={isEmergencyDialogOpen}
+        onClose={closeEmergencyDialog}
       />
     </div>
   );

@@ -53,13 +53,19 @@ apiClient.interceptors.response.use(
         }
       }
 
-      // Log the actual technical error to console for developers
-      console.error("[API Error]", {
-        status: error.response.status,
-        url: error.config?.url,
-        data: error.response.data,
-      });
+      // Suppress the expected invalid-credential sign-in noise, but keep other API errors visible.
+      const requestUrl = String(error.config?.url ?? "");
+      const isExpectedSignInFailure =
+        error.response.status === 401 && requestUrl.includes("/auth/sign-in");
 
+      if (!isExpectedSignInFailure) {
+        console.error("[API Error]", {
+          status: error.response.status,
+          url: error.config?.url,
+          data: error.response.data,
+        });
+      }
+    //until here 
       return Promise.reject(
         new Error(Array.isArray(message) ? message[0] : message),
       );

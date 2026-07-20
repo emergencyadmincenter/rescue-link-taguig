@@ -1,8 +1,9 @@
 # Agent Instructions & Design System Guidelines
 
-This file contains rules and instructions for future AI-assisted development and developers working on this project. 
+This file contains rules and instructions for future AI-assisted development and developers working on this project.
 
 ## Project Architecture & Conventions
+
 - **Framework**: Next.js (App Router)
 - **Styling**: Tailwind CSS v4 with a custom Design System
 - **Components**: Grouped by features (`src/features`) with shared components in `src/components/shared` and `src/components/ui`.
@@ -39,7 +40,8 @@ It is the single source of truth for all styling variables. When building or mod
    - If an existing UI pattern is unsupported by the design system, extend the design system by adding tokens to `light.css` / `dark.css` and mapping them in `tokens.css`, rather than hardcoding the values.
 
 ### Adding New Instructions
-*(You can append new architectural or domain-specific instructions below this section)*
+
+_(You can append new architectural or domain-specific instructions below this section)_
 
 ## Global UI & Interaction Principles
 
@@ -69,7 +71,7 @@ To maintain a polished, professional, and production-ready interface, strictly a
    - Be extremely careful with "checked" or "active" states (e.g., text on light background accents should remain dark/primary, not foreground/white).
 
 6. **Entity Formatting**
-   - Display system entities (such as role names: `admin`, `coordinator`) in Title Case in the UI. 
+   - Display system entities (such as role names: `admin`, `coordinator`) in Title Case in the UI.
    - Prefer using CSS utilities like `capitalize` directly in the markup to avoid mutating the underlying data layer.
 
 7. **Confirmation Dialogs**
@@ -107,3 +109,41 @@ To maintain a polished, professional, and production-ready interface, strictly a
     - All interactive elements must adhere to the project's hover, focus, transition, and accessibility standards.
     - Responsive behavior is strictly required for every new page and component (mobile, tablet, and desktop).
     - Optimize assets (using `next/image`) and layouts to minimize layout shifts and maximize perceived performance.
+
+14. **Workspace & Data-Heavy Interfaces**
+    - Workspace pages should use fixed viewport layouts with independently scrollable content areas where appropriate.
+    - Forms in dialogs should have constrained heights with internal scrolling when necessary.
+    - Detail panels should use auto-save for low-risk edits where appropriate.
+    - List-detail interfaces should maintain layout stability during state changes.
+    - Feature-specific UI states should be implemented as reusable components rather than page-specific logic.
+    - Components should be designed with future real-time integration in mind.
+15. **Avoid Arbitrary `max-w-*` Constraints**
+
+- **Do NOT** indiscriminately apply Tailwind utilities such as `max-w-xs`, `max-w-sm`, `max-w-md`, `max-w-lg`, `max-w-xl`, etc. to dialogs, cards, titles, paragraphs, forms, sections, or other layout containers simply to constrain their width.
+
+- Excessive use of these utilities often results in:
+
+  - Unnecessary text wrapping.
+  - Wasted horizontal space.
+  - Poor readability on larger screens.
+  - Inconsistent layouts across the application.
+  - Components appearing artificially narrow or "cheap."
+
+- Instead, design components according to their content and context:
+
+  - Dialogs should size naturally based on their content while respecting sensible minimum and maximum viewport constraints.
+  - Titles and descriptions should utilize the available space before wrapping onto additional lines.
+  - Cards and content containers should fill the layout appropriately instead of being arbitrarily constrained.
+  - Forms should prioritize usability and readability over narrow fixed widths.
+
+- Before introducing a `max-w-*` utility, first ask whether the width restriction is actually necessary for the component.
+
+- **Only use `max-w-*` when it has a clear UX purpose**, for example:
+
+  - Long-form reading content (documentation, articles, blog posts).
+  - Hero content intended for optimal reading measure.
+  - Intentionally compact UI elements where limiting width improves usability.
+
+- Do **not** use `max-w-*` as a default styling pattern or as a quick fix for layout issues. If a layout appears incorrect, fix the layout itself instead of masking the problem by constraining widths.
+
+- Prefer responsive layouts using flexbox, grid, spacing tokens, and the project's design system so components naturally adapt across mobile, tablet, and desktop viewports without unnecessary width constraints.

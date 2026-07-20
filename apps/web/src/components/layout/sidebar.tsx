@@ -3,18 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiMessageSquare, FiChevronDown, FiChevronRight } from "react-icons/fi";
-import {
-  HiOutlineViewGrid,
-  HiOutlineUserGroup,
-  HiOutlineLocationMarker,
-  HiOutlineUser,
-} from "react-icons/hi";
+import { FiFileText } from "react-icons/fi";
+import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
+import { TiWeatherPartlySunny } from "react-icons/ti";
+import { useAuth } from "@/providers/AuthProvider";
+import { signOut } from "@/features/auth/api/auth.api";
+import { FiLogOut } from "react-icons/fi";
 
 type NavItem = {
   label: string;
   href: string;
   icon: React.ElementType;
+  roles?: string[]; // If undefined, accessible by all
 };
 
 const NAVIGATION: NavItem[] = [
@@ -22,32 +22,32 @@ const NAVIGATION: NavItem[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: HiOutlineViewGrid,
+    // Accessible by all authenticated users
+  },
+  {
+    label: "Logs",
+    href: "/logs",
+    icon: FiFileText,
+    roles: ["coordinator", "admin"],
+  },
+  {
+    label: "Weather",
+    href: "/weather",
+    icon: TiWeatherPartlySunny,
+    roles: ["coordinator", "admin"],
   },
   {
     label: "Personnel",
     href: "/personnel",
     icon: HiOutlineUserGroup,
-  },
-  {
-    label: "Barangays",
-    href: "/barangays",
-    icon: HiOutlineLocationMarker,
-  },
-  {
-    label: "Coordinators",
-    href: "/coordinators",
-    icon: HiOutlineUser,
-  },
-  {
-    label: "Messages",
-    href: "/messages",
-    icon: FiMessageSquare,
+    roles: ["admin"], // Only Admin
   },
 ];
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
+  const { user } = useAuth();
 
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
@@ -56,13 +56,25 @@ export function Sidebar() {
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.warn("Logout API failed, continuing with client logout.", error);
+    } finally {
+      window.location.href = "/sign-in";
+    }
+  };
+
   return (
     <aside
       className={`bg-white border-r border-gray-100 flex flex-col pt-4 shrink-0 transition-all duration-300 ease-in-out ${
         isCollapsed ? "w-[68px]" : "w-[240px]"
       }`}
     >
-      <div className={`flex mb-3 px-4 transition-all duration-300 ${isCollapsed ? "justify-center" : "justify-end"}`}>
+      <div
+        className={`flex mb-3 px-4 transition-all duration-300 ${isCollapsed ? "justify-center" : "justify-end"}`}
+      >
         <button
           onClick={toggleSidebar}
           className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1.5 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
@@ -95,7 +107,11 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-col mt-1 flex-1 overflow-y-auto overflow-x-hidden px-2 gap-1 pb-4">
-        {NAVIGATION.map((item) => (
+        {NAVIGATION.filter(
+          (item) =>
+            !item.roles ||
+            (user?.roles && item.roles.some((r) => user.roles.includes(r))),
+        ).map((item) => (
           <SidebarItem
             key={item.href}
             item={item}
@@ -104,6 +120,19 @@ export function Sidebar() {
           />
         ))}
       </nav>
+
+      <div className="p-2 mt-auto border-t border-gray-100">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-danger hover:bg-danger/10 transition-all duration-200 ease-in-out group"
+          title={isCollapsed ? "Logout" : undefined}
+        >
+          <FiLogOut className="w-5 h-5 shrink-0" />
+          {!isCollapsed && (
+            <span className="body-medium font-medium">Logout</span>
+          )}
+        </button>
+      </div>
     </aside>
   );
 }
@@ -131,9 +160,13 @@ function SidebarItem({
         title={isCollapsed ? item.label : undefined}
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <Icon className={`w-5 h-5 shrink-0 transition-colors duration-200 ${isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-600"}`} />
+          <Icon
+            className={`w-5 h-5 shrink-0 transition-colors duration-200 ${isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-600"}`}
+          />
           {!isCollapsed && (
-            <span className={`body-medium truncate font-medium transition-colors duration-200 ${isActive ? "text-primary" : ""}`}>
+            <span
+              className={`body-medium truncate font-medium transition-colors duration-200 ${isActive ? "text-primary" : ""}`}
+            >
               {item.label}
             </span>
           )}
