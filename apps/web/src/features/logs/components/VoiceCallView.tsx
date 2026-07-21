@@ -108,7 +108,6 @@ export default function VoiceCallView({
   const isActive = call?.status === "active" || call?.status === "ringing";
   const isMissed = call?.status === "missed";
   const isEnded = call?.status === "ended" || call?.status === "rejected";
-
   const showVideo = hasRemoteVideo && isActive;
 
   if (!call) {
