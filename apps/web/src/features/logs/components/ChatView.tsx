@@ -1,6 +1,13 @@
 "use client";
 
-import { FiMessageSquare, FiImage, FiSend, FiXCircle, FiUser, FiAlertTriangle } from "react-icons/fi";
+import {
+  FiMessageSquare,
+  FiImage,
+  FiSend,
+  FiXCircle,
+  FiUser,
+  FiAlertTriangle,
+} from "react-icons/fi";
 import { Call, Message } from "../types/logs.types";
 import { Socket } from "socket.io-client";
 import { useState, useEffect, useRef } from "react";
@@ -35,9 +42,15 @@ export default function ChatView({
 
     const onCallEnded = (payload: any) => {
       if (payload?.endedBy === "resident") {
-        toast("The resident ended the chat.", { icon: <FiMessageSquare className="text-primary" />, id: "chat-ended" });
+        toast("The resident ended the chat.", {
+          icon: <FiMessageSquare className="text-primary" />,
+          id: "chat-ended",
+        });
       } else if (payload?.endedBy === "system") {
-        toast("The chat was ended by the system.", { icon: <FiAlertTriangle className="text-warning" />, id: "chat-ended" });
+        toast("The chat was ended by the system.", {
+          icon: <FiAlertTriangle className="text-warning" />,
+          id: "chat-ended",
+        });
       }
     };
 
@@ -91,7 +104,9 @@ export default function ChatView({
           <div
             className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isEnded ? "bg-background-subtle" : "bg-danger/10"}`}
           >
-            <FiUser className={`w-5 h-5 ${isEnded ? "text-foreground/50" : "text-danger"}`} />
+            <FiUser
+              className={`w-5 h-5 ${isEnded ? "text-foreground/50" : "text-danger"}`}
+            />
           </div>
           <div className="flex flex-col">
             <p className="body-medium font-bold text-foreground leading-tight">

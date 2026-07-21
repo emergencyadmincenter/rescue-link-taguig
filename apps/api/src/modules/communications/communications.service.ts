@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
 
@@ -21,7 +26,9 @@ export interface RoutingState {
 }
 
 @Injectable()
-export class CommunicationsService implements OnModuleInit, OnApplicationShutdown {
+export class CommunicationsService
+  implements OnModuleInit, OnApplicationShutdown
+{
   private readonly logger = new Logger(CommunicationsService.name);
   private server: Server;
 
@@ -438,7 +445,10 @@ export class CommunicationsService implements OnModuleInit, OnApplicationShutdow
         ]);
       } catch (err) {
         this.logger.error('Failed to update call/log on accept:', err);
-        return { success: false, error: 'Internal server error during call accept' };
+        return {
+          success: false,
+          error: 'Internal server error during call accept',
+        };
       }
 
       this.server.to(`call_${callId}`).emit('call_accepted', {
@@ -583,19 +593,23 @@ export class CommunicationsService implements OnModuleInit, OnApplicationShutdow
     return message;
   }
 
-  async updateCallLocation(callId: string, latitude: number, longitude: number) {
+  async updateCallLocation(
+    callId: string,
+    latitude: number,
+    longitude: number,
+  ) {
     const call = await this.prisma.call.findUnique({ where: { id: callId } });
     if (!call) return;
-    
+
     await this.prisma.call.update({
       where: { id: callId },
-      data: { latitude, longitude }
+      data: { latitude, longitude },
     });
 
     if (call.log_id) {
       await this.prisma.log.update({
         where: { id: call.log_id },
-        data: { latitude, longitude }
+        data: { latitude, longitude },
       });
     }
   }

@@ -209,7 +209,9 @@ export class LogsService {
       where: { id: userId },
       include: { user_roles: { include: { role: true } } },
     });
-    const isAdmin = userRecord?.user_roles?.some((ur) => ur.role.name === 'admin');
+    const isAdmin = userRecord?.user_roles?.some(
+      (ur) => ur.role.name === 'admin',
+    );
 
     if (
       !isAdmin &&

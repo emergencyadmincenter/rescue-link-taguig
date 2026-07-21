@@ -68,7 +68,11 @@ export default function LocationPanel({
 
   return (
     <div className="flex flex-col h-full w-full min-h-[500px]">
-      <MapComponent latitude={parsedLat} longitude={parsedLng} channels={channels} />
+      <MapComponent
+        latitude={parsedLat}
+        longitude={parsedLng}
+        channels={channels}
+      />
     </div>
   );
 }

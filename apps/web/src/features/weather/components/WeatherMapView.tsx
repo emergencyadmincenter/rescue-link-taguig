@@ -123,7 +123,7 @@ function MapResizer({ isFullScreen }: { isFullScreen?: boolean }) {
 
   // Extra safety fallback to ensure tiles render properly after a full-screen transition
   useEffect(() => {
-    if (typeof isFullScreen !== 'undefined') {
+    if (typeof isFullScreen !== "undefined") {
       const t1 = setTimeout(() => map.invalidateSize(), 150);
       const t2 = setTimeout(() => map.invalidateSize(), 400);
       return () => {
@@ -226,13 +226,16 @@ export default function WeatherMapView({
       setIsFullScreen(document.fullscreenElement === mapContainerRef.current);
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
       mapContainerRef.current?.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message}`,
+        );
       });
     } else {
       document.exitFullscreen();
@@ -433,7 +436,8 @@ export default function WeatherMapView({
           const w = findWeatherForFeature(feature.properties.name);
           if (w) {
             if (w.severity === "severe") severe++;
-            else if (w.severity === "warning" || w.severity === "advisory") advisory++;
+            else if (w.severity === "warning" || w.severity === "advisory")
+              advisory++;
             else normal++;
           } else {
             noDataCount++;
@@ -584,9 +588,13 @@ export default function WeatherMapView({
             className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
             title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
           >
-            {isFullScreen ? <FiMinimize className="w-5 h-5" /> : <FiMaximize className="w-5 h-5" />}
+            {isFullScreen ? (
+              <FiMinimize className="w-5 h-5" />
+            ) : (
+              <FiMaximize className="w-5 h-5" />
+            )}
           </button>
-          
+
           <MapContainer
             center={TAGUIG_CENTER}
             zoom={DEFAULT_ZOOM}

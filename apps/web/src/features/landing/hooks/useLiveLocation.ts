@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
 
-const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+const getDistanceInMeters = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
   const R = 6371e3; // Earth radius in meters
   const p1 = (lat1 * Math.PI) / 180;
   const p2 = (lat2 * Math.PI) / 180;
@@ -17,14 +22,15 @@ const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: num
 export const useLiveLocation = (
   socket: Socket | null,
   callId: string,
-  isActive: boolean
+  isActive: boolean,
 ) => {
   const lastLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!socket || !callId || !isActive || !("geolocation" in navigator)) return;
+    if (!socket || !callId || !isActive || !("geolocation" in navigator))
+      return;
 
     let isTracking = true;
 
@@ -37,16 +43,20 @@ export const useLiveLocation = (
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           lastLocationRef.current = { lat, lng };
-          socket.emit("update_location", { callId, latitude: lat, longitude: lng });
+          socket.emit("update_location", {
+            callId,
+            latitude: lat,
+            longitude: lng,
+          });
         },
         (err) => console.warn("Initial live location error:", err),
-        { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 }
+        { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
       );
 
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           if (!isTracking) return;
-          
+
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const accuracy = position.coords.accuracy;
@@ -59,7 +69,7 @@ export const useLiveLocation = (
               lastLocationRef.current.lat,
               lastLocationRef.current.lng,
               lat,
-              lng
+              lng,
             );
 
             // Ignore jitter (movements less than 5 meters)
@@ -67,21 +77,25 @@ export const useLiveLocation = (
           }
 
           lastLocationRef.current = { lat, lng };
-          socket.emit("update_location", { callId, latitude: lat, longitude: lng });
+          socket.emit("update_location", {
+            callId,
+            latitude: lat,
+            longitude: lng,
+          });
         },
         (err) => {
           console.warn("Live location watch error:", err);
           // Intelligent retry if it's not a hard denial (e.g., timeout or generic error)
           if (err.code !== err.PERMISSION_DENIED && isTracking) {
-             retryTimeoutRef.current = setTimeout(() => {
-               if (watchIdRef.current !== null) {
-                 navigator.geolocation.clearWatch(watchIdRef.current);
-               }
-               startTracking();
-             }, 10000);
+            retryTimeoutRef.current = setTimeout(() => {
+              if (watchIdRef.current !== null) {
+                navigator.geolocation.clearWatch(watchIdRef.current);
+              }
+              startTracking();
+            }, 10000);
           }
         },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 },
       );
     };
 

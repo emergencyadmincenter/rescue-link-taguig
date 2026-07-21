@@ -44,7 +44,7 @@ export class AuthController {
     // Set HTTP-only cookie
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
-    
+
     response.cookie('access_token', result.token, {
       httpOnly: true,
       secure: isProduction,
