@@ -117,6 +117,7 @@ export interface CreateLogPayload {
   longitude?: number;
   resource_ids?: string[];
   channels?: string[];
+  status?: LogStatus;
 }
 
 export interface UpdateLogPayload {

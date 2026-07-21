@@ -170,6 +170,7 @@ export default function CallSessionPage() {
             <LocationPanel
               latitude={log.latitude ?? null}
               longitude={log.longitude ?? null}
+              channels={log.channels}
             />
           </div>
         </div>

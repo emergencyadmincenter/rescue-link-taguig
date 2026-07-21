@@ -24,6 +24,8 @@ import { logsApi } from "../api/logs.api";
 import { Resource, CreateLogPayload } from "../types/logs.types";
 import { toast } from "react-hot-toast";
 import SelectorDialog, { SelectorOption } from "./SelectorDialog";
+import StatusSelector from "./StatusSelector";
+import { LogStatus } from "../types/logs.types";
 
 interface ManualLogDialogProps {
   isOpen: boolean;
@@ -80,6 +82,7 @@ export default function ManualLogDialog({
   const [contact, setContact] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
+  const [status, setStatus] = useState<LogStatus>("active");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -113,6 +116,7 @@ export default function ManualLogDialog({
       setContact("");
       setAddress("");
       setDescription("");
+      setStatus("active");
       setSelectedNeeds([]);
       setSelectedChannels([]);
       setErrors({});
@@ -147,6 +151,7 @@ export default function ManualLogDialog({
           selectedChannels.length > 0
             ? selectedChannels.map((c) => c.label)
             : undefined,
+        status,
       };
       await logsApi.createLog(payload);
       toast.success("Emergency log created successfully");
@@ -173,11 +178,12 @@ export default function ManualLogDialog({
           className="bg-white rounded-lg shadow-xl w-full max-w-[420px] flex flex-col max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100 shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <FiAlertCircle className="w-[18px] h-[18px] text-gray-700" />
               <h2 className="title-small text-gray-900">Add Log Emergency</h2>
             </div>
+            <StatusSelector currentStatus={status} onStatusChange={setStatus} />
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">

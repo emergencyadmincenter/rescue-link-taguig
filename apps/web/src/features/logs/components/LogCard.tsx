@@ -2,11 +2,14 @@
 
 import { Log } from "../types/logs.types";
 import StatusBadge from "./StatusBadge";
+import StatusSelector from "./StatusSelector";
 import { SOURCE_CONFIG } from "../constants/logs.constants";
+import { LogStatus } from "../types/logs.types";
 
 interface LogCardProps {
   log: Log;
   onClick: (id: string) => void;
+  onStatusChange?: (id: string, status: LogStatus) => void;
   isActive?: boolean;
 }
 
@@ -24,39 +27,47 @@ function formatTimeAgo(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-export default function LogCard({ log, onClick, isActive }: LogCardProps) {
+export default function LogCard({ log, onClick, onStatusChange, isActive }: LogCardProps) {
   return (
-    <button
+    <div
       onClick={() => onClick(log.id)}
-      className={`w-full text-left py-4 px-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') onClick(log.id); }}
+      className={`w-full text-left py-4 px-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
         isActive ? "bg-gray-50" : ""
       }`}
     >
-      <div className="flex items-start justify-between mb-1.5">
+      <div className="flex items-start justify-between mb-2">
         <StatusBadge status={log.status} />
-        <span className="body-xsmall text-gray-400">
+        <span className="body-xsmall text-gray-400 shrink-0 ml-2 pt-0.5">
           {formatTimeAgo(log.created_at)}
         </span>
       </div>
 
-      <h3 className="body-medium font-bold text-gray-900 mb-1 truncate group-hover:text-primary transition-colors">
+      <h3 className="body-medium font-bold text-gray-900 truncate transition-colors mb-1">
         {log.caller_name || "Unknown Caller"}
       </h3>
 
       {log.description && (
-        <p className="body-small text-gray-500 truncate mb-2">
+        <p className="body-small text-gray-500 truncate mb-3">
           {log.description}
         </p>
       )}
 
-      <div className="flex items-center justify-between mt-3">
-        <span className="body-xsmall text-gray-400 truncate">
-          Coordinator: {log.assigned_coordinator?.name || "Unassigned"}
-        </span>
-        <span className="body-xsmall font-medium text-gray-500 shrink-0 ml-4">
-          ID: {log.reference_no}
-        </span>
+      <div className="flex items-end justify-between mt-2 pt-2 border-t border-gray-100/50">
+        <div className="flex flex-col gap-0.5 min-w-0 pr-3">
+          <span className="body-xsmall text-gray-400 truncate">
+            Coord: {log.assigned_coordinator?.name || "Unassigned"}
+          </span>
+        </div>
+        
+        <div className="shrink-0 flex items-center">
+          <span className="text-[10px] font-mono text-gray-500 font-medium px-1.5 py-0.5 rounded-md bg-gray-100/80 border border-gray-200/50">
+            {log.reference_no}
+          </span>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }

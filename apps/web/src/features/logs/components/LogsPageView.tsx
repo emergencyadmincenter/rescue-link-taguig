@@ -15,7 +15,7 @@ import { useAuth } from "@/providers/AuthProvider";
 
 export default function LogsPageView() {
   const router = useRouter();
-  const { logs, loading, params, updateParams, statusCounts, refresh } =
+  const { logs, loading, meta, params, updateParams, statusCounts, refresh } =
     useLogs();
   const { user } = useAuth();
 
@@ -98,12 +98,32 @@ export default function LogsPageView() {
       </div>
 
       {/* Main Content Area (Scrollable List) */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-2">
+      <div className="flex-1 overflow-y-auto custom-scrollbar border-t border-gray-100 pt-2 pb-10">
         <LogList
           logs={logs}
           loading={loading}
           onLogClick={(id) => router.push(`/logs/${id}`)}
+          onStatusChange={async (id, status) => {
+            try {
+              await logsApi.updateLog(id, { status });
+              refresh();
+            } catch (err) {
+              console.error("Failed to update status", err);
+            }
+          }}
         />
+        
+        {meta.page < meta.totalPages && (
+          <div className="w-full flex justify-center mt-6">
+            <button
+              onClick={() => updateParams({ limit: (params.limit || 20) + 20 })}
+              disabled={loading}
+              className="px-6 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl font-medium text-sm transition-colors border border-gray-200 shadow-sm disabled:opacity-50"
+            >
+              {loading ? "Loading..." : "Load More Logs"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Dialogs */}

@@ -30,7 +30,7 @@ export class CommunicationsService
   implements OnModuleInit, OnApplicationShutdown
 {
   private readonly logger = new Logger(CommunicationsService.name);
-  private server: Server;
+  private server!: Server;
 
   private coordinators = new Map<string, CoordinatorPresence>();
   private activeRoutings = new Map<string, RoutingState>();
@@ -65,7 +65,7 @@ export class CommunicationsService
     this.server = server;
   }
 
-  async onApplicationShutdown() {
+  onApplicationShutdown() {
     this.logger.log('Graceful shutdown: clearing active routing timeouts');
     for (const state of this.activeRoutings.values()) {
       if (state.timerId) {
@@ -98,7 +98,7 @@ export class CommunicationsService
     this.logger.log(
       `Coordinator ${userId} connected (Socket: ${socket.id}) with status ${initialStatus}`,
     );
-    socket.join(`coordinator_${userId}`);
+    void socket.join(`coordinator_${userId}`);
     this.server.emit('coordinator_status_change', {
       userId,
       status: initialStatus,
@@ -140,7 +140,7 @@ export class CommunicationsService
               ),
             );
 
-          this.routeNext(callId);
+          void this.routeNext(callId);
         }
       }
 
@@ -206,57 +206,60 @@ export class CommunicationsService
   handleResidentDisconnect(callId: string) {
     this.logger.log(`Handling resident disconnect for Call ${callId}`);
 
-    const timer = setTimeout(async () => {
-      this.pendingTimeouts.delete(timer);
-      // Give resident 5 seconds to reconnect
-      const room = this.server.sockets.adapter.rooms.get(`call_${callId}`);
-      // Find if there are any resident sockets left
-      let hasResident = false;
-      if (room) {
-        for (const socketId of room) {
-          const client = this.server.sockets.sockets.get(socketId);
-          if (client && client.data.role === 'resident') {
-            hasResident = true;
-            break;
+    const timer = setTimeout(() => {
+      void (async () => {
+        this.pendingTimeouts.delete(timer);
+        // Give resident 5 seconds to reconnect
+        const room = this.server.sockets.adapter.rooms.get(`call_${callId}`);
+        // Find if there are any resident sockets left
+        let hasResident = false;
+        if (room) {
+          for (const socketId of room) {
+            const client = this.server.sockets.sockets.get(socketId);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if (client && client.data?.role === 'resident') {
+              hasResident = true;
+              break;
+            }
           }
         }
-      }
 
-      if (!hasResident) {
-        this.logger.log(`Resident abandoned Call ${callId}. Cleaning up.`);
-        const state = this.activeRoutings.get(callId);
+        if (!hasResident) {
+          this.logger.log(`Resident abandoned Call ${callId}. Cleaning up.`);
+          const state = this.activeRoutings.get(callId);
 
-        if (state) {
-          if (state.timerId) clearTimeout(state.timerId);
-          this.activeRoutings.delete(callId);
+          if (state) {
+            if (state.timerId) clearTimeout(state.timerId);
+            this.activeRoutings.delete(callId);
 
-          this.prisma.call
-            .update({
+            this.prisma.call
+              .update({
+                where: { id: callId },
+                data: { status: 'missed', ended_at: new Date() },
+              })
+              .catch((err) =>
+                this.logger.error('Failed to cleanup abandoned call:', err),
+              );
+
+            if (state.assignedCoordinatorId) {
+              this.server
+                .to(`coordinator_${state.assignedCoordinatorId}`)
+                .emit('call_ended', { callId, endedBy: 'system' });
+            }
+          } else {
+            // It might have been accepted already
+            const call = await this.prisma.call.findUnique({
               where: { id: callId },
-              data: { status: 'missed', ended_at: new Date() },
-            })
-            .catch((err) =>
-              this.logger.error('Failed to cleanup abandoned call:', err),
-            );
-
-          if (state.assignedCoordinatorId) {
-            this.server
-              .to(`coordinator_${state.assignedCoordinatorId}`)
-              .emit('call_ended', { callId, endedBy: 'system' });
-          }
-        } else {
-          // It might have been accepted already
-          const call = await this.prisma.call.findUnique({
-            where: { id: callId },
-          });
-          if (call && call.status === 'active') {
-            this.endCall(callId, 'resident');
-            this.server
-              .to(`call_${callId}`)
-              .emit('call_ended', { callId, endedBy: 'resident' });
+            });
+            if (call && call.status === 'active') {
+              void this.endCall(callId, 'resident');
+              this.server
+                .to(`call_${callId}`)
+                .emit('call_ended', { callId, endedBy: 'resident' });
+            }
           }
         }
-      }
+      })();
     }, 5000);
     this.pendingTimeouts.add(timer);
   }
@@ -268,7 +271,7 @@ export class CommunicationsService
           clearTimeout(state.timerId);
           state.timerId = undefined;
         }
-        this.routeNext(callId);
+        void this.routeNext(callId);
       }
     }
   }
@@ -295,7 +298,7 @@ export class CommunicationsService
     return Array.from(available);
   }
 
-  async startRouting(
+  startRouting(
     callId: string,
     communicationMethod: 'voice' | 'chat',
     logId: string,
@@ -313,7 +316,7 @@ export class CommunicationsService
       startTime: Date.now(),
     });
 
-    this.routeNext(callId);
+    void this.routeNext(callId);
   }
 
   private async routeNext(callId: string) {
@@ -350,7 +353,9 @@ export class CommunicationsService
         this.logger.log(
           `No available coordinators for Call ${callId}, retrying in 5s...`,
         );
-        state.timerId = setTimeout(() => this.routeNext(callId), 5000);
+        state.timerId = setTimeout(() => {
+          void this.routeNext(callId);
+        }, 5000);
         return;
       }
     }
@@ -395,7 +400,7 @@ export class CommunicationsService
           this.logger.error('Failed to clear coordinator on timeout:', err),
         );
 
-      this.routeNext(callId);
+      void this.routeNext(callId);
     }, 30000);
   }
 

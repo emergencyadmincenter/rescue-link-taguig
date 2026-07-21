@@ -6,15 +6,15 @@ export class CreatePermissionDto {
   @Matches(/^[a-z0-9_]+:[a-z0-9_]+$/, {
     message: 'Name must follow resource:action format (e.g., users:view)',
   })
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
-  resource: string;
+  resource!: string;
 
   @IsString()
   @IsNotEmpty()
-  action: string;
+  action!: string;
 
   @IsString()
   @IsOptional()

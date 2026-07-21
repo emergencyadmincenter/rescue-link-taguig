@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSocket } from "@/lib/socket";
-import { FiLoader, FiPhoneCall, FiAlertCircle } from "react-icons/fi";
+import { FiLoader, FiPhoneCall, FiAlertCircle, FiRadio } from "react-icons/fi";
 import ActiveSOSView from "./ActiveSOSView";
 import ActiveSOSChatView from "./ActiveSOSChatView";
 import { logsApi } from "@/features/logs/api/logs.api";
@@ -147,23 +147,32 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
           </>
         ) : (
           <>
-            <div className="relative mb-8">
-              <div className="w-24 h-24 bg-danger/10 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
-                <FiLoader className="w-10 h-10 text-danger animate-spin" />
+            <div className="relative mb-8 w-24 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 border-[3px] border-danger/30 rounded-full animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] z-0"></div>
+              <div
+                className="absolute inset-0 border-[3px] border-danger/20 rounded-full animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite] z-0"
+                style={{ animationDelay: "0.5s" }}
+              ></div>
+              <div
+                className="absolute inset-0 border-[3px] border-danger/10 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite] z-0"
+                style={{ animationDelay: "1s" }}
+              ></div>
+
+              <div className="w-24 h-24 bg-gradient-to-tr from-danger/20 to-danger/5 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_30px_rgba(225,29,72,0.3)] border border-danger/30 backdrop-blur-sm">
+                <FiRadio className="w-10 h-10 text-danger animate-pulse" />
               </div>
-              <div className="absolute inset-0 bg-danger/20 rounded-full animate-ping z-0"></div>
             </div>
 
             <h1 className="title-medium text-gray-900 mb-2">
               Connecting to Emergency Services...
             </h1>
-            <p className="body-medium text-gray-500">
-              Please wait while we secure a connection with an available
-              coordinator.
+            <p className="body-medium text-gray-500 min-h-[48px] flex items-center justify-center">
+              {statusMessage ||
+                "Please wait while we secure a connection with an available coordinator."}
             </p>
 
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-8 overflow-hidden">
-              <div className="bg-danger h-full rounded-full w-2/3 animate-pulse"></div>
+              <div className="bg-danger h-full rounded-full w-full origin-left animate-[pulse_2s_ease-in-out_infinite]"></div>
             </div>
           </>
         )}

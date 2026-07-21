@@ -9,15 +9,15 @@ import {
 export class CreateLogDto {
   @IsString()
   @IsNotEmpty()
-  caller_name: string;
+  caller_name!: string;
 
   @IsString()
   @IsNotEmpty()
-  caller_contact: string;
+  caller_contact!: string;
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  address!: string;
 
   @IsOptional()
   @IsString()
@@ -40,4 +40,8 @@ export class CreateLogDto {
   @IsArray()
   @IsString({ each: true })
   channels?: string[];
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

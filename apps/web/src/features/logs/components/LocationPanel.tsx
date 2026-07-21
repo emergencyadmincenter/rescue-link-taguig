@@ -26,11 +26,13 @@ const MapComponent = dynamic(() => import("./InteractiveLocationMap"), {
 interface LocationPanelProps {
   latitude?: number | string | null;
   longitude?: number | string | null;
+  channels?: string[];
 }
 
 export default function LocationPanel({
   latitude,
   longitude,
+  channels,
 }: LocationPanelProps) {
   // Coerce to numbers to handle potential stringified Decimals from the database
   const parsedLat = Number(latitude);
@@ -66,7 +68,11 @@ export default function LocationPanel({
 
   return (
     <div className="flex flex-col h-full w-full min-h-[500px]">
-      <MapComponent latitude={parsedLat} longitude={parsedLng} />
+      <MapComponent
+        latitude={parsedLat}
+        longitude={parsedLng}
+        channels={channels}
+      />
     </div>
   );
 }
