@@ -192,7 +192,6 @@ export function useWebRTC(
 
   const startCall = async () => {
     if (localStreamRef.current || isAcquiringMedia.current) return;
-
     isAcquiringMedia.current = true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -201,7 +200,6 @@ export function useWebRTC(
       });
       setLocalStream(stream);
       localStreamRef.current = stream;
-
       if (peerConnectionRef.current) {
         stream.getTracks().forEach((track) => {
           peerConnectionRef.current?.addTrack(track, stream);

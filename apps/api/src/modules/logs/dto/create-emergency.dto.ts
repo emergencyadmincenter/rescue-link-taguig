@@ -3,7 +3,7 @@ import { CommunicationMethod } from '../../../generated/prisma/client';
 
 export class CreateEmergencyDto {
   @IsEnum(CommunicationMethod)
-  communicationMethod: 'voice' | 'chat';
+  communicationMethod!: 'voice' | 'chat';
 
   @IsOptional()
   @IsNumber()
