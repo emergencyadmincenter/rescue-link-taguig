@@ -1,6 +1,6 @@
 "use client";
 
-import { Log } from "../types/logs.types";
+import { Log, LogStatus } from "../types/logs.types";
 import LogCard from "./LogCard";
 import { FiInbox } from "react-icons/fi";
 
