@@ -2,8 +2,8 @@ export class ApiResponse<T = any> {
   success!: boolean;
   data?: T;
   error?: {
-    code!: string;
-    message!: string;
+    code: string;
+    message: string;
   };
 
   private constructor(partial: Partial<ApiResponse<T>>) {
