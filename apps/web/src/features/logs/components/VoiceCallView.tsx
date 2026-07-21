@@ -7,6 +7,8 @@ import {
   FiMicOff,
   FiVideo,
   FiVideoOff,
+  FiUser,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { Call } from "../types/logs.types";
 import { CALL_STATUS_CONFIG } from "../constants/logs.constants";
@@ -63,9 +65,9 @@ export default function VoiceCallView({
       const onCallEnded = (payload: any) => {
         if (endCall) endCall();
         if (payload?.endedBy === "resident") {
-          toast("The resident ended the call.", { icon: "📞", id: "resident-ended" });
+          toast("The resident ended the call.", { icon: <FiPhoneOff className="text-danger" />, id: "resident-ended" });
         } else if (payload?.endedBy === "system") {
-          toast("The call was ended by the system.", { icon: "⚠️", id: "system-ended" });
+          toast("The call was ended by the system.", { icon: <FiAlertTriangle className="text-warning" />, id: "system-ended" });
         }
       };
       socket.on("call_ended", onCallEnded);
@@ -146,7 +148,7 @@ export default function VoiceCallView({
               <div
                 className={`w-28 h-28 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
               >
-                <span className="text-5xl">🏃</span>
+                <FiUser className={`w-14 h-14 ${isActive ? "text-success" : "text-danger"}`} />
               </div>
             </div>
 
@@ -211,7 +213,7 @@ export default function VoiceCallView({
             <div className="flex items-center gap-3">
               {/* Resident Avatar */}
               <div className="w-11 h-11 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                <span className="text-xl">🏃</span>
+                <FiUser className="w-6 h-6 text-success" />
               </div>
               <div className="flex flex-col">
                 <p className="body-medium font-bold text-foreground">Resident</p>

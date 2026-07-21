@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FiCheck, FiUser, FiPhone, FiMapPin, FiAlignLeft, FiSave, FiAlertTriangle } from "react-icons/fi";
 import { Log } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
@@ -29,8 +29,7 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
   });
 
   const [isSaving, setIsSaving] = useState(false);
-
-  const [hasAutoPopulatedId, setHasAutoPopulatedId] = useState<string | null>(null);
+  const autoPopulatedRefs = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (log) {
@@ -42,18 +41,17 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
         description: log.description || prev.description || "",
       }));
 
-      // Auto-populate address from lat/lng if not present
-      if (!log.address && log.latitude && log.longitude && !isReadOnly && hasAutoPopulatedId !== log.id) {
-        setHasAutoPopulatedId(log.id);
+      // Auto-populate address from lat/lng if not present or if it's "Unknown"
+      if ((!log.address || log.address === "Unknown") && log.latitude && log.longitude && !isReadOnly && !autoPopulatedRefs.current.has(log.id)) {
+        autoPopulatedRefs.current.add(log.id);
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${log.latitude}&lon=${log.longitude}`)
           .then(res => res.json())
           .then(data => {
             if (data && data.display_name) {
               setFormData(prev => ({
                 ...prev,
-                address: prev.address || data.display_name
+                address: (!prev.address || prev.address === "Unknown") ? data.display_name : prev.address
               }));
-              toast.success("Location auto-populated from coordinates.");
             }
           })
           .catch(err => {
@@ -61,7 +59,7 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
           });
       }
     }
-  }, [log, isReadOnly, hasAutoPopulatedId]);
+  }, [log, isReadOnly]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -11,7 +11,7 @@ import React, {
 import { useSocket } from "@/lib/socket";
 import { getCookie } from "@/lib/cookies";
 import { useRouter, usePathname } from "next/navigation";
-import { FiPhoneIncoming, FiX, FiCheck, FiMic, FiMicOff, FiPhone, FiMaximize2 } from "react-icons/fi";
+import { FiPhoneIncoming, FiX, FiCheck, FiMic, FiMicOff, FiPhone, FiMaximize2, FiUser } from "react-icons/fi";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { useWebRTC } from "@/lib/webrtc";
 
@@ -543,7 +543,7 @@ const FloatingCallWindow = ({ webrtc, activeCallId, activeCallMethod, router, so
           />
         ) : (
           <div className="w-16 h-16 rounded-full bg-danger/20 flex items-center justify-center">
-            <span className="text-3xl">🏃</span>
+            <FiUser className="w-8 h-8 text-danger" />
           </div>
         )}
         

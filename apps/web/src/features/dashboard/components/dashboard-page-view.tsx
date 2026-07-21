@@ -79,22 +79,7 @@ export function DashboardPageView() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-12 pb-8 mb-8 border-b border-gray-100 relative">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/3"></div>
         <div className="relative z-10 flex flex-col gap-2">
-          <div className="flex items-center gap-4 mb-3">
-            <span
-              className={`px-3 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider border ${isAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-info/10 text-info border-info/20"}`}
-            >
-              {isAdmin ? "Administrator Workspace" : "Coordinator Workspace"}
-            </span>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-success/5 border border-success/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-              </span>
-              <span className="text-xs text-success font-bold uppercase tracking-wider">
-                System Online
-              </span>
-            </div>
-          </div>
+
           <h1 className="text-4xl md:text-5xl text-gray-900 tracking-tight font-bold font-outfit">
             {isAdmin ? "Command Center Overview" : "Operational Readiness"}
           </h1>

@@ -165,7 +165,7 @@ export default function CallSessionPage() {
           <div
             className={`w-full h-full flex flex-col bg-background ${activeTab === "location" ? "flex" : "hidden"}`}
           >
-            <LocationPanel latitude={log.latitude ?? null} longitude={log.longitude ?? null} />
+            <LocationPanel latitude={log.latitude ?? null} longitude={log.longitude ?? null} channels={log.channels} />
           </div>
         </div>
 
