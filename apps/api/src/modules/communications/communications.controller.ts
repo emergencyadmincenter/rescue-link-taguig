@@ -67,8 +67,14 @@ export class CommunicationsController {
       log.id,
     );
 
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
     res.cookie(`resident_call_${call.id}`, 'true', {
       httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      domain: cookieDomain,
       path: '/',
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
     });

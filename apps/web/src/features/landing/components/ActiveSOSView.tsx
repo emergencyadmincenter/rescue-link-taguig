@@ -8,12 +8,12 @@ import {
   FiMicOff,
   FiVideo,
   FiVideoOff,
-  FiMessageSquare,
   FiCheck,
   FiPhone,
   FiRefreshCw,
 } from "react-icons/fi";
 import { useWebRTC } from "@/lib/webrtc";
+import { useLiveLocation } from "../hooks/useLiveLocation";
 
 interface ActiveSOSViewProps {
   callId: string;
@@ -27,13 +27,14 @@ export default function ActiveSOSView({
   socket,
 }: ActiveSOSViewProps) {
   const [isMuted, setIsMuted] = React.useState(false);
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
   const [sessionEndReason, setSessionEndReason] = React.useState<
     "resident" | "coordinator" | "system" | null
   >(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useLiveLocation(socket, callId, !sessionEndReason);
 
   const {
     startCall,
@@ -139,93 +140,69 @@ export default function ActiveSOSView({
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col animate-in fade-in">
+    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden animate-in fade-in">
       <audio key={callId} ref={audioRef} autoPlay />
 
-      {/* Header */}
-      <div className="p-4 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-          <span className="text-white text-sm font-medium">
-            Active Emergency Call
-          </span>
+      {/* Main Video Area (Resident Camera Fullscreen) */}
+      <div className="absolute inset-0 z-0 bg-gray-900">
+        {isVideoEnabled ? (
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+            style={{
+              transform: facingMode === "user" ? "scaleX(-1)" : "none",
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center">
+            <FiVideoOff className="w-16 h-16 text-white/20 mb-4" />
+            <p className="text-white/50 text-sm">Camera is disabled</p>
+          </div>
+        )}
+      </div>
+
+      {/* Floating Header Overlay */}
+      <div className="absolute top-4 sm:top-6 left-4 right-4 sm:left-6 sm:right-6 z-10 flex items-center justify-between p-3 sm:p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 relative">
+            <span className="text-white font-bold text-sm sm:text-base">
+              CC
+            </span>
+            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success border-2 border-black" />
+          </div>
+          <div>
+            <h3 className="text-white font-medium text-sm sm:text-base">
+              Command Center
+            </h3>
+            <p className="text-white/70 text-xs sm:text-sm flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+              Connected
+            </p>
+          </div>
         </div>
-        <span className="text-white/60 text-sm font-mono">
+        <div className="text-white/80 text-xs sm:text-sm font-mono bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
           {callId.slice(0, 8)}
-        </span>
-      </div>
-
-      {/* Main Video/Audio Area */}
-      <div className="flex-1 flex items-center justify-center relative">
-        <div className="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center mb-16">
-          <div className="w-24 h-24 rounded-full bg-white/20 animate-pulse flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.1)]">
-            <span className="text-white text-3xl font-bold">CC</span>
-          </div>
         </div>
-
-        {/* Local Video PIP */}
-        {isVideoEnabled && (
-          <div className="absolute bottom-32 right-4 w-28 h-40 bg-black rounded-xl overflow-hidden shadow-lg border border-white/20 z-20">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-              style={{
-                transform: facingMode === "user" ? "scaleX(-1)" : "none",
-              }}
-            />
-            <button
-              onClick={switchCamera}
-              className="absolute top-2 right-2 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 backdrop-blur-sm"
-            >
-              <FiRefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Floating Chat Overlay (if open) */}
-        {isChatOpen && (
-          <div className="absolute inset-x-4 bottom-32 top-20 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex flex-col overflow-hidden">
-            <div className="p-3 border-b border-white/20 flex justify-between items-center bg-black/40">
-              <span className="text-white font-medium text-sm">
-                Emergency Chat
-              </span>
-              <button
-                onClick={() => setIsChatOpen(false)}
-                className="text-white/60 hover:text-white"
-              >
-                <FiX />
-              </button>
-            </div>
-            <div className="flex-1 p-4 overflow-y-auto">
-              <p className="text-white/50 text-xs text-center">Chat started</p>
-              {/* Chat messages would go here */}
-            </div>
-            <div className="p-3 bg-black/40">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                className="w-full bg-white/10 text-white rounded-full px-4 py-2 text-sm outline-none placeholder:text-white/40"
-              />
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Camera Switch Button */}
+      {isVideoEnabled && (
+        <button
+          onClick={switchCamera}
+          className="absolute top-24 right-4 sm:right-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-black/70 backdrop-blur-md border border-white/10 shadow-lg transition-transform active:scale-95"
+        >
+          <FiRefreshCw className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Controls */}
-      <div className="p-6 pb-8 flex justify-center items-center gap-6 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full">
-        <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`p-4 rounded-full transition-colors ${isChatOpen ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
-        >
-          <FiMessageSquare className="w-6 h-6" />
-        </button>
-
+      <div className="absolute bottom-0 inset-x-0 p-6 pb-8 flex justify-center items-center gap-4 sm:gap-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20">
         <button
           onClick={toggleVideo}
-          className={`p-4 rounded-full transition-colors ${isVideoEnabled ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
+          className={`p-4 sm:p-5 rounded-full transition-all duration-300 shadow-lg backdrop-blur-md ${isVideoEnabled ? "bg-white/15 text-white hover:bg-white/25 border border-white/10" : "bg-danger text-white hover:bg-danger-hover"}`}
         >
           {isVideoEnabled ? (
             <FiVideo className="w-6 h-6" />
@@ -236,7 +213,7 @@ export default function ActiveSOSView({
 
         <button
           onClick={handleToggleMute}
-          className={`p-4 rounded-full transition-colors ${!isMuted ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
+          className={`p-4 sm:p-5 rounded-full transition-all duration-300 shadow-lg backdrop-blur-md ${!isMuted ? "bg-white/15 text-white hover:bg-white/25 border border-white/10" : "bg-danger text-white hover:bg-danger-hover"}`}
         >
           {!isMuted ? (
             <FiMic className="w-6 h-6" />
@@ -247,7 +224,7 @@ export default function ActiveSOSView({
 
         <button
           onClick={handleEndCall}
-          className="p-4 rounded-full bg-danger text-white hover:bg-danger-hover transition-colors shadow-lg"
+          className="p-4 sm:p-5 rounded-full bg-danger text-white hover:bg-danger-hover transition-all duration-300 shadow-[0_0_20px_rgba(225,29,72,0.4)] hover:shadow-[0_0_30px_rgba(225,29,72,0.6)] ml-2 sm:ml-4"
         >
           <FiPhone className="w-6 h-6 rotate-[135deg]" />
         </button>

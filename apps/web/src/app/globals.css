@@ -39,3 +39,29 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--primary-subtle);
 }
+
+/* --- Leaflet Map Overrides --- */
+
+.weather-map-tooltip {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  font-family: var(--font-inter), Inter, sans-serif !important;
+}
+
+.weather-map-tooltip::before {
+  border-top-color: #e5e7eb !important;
+}
+
+/* Ensure Leaflet map container respects our layout */
+.leaflet-container {
+  font-family: var(--font-inter), Inter, sans-serif;
+  z-index: 0;
+}
+
+/* High-contrast dark mode inversion for OSM tiles */
+.dark-map-tiles {
+  filter: invert(100%) hue-rotate(180deg) brightness(100%) contrast(105%) grayscale(20%);
+}

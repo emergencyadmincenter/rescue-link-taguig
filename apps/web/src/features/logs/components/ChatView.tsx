@@ -35,9 +35,12 @@ export default function ChatView({
 
     const onCallEnded = (payload: any) => {
       if (payload?.endedBy === "resident") {
-        toast("The resident ended the chat.", { icon: "💬" });
+        toast("The resident ended the chat.", { icon: "💬", id: "chat-ended" });
       } else if (payload?.endedBy === "system") {
-        toast("The chat was ended by the system.", { icon: "⚠️" });
+        toast("The chat was ended by the system.", {
+          icon: "⚠️",
+          id: "chat-ended",
+        });
       }
     };
 

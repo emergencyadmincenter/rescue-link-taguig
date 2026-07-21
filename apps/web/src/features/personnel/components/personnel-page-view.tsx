@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 import {
   FiSearch,
   FiBell,
@@ -27,6 +28,12 @@ import { PersonnelDetailDialog } from "./personnel-detail-dialog";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { usePersonnel } from "../hooks/use-personnel";
 import {
+  deactivatePersonnel,
+  reactivatePersonnel,
+  removePersonnel,
+  resendActivationEmail,
+} from "../api/personnel.api";
+import {
   PersonnelEntry as ApiPersonnelItem,
   PersonnelStatus,
 } from "../types/personnel.types";
@@ -40,6 +47,7 @@ export default function PersonnelPageView() {
     type: "deactivate" | "reactivate" | "remove";
     person: ApiPersonnelItem;
   } | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const [detailPerson, setDetailPerson] = useState<ApiPersonnelItem | null>(
@@ -63,7 +71,8 @@ export default function PersonnelPageView() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { groups, isLoading, error } = usePersonnel({
+  // `refresh` triggers a re-fetch of the personnel list (e.g. after creating a new account)
+  const { groups, isLoading, error, refresh } = usePersonnel({
     search: debouncedSearchQuery,
     status: statusFilter,
   });
@@ -179,7 +188,7 @@ export default function PersonnelPageView() {
               <FiShield className="w-4 h-4" />
               <span>Permissions</span>
             </Link>
-            
+
             <button
               onClick={() => setShowAddForm(true)}
               className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
@@ -273,8 +282,20 @@ export default function PersonnelPageView() {
                               setConfirmAction({ type: "reactivate", person });
                               setOpenMenuId(null);
                             }}
-                            onResendActivation={() => {
+                            onResendActivation={async () => {
                               setOpenMenuId(null);
+                              try {
+                                await resendActivationEmail(person.id);
+                                toast.success(
+                                  "Activation email resent successfully",
+                                );
+                              } catch (error: unknown) {
+                                toast.error(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Failed to resend activation email",
+                                );
+                              }
                             }}
                             onRemove={() => {
                               setConfirmAction({ type: "remove", person });
@@ -307,7 +328,11 @@ export default function PersonnelPageView() {
       {/* ===== Add Personnel Dialog ===== */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <AddPersonnelForm onCancel={() => setShowAddForm(false)} />
+          {/* onSuccess triggers a list refresh after the account is created */}
+          <AddPersonnelForm
+            onCancel={() => setShowAddForm(false)}
+            onSuccess={refresh}
+          />
         </div>
       )}
 
@@ -315,10 +340,12 @@ export default function PersonnelPageView() {
       {editingPerson && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <EditPersonnelForm
+            id={editingPerson.id}
             initialName={editingPerson.name}
             initialEmail={editingPerson.email}
             initialRole="Coordinator"
             onCancel={() => setEditingPerson(null)}
+            onSuccess={refresh}
           />
         </div>
       )}
@@ -341,15 +368,44 @@ export default function PersonnelPageView() {
               : "Are you sure you want to remove this personnel account? The account will be removed from the active personnel list and can no longer be reactivated."
         }
         confirmLabel={
-          confirmAction?.type === "deactivate"
-            ? "Deactivate"
-            : confirmAction?.type === "reactivate"
-              ? "Reactivate"
-              : "Remove"
+          isActionLoading
+            ? "Processing..."
+            : confirmAction?.type === "deactivate"
+              ? "Deactivate"
+              : confirmAction?.type === "reactivate"
+                ? "Reactivate"
+                : "Remove"
         }
         isDestructive={confirmAction?.type !== "reactivate"}
-        onCancel={() => setConfirmAction(null)}
-        onConfirm={() => setConfirmAction(null)}
+        onCancel={() => {
+          if (!isActionLoading) setConfirmAction(null);
+        }}
+        onConfirm={async () => {
+          if (!confirmAction || isActionLoading) return;
+          setIsActionLoading(true);
+          try {
+            if (confirmAction.type === "deactivate") {
+              await deactivatePersonnel(confirmAction.person.id);
+              toast.success("Personnel account deactivated successfully");
+            } else if (confirmAction.type === "reactivate") {
+              await reactivatePersonnel(confirmAction.person.id);
+              toast.success("Personnel account reactivated successfully");
+            } else if (confirmAction.type === "remove") {
+              await removePersonnel(confirmAction.person.id);
+              toast.success("Personnel account removed successfully");
+            }
+            refresh();
+            setConfirmAction(null);
+          } catch (error: unknown) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : `Failed to ${confirmAction.type} personnel`,
+            );
+          } finally {
+            setIsActionLoading(false);
+          }
+        }}
       />
     </>
   );

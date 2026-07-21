@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 export async function seedUsers(prisma: PrismaService) {
   const adminEmail = 'rescuelinktaguig@gmail.com';
-  const passwordHash = await bcrypt.hash('bscs3a', 10);
+  const passwordHash = await bcrypt.hash('RescueLinkTaguig_BSCS3A', 10);
 
   // Default Admin
   await prisma.user.upsert({
@@ -19,31 +19,32 @@ export async function seedUsers(prisma: PrismaService) {
     },
   });
 
-  // Coordinator 1
-  const coord1Email = 'coordinator1@rescuelink.com';
-  await prisma.user.upsert({
-    where: { email: coord1Email },
-    update: {},
-    create: {
-      name: 'Coordinator One',
-      email: coord1Email,
-      password_hash: passwordHash,
-      status: UserStatus.active,
-    },
-  });
+  // Coordinators (Development only)
+  if (process.env.NODE_ENV !== 'production') {
+    // Coordinator 1
+    await prisma.user.upsert({
+      where: { email: 'coordinator1@example.com' },
+      update: {},
+      create: {
+        name: 'Coordinator One',
+        email: 'coordinator1@example.com',
+        password_hash: passwordHash,
+        status: UserStatus.active,
+      },
+    });
 
-  // Coordinator 2
-  const coord2Email = 'coordinator2@rescuelink.com';
-  await prisma.user.upsert({
-    where: { email: coord2Email },
-    update: {},
-    create: {
-      name: 'Coordinator Two',
-      email: coord2Email,
-      password_hash: passwordHash,
-      status: UserStatus.active,
-    },
-  });
+    // Coordinator 2
+    await prisma.user.upsert({
+      where: { email: 'coordinator2@example.com' },
+      update: {},
+      create: {
+        name: 'Coordinator Two',
+        email: 'coordinator2@example.com',
+        password_hash: passwordHash,
+        status: UserStatus.active,
+      },
+    });
+  }
 
   console.log('✅ Users seeded');
 }

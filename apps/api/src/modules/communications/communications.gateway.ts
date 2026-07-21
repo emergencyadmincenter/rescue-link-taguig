@@ -235,7 +235,9 @@ export class CommunicationsGateway
       attachmentUrl?: string;
     },
   ) {
-    this.logger.log(`Received send_chat_message from ${client.id} (role: ${client.data.role}, userId: ${client.data.userId}) with callId: ${data.callId}`);
+    this.logger.log(
+      `Received send_chat_message from ${client.id} (role: ${client.data.role}, userId: ${client.data.userId}) with callId: ${data.callId}`,
+    );
     const call = await this.communicationsService.getCallDetails(data.callId);
     if (!call) {
       this.logger.log(`Send failed: Call not found`);
@@ -244,7 +246,9 @@ export class CommunicationsGateway
 
     if (client.data.role === 'coordinator') {
       if (call.coordinator_id !== client.data.userId) {
-        this.logger.log(`Send failed: Unauthorized. Call assigned to ${call.coordinator_id}, but client is ${client.data.userId}`);
+        this.logger.log(
+          `Send failed: Unauthorized. Call assigned to ${call.coordinator_id}, but client is ${client.data.userId}`,
+        );
         return {
           success: false,
           error: 'Unauthorized: Call is assigned to another coordinator',
@@ -252,7 +256,9 @@ export class CommunicationsGateway
       }
     } else {
       if (client.data.callId !== data.callId) {
-        this.logger.log(`Send failed: Unauthorized resident. Client callId ${client.data.callId} !== ${data.callId}`);
+        this.logger.log(
+          `Send failed: Unauthorized resident. Client callId ${client.data.callId} !== ${data.callId}`,
+        );
         return {
           success: false,
           error: 'Unauthorized: You have not joined this call room',
@@ -277,6 +283,37 @@ export class CommunicationsGateway
       data.text,
       data.attachmentUrl,
     );
+  }
+
+  @SubscribeMessage('update_location')
+  async handleUpdateLocation(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: { callId: string; latitude: number; longitude: number },
+  ) {
+    // Basic authorization check
+    if (client.data.role !== 'resident' || client.data.callId !== data.callId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Broadcast the new coordinates to the call room (coordinator)
+    client.to(`call_${data.callId}`).emit('location_updated', {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      updatedAt: new Date().toISOString(),
+    });
+
+    // Optionally update the DB in the background to persist the latest location
+    this.communicationsService
+      .updateCallLocation(data.callId, data.latitude, data.longitude)
+      .catch((err) => {
+        this.logger.error(
+          `Failed to update DB location for call ${data.callId}`,
+          err,
+        );
+      });
+
+    return { success: true };
   }
 
   // WebRTC Signaling

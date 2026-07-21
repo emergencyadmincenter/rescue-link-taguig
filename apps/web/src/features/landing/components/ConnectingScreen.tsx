@@ -73,23 +73,26 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
       setStatusMessage("Reconnecting...");
       const data = await logsApi.getCallDetails(callId);
       if (data && data.log && data.call) {
-         const newEmergency = await logsApi.createEmergency({
-           communicationMethod: data.call.communication_method as 'voice' | 'chat',
-           latitude: data.log.latitude,
-           longitude: data.log.longitude,
-         });
-         
-         if (newEmergency && newEmergency.id) {
-           window.location.href = `/sos/${newEmergency.id}`;
-         } else {
-           throw new Error("Failed to create new emergency request");
-         }
+        const newEmergency = await logsApi.createEmergency({
+          communicationMethod: data.call.communication_method as
+            "voice" | "chat",
+          latitude: data.log.latitude,
+          longitude: data.log.longitude,
+        });
+
+        if (newEmergency && newEmergency.id) {
+          window.location.href = `/sos/${newEmergency.id}`;
+        } else {
+          throw new Error("Failed to create new emergency request");
+        }
       } else {
-         throw new Error("Could not fetch previous call details");
+        throw new Error("Could not fetch previous call details");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to reconnect. Please try again or call 911.", { id: "reconnect-error" });
+      toast.error("Failed to reconnect. Please try again or call 911.", {
+        id: "reconnect-error",
+      });
       setStatus("missed");
       setStatusMessage("Failed to reconnect.");
     }
@@ -129,7 +132,7 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
             </h1>
             <p className="body-medium text-gray-500 mb-8">{statusMessage}</p>
 
-            <button 
+            <button
               onClick={handleTryAgain}
               className="w-full py-3 bg-danger text-white rounded-xl font-medium hover:bg-danger-hover transition-colors mb-3"
             >
@@ -145,22 +148,19 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
         ) : (
           <>
             <div className="relative mb-8">
-              <div className="w-24 h-24 bg-danger/10 rounded-full flex items-center justify-center relative z-10">
-                {status === "ringing" ? (
-                  <FiPhoneCall className="w-10 h-10 text-danger animate-pulse" />
-                ) : (
-                  <FiLoader className="w-10 h-10 text-danger animate-spin" />
-                )}
+              <div className="w-24 h-24 bg-danger/10 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
+                <FiLoader className="w-10 h-10 text-danger animate-spin" />
               </div>
-              <div className="absolute inset-0 bg-danger/5 rounded-full animate-ping z-0"></div>
+              <div className="absolute inset-0 bg-danger/20 rounded-full animate-ping z-0"></div>
             </div>
 
             <h1 className="title-medium text-gray-900 mb-2">
-              {status === "ringing"
-                ? "Finding an available coordinator..."
-                : "Connecting..."}
+              Connecting to Emergency Services...
             </h1>
-            <p className="body-medium text-gray-500">{statusMessage}</p>
+            <p className="body-medium text-gray-500">
+              Please wait while we secure a connection with an available
+              coordinator.
+            </p>
 
             <div className="w-full bg-gray-100 rounded-full h-1.5 mt-8 overflow-hidden">
               <div className="bg-danger h-full rounded-full w-2/3 animate-pulse"></div>

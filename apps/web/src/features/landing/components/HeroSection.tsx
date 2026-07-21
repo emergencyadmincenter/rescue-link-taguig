@@ -23,7 +23,7 @@ const heroStyles = `
 
 export function HeroSection({ onRequestAssistance }: HeroSectionProps) {
   return (
-    <section className="relative pt-32 pb-20 md:pt-40 md:pb-32 overflow-hidden bg-gray-50">
+    <section className="relative pt-32 pb-12 md:pt-40 md:pb-32 overflow-hidden bg-gray-50">
       <style>{heroStyles}</style>
       {/* --- BACKGROUND LAYER --- */}
       <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-40 z-0"></div>

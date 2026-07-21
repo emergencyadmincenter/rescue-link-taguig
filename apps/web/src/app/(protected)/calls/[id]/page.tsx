@@ -8,6 +8,7 @@ import { logsApi } from "@/features/logs/api/logs.api";
 import { Log, Resource, Call } from "@/features/logs/types/logs.types";
 import IncidentFormPanel from "@/features/logs/components/IncidentFormPanel";
 import CommunicationPanel from "@/features/logs/components/CommunicationPanel";
+import LocationPanel from "@/features/logs/components/LocationPanel";
 import toast from "react-hot-toast";
 
 export default function CallSessionPage() {
@@ -56,8 +57,22 @@ export default function CallSessionPage() {
     };
 
     socket.on("call_ended", onCallEnded);
+
+    const onLocationUpdated = (data: {
+      latitude: number;
+      longitude: number;
+    }) => {
+      setLog((prev) => {
+        if (!prev) return prev;
+        return { ...prev, latitude: data.latitude, longitude: data.longitude };
+      });
+    };
+
+    socket.on("location_updated", onLocationUpdated);
+
     return () => {
       socket.off("call_ended", onCallEnded);
+      socket.off("location_updated", onLocationUpdated);
     };
   }, [socket, callId]);
 
@@ -87,21 +102,31 @@ export default function CallSessionPage() {
           >
             <FiArrowLeft className="w-5 h-5 text-foreground/70 group-hover:text-foreground transition-colors" />
           </button>
-          
+
           <div className="flex items-center gap-3 border-l border-background-subtle pl-6">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isSessionActive ? 'bg-primary/10 text-primary animate-pulse' : 'bg-background text-foreground/40'}`}>
-              {log.source === "voice_call" ? <FiPhoneCall className="w-5 h-5" /> : <FiMessageSquare className="w-5 h-5" />}
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center ${isSessionActive ? "bg-primary/10 text-primary animate-pulse" : "bg-background text-foreground/40"}`}
+            >
+              {log.source === "voice_call" ? (
+                <FiPhoneCall className="w-5 h-5" />
+              ) : (
+                <FiMessageSquare className="w-5 h-5" />
+              )}
             </div>
             <div>
               <h1 className="title-medium text-foreground leading-tight">
-                {isSessionActive ? 'Active Emergency Session' : 'Emergency Session Ended'}
+                {isSessionActive
+                  ? "Active Emergency Session"
+                  : "Emergency Session Ended"}
               </h1>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-foreground/50 font-medium">
-                  {log.source === "voice_call" ? 'Voice Call' : 'Chat Session'}
+                  {log.source === "voice_call" ? "Voice Call" : "Chat Session"}
                 </span>
                 <span className="w-1 h-1 rounded-full bg-foreground/20" />
-                <span className="text-xs font-mono text-foreground/40">{call.id.slice(0, 8)}</span>
+                <span className="text-xs font-mono text-foreground/40">
+                  {call.id.slice(0, 8)}
+                </span>
               </div>
             </div>
           </div>
@@ -134,19 +159,18 @@ export default function CallSessionPage() {
       <div className="flex-1 flex flex-row overflow-hidden">
         {/* Left Panel: Toggles between Communication and Location */}
         <div className="flex-1 flex flex-col h-full bg-background border-r border-background-subtle animate-in fade-in slide-in-from-left-4 min-w-0 overflow-hidden relative">
-          <div className={`w-full h-full flex flex-col ${activeTab === "details" ? "flex" : "hidden"}`}>
+          <div
+            className={`w-full h-full flex flex-col ${activeTab === "details" ? "flex" : "hidden"}`}
+          >
             <CommunicationPanel log={log} socket={socket || undefined} />
           </div>
-          <div className={`w-full h-full items-center justify-center bg-background/50 ${activeTab === "location" ? "flex" : "hidden"}`}>
-            <div className="text-center">
-              <span className="text-4xl mb-4 block">🗺️</span>
-              <h3 className="title-medium text-foreground">
-                Location Tracking
-              </h3>
-              <p className="body-medium text-foreground/50 mt-2">
-                Map view and live location tracking will be implemented here.
-              </p>
-            </div>
+          <div
+            className={`w-full h-full flex flex-col bg-background ${activeTab === "location" ? "flex" : "hidden"}`}
+          >
+            <LocationPanel
+              latitude={log.latitude ?? null}
+              longitude={log.longitude ?? null}
+            />
           </div>
         </div>
 

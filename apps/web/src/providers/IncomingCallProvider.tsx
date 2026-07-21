@@ -11,7 +11,15 @@ import React, {
 import { useSocket } from "@/lib/socket";
 import { getCookie } from "@/lib/cookies";
 import { useRouter, usePathname } from "next/navigation";
-import { FiPhoneIncoming, FiX, FiCheck, FiMic, FiMicOff, FiPhone, FiMaximize2 } from "react-icons/fi";
+import {
+  FiPhoneIncoming,
+  FiX,
+  FiCheck,
+  FiMic,
+  FiMicOff,
+  FiPhone,
+  FiMaximize2,
+} from "react-icons/fi";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { useWebRTC } from "@/lib/webrtc";
 
@@ -29,33 +37,42 @@ export function IncomingCallProvider({
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [activeCallId, setActiveCallIdState] = useState<string | null>(null);
   const [activeLogId, setActiveLogIdState] = useState<string | null>(null);
+  const [activeCallMethod, setActiveCallMethodState] = useState<string | null>(
+    null,
+  );
   const [timeLeft, setTimeLeft] = useState(30);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const ringtoneRef = useRef<any>(null);
 
   const globalAudioRef = useRef<HTMLAudioElement>(null);
-  const webrtc = useWebRTC(socket || undefined, activeCallId || '', "coordinator");
+  const webrtc = useWebRTC(
+    socket || undefined,
+    activeCallId || "",
+    "coordinator",
+  );
 
   useEffect(() => {
-    if (activeCallId) {
+    if (activeCallId && activeCallMethod === "voice") {
       webrtc.startCall();
     } else {
       webrtc.endCall();
     }
-  }, [activeCallId]);
+  }, [activeCallId, activeCallMethod]);
 
   useEffect(() => {
     if (globalAudioRef.current) {
-      if (webrtc?.remoteStream) {
+      if (webrtc?.remoteStream && activeCallMethod === "voice") {
         globalAudioRef.current.srcObject = null;
         globalAudioRef.current.srcObject = webrtc.remoteStream;
-        globalAudioRef.current.play().catch(e => console.log("Global audio play error:", e));
+        globalAudioRef.current
+          .play()
+          .catch((e) => console.log("Global audio play error:", e));
       } else {
         globalAudioRef.current.srcObject = null;
       }
     }
-  }, [webrtc?.remoteStream]);
+  }, [webrtc?.remoteStream, activeCallMethod]);
 
   // Synchronize activeCallId with localStorage and verify its state
   useEffect(() => {
@@ -64,11 +81,19 @@ export function IncomingCallProvider({
       if (stored) {
         setActiveCallIdState(stored);
 
+        const storedMethod = localStorage.getItem("activeCallMethod");
+        if (storedMethod) setActiveCallMethodState(storedMethod);
+
         // Verify if the call is still active on the server
         logsApi
           .getCallDetails(stored)
           .then((data) => {
             const status = data?.call?.status;
+            const method = data?.call?.communication_method;
+            if (method) {
+              setActiveCallMethodState(method);
+              localStorage.setItem("activeCallMethod", method);
+            }
             if (
               status === "ended" ||
               status === "rejected" ||
@@ -76,8 +101,10 @@ export function IncomingCallProvider({
             ) {
               setActiveCallIdState(null);
               setActiveLogIdState(null);
+              setActiveCallMethodState(null);
               localStorage.removeItem("activeCallId");
               localStorage.removeItem("activeLogId");
+              localStorage.removeItem("activeCallMethod");
             }
           })
           .catch((err) => {
@@ -86,8 +113,10 @@ export function IncomingCallProvider({
             if (err?.response?.status === 404) {
               setActiveCallIdState(null);
               setActiveLogIdState(null);
+              setActiveCallMethodState(null);
               localStorage.removeItem("activeCallId");
               localStorage.removeItem("activeLogId");
+              localStorage.removeItem("activeCallMethod");
             }
           });
       }
@@ -98,9 +127,11 @@ export function IncomingCallProvider({
   }, []);
 
   const setActiveCallId = useCallback(
-    (id: string | null, logId?: string | null) => {
+    (id: string | null, logId?: string | null, method?: string | null) => {
       setActiveCallIdState(id);
       setActiveLogIdState(logId || null);
+      setActiveCallMethodState(method || null);
+
       if (id) {
         localStorage.setItem("activeCallId", id);
       } else {
@@ -110,6 +141,11 @@ export function IncomingCallProvider({
         localStorage.setItem("activeLogId", logId);
       } else {
         localStorage.removeItem("activeLogId");
+      }
+      if (method) {
+        localStorage.setItem("activeCallMethod", method);
+      } else {
+        localStorage.removeItem("activeCallMethod");
       }
     },
     [],
@@ -252,7 +288,8 @@ export function IncomingCallProvider({
 
     const callId = incomingCall.callId;
     const logId = incomingCall.logId;
-    setActiveCallId(callId, logId);
+    const method = incomingCall.communicationMethod;
+    setActiveCallId(callId, logId, method);
     setIncomingCall(null);
     router.push(`/calls/${callId}`);
   };
@@ -295,11 +332,11 @@ export function IncomingCallProvider({
       {children}
 
       {activeCallId && !pathname?.startsWith(`/calls/${activeCallId}`) && (
-        <FloatingCallWindow 
-          webrtc={webrtc} 
-          activeCallId={activeCallId} 
-          router={router} 
-          socket={socket} 
+        <FloatingCallWindow
+          webrtc={webrtc}
+          activeCallId={activeCallId}
+          router={router}
+          socket={socket}
         />
       )}
 
@@ -404,40 +441,50 @@ export const useIncomingCall = () => useContext(IncomingCallContext);
 
 const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
   const { remoteStream, hasRemoteVideo, isMuted, toggleMute, endCall } = webrtc;
-  
-  const [position, setPosition] = useState<{ x: number, y: number } | null>(null);
+
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    null,
+  );
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
 
   // Use a callback ref to guarantee the video stream is attached the exact moment the element mounts
-  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    if (node) {
-      if (remoteStream) {
-        node.srcObject = null;
-        node.srcObject = remoteStream;
-        node.play().catch(e => console.log("Floating video play error:", e));
-      } else {
-        node.srcObject = null;
+  const videoCallbackRef = useCallback(
+    (node: HTMLVideoElement | null) => {
+      if (node) {
+        if (remoteStream) {
+          node.srcObject = null;
+          node.srcObject = remoteStream;
+          node
+            .play()
+            .catch((e) => console.log("Floating video play error:", e));
+        } else {
+          node.srcObject = null;
+        }
       }
-    }
-  }, [remoteStream, hasRemoteVideo]);
+    },
+    [remoteStream, hasRemoteVideo],
+  );
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !position) {
-      setPosition({ x: window.innerWidth - 300 - 24, y: window.innerHeight - 350 - 24 });
+    if (typeof window !== "undefined" && !position) {
+      setPosition({
+        x: window.innerWidth - 300 - 24,
+        y: window.innerHeight - 350 - 24,
+      });
     }
   }, [position]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button')) return; // Ignore drag on buttons
-    
+    if (target.closest("button")) return; // Ignore drag on buttons
+
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       initialX: position?.x || 0,
-      initialY: position?.y || 0
+      initialY: position?.y || 0,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -448,7 +495,7 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
     const dy = e.clientY - dragRef.current.startY;
     setPosition({
       x: dragRef.current.initialX + dx,
-      y: dragRef.current.initialY + dy
+      y: dragRef.current.initialY + dy,
     });
   };
 
@@ -472,7 +519,7 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
       onPointerCancel={handlePointerUp}
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        cursor: isDragging ? 'grabbing' : 'grab'
+        cursor: isDragging ? "grabbing" : "grab",
       }}
       className="fixed top-0 left-0 w-72 bg-black rounded-2xl shadow-2xl z-[9999] overflow-hidden flex flex-col border border-white/10"
     >
@@ -491,13 +538,13 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
             <span className="text-3xl">🏃</span>
           </div>
         )}
-        
+
         {/* Status Overlay */}
         <div className="absolute top-3 left-3 flex items-center gap-2 bg-black/50 backdrop-blur-md px-2 py-1 rounded-md">
           <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
           <span className="text-xs font-medium text-white">Active Call</span>
         </div>
-        
+
         {/* Return to Call Button */}
         <button
           onClick={() => router.push(`/calls/${activeCallId}`)}
@@ -521,9 +568,13 @@ const FloatingCallWindow = ({ webrtc, activeCallId, router, socket }: any) => {
               : "bg-background-subtle text-foreground hover:bg-foreground/10"
           }`}
         >
-          {isMuted ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+          {isMuted ? (
+            <FiMicOff className="w-5 h-5" />
+          ) : (
+            <FiMic className="w-5 h-5" />
+          )}
         </button>
-        
+
         <button
           onClick={(e) => {
             e.stopPropagation();
