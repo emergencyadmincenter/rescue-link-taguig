@@ -4,5 +4,5 @@ export class UpdateRolePermissionsDto {
   @IsArray()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  permissionIds: string[];
+  permissionIds!: string[];
 }

@@ -85,9 +85,6 @@ export function IncomingCallProvider({
         const storedMethod = localStorage.getItem("activeCallMethod");
         if (storedMethod) setActiveCallMethodState(storedMethod);
 
-        const storedMethod = localStorage.getItem("activeCallMethod");
-        if (storedMethod) setActiveCallMethodState(storedMethod);
-
         // Verify if the call is still active on the server
         logsApi
           .getCallDetails(stored)
