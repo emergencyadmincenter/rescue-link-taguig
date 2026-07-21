@@ -1,10 +1,10 @@
-export type LogStatus = 'active' | 'dispatched' | 'resolved' | 'cancelled';
-export type LogSource = 'manual' | 'voice_call' | 'chat';
-export type CallStatus = 'ringing' | 'active' | 'ended' | 'missed' | 'rejected';
-export type MessageSenderType = 'resident' | 'coordinator' | 'system';
-export type MessageType = 'text' | 'image' | 'file';
-export type ResourceCategory = 'responder' | 'medical' | 'relief' | 'utility';
-export type CommunicationMethod = 'voice' | 'chat';
+export type LogStatus = "active" | "dispatched" | "resolved" | "cancelled";
+export type LogSource = "manual" | "voice_call" | "chat";
+export type CallStatus = "ringing" | "active" | "ended" | "missed" | "rejected";
+export type MessageSenderType = "resident" | "coordinator" | "system";
+export type MessageType = "text" | "image" | "file";
+export type ResourceCategory = "responder" | "medical" | "relief" | "utility";
+export type CommunicationMethod = "voice" | "chat";
 
 export interface User {
   id: string;
@@ -86,7 +86,7 @@ export interface LogsQueryParams {
   page?: number;
   limit?: number;
   sort_by?: string;
-  sort_order?: 'asc' | 'desc';
+  sort_order?: "asc" | "desc";
 }
 
 export interface PaginatedResponse<T> {

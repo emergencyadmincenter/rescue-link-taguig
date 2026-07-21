@@ -47,9 +47,10 @@ export default function LogsPageView() {
     [updateParams],
   );
 
-  const activeTab = params.assigned_coordinator_id === user?.id 
-    ? "my_logs" 
-    : params.status || "all";
+  const activeTab =
+    params.assigned_coordinator_id === user?.id
+      ? "my_logs"
+      : params.status || "all";
 
   const handleTabChange = (tab: string) => {
     if (tab === "my_logs") {
@@ -112,7 +113,7 @@ export default function LogsPageView() {
             }
           }}
         />
-        
+
         {meta.page < meta.totalPages && (
           <div className="w-full flex justify-center mt-6">
             <button

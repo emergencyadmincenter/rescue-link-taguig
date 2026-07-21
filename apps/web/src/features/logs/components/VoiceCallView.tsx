@@ -54,7 +54,14 @@ export default function VoiceCallView({
   }, []);
 
   const { webrtc } = useIncomingCall();
-  const { startCall, endCall, toggleMute, isMuted, remoteStream, hasRemoteVideo } = webrtc || {};
+  const {
+    startCall,
+    endCall,
+    toggleMute,
+    isMuted,
+    remoteStream,
+    hasRemoteVideo,
+  } = webrtc || {};
 
   useEffect(() => {
     if (call?.status === "active" && startCall) {
@@ -65,9 +72,15 @@ export default function VoiceCallView({
       const onCallEnded = (payload: any) => {
         if (endCall) endCall();
         if (payload?.endedBy === "resident") {
-          toast("The resident ended the call.", { icon: <FiPhoneOff className="text-danger" />, id: "resident-ended" });
+          toast("The resident ended the call.", {
+            icon: <FiPhoneOff className="text-danger" />,
+            id: "resident-ended",
+          });
         } else if (payload?.endedBy === "system") {
-          toast("The call was ended by the system.", { icon: <FiAlertTriangle className="text-warning" />, id: "system-ended" });
+          toast("The call was ended by the system.", {
+            icon: <FiAlertTriangle className="text-warning" />,
+            id: "system-ended",
+          });
         }
       };
       socket.on("call_ended", onCallEnded);
@@ -77,22 +90,25 @@ export default function VoiceCallView({
     }
   }, [call?.status, socket, startCall, endCall]);
 
-  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    if (node) {
-      if (remoteStream) {
-        node.srcObject = null;
-        node.srcObject = remoteStream;
-        node.play().catch(e => console.log("Video play error:", e));
-      } else {
-        node.srcObject = null;
+  const videoCallbackRef = useCallback(
+    (node: HTMLVideoElement | null) => {
+      if (node) {
+        if (remoteStream) {
+          node.srcObject = null;
+          node.srcObject = remoteStream;
+          node.play().catch((e) => console.log("Video play error:", e));
+        } else {
+          node.srcObject = null;
+        }
       }
-    }
-  }, [remoteStream]);
+    },
+    [remoteStream],
+  );
 
   const isActive = call?.status === "active" || call?.status === "ringing";
   const isMissed = call?.status === "missed";
   const isEnded = call?.status === "ended" || call?.status === "rejected";
-  
+
   const showVideo = hasRemoteVideo && isActive;
 
   if (!call) {
@@ -148,14 +164,18 @@ export default function VoiceCallView({
               <div
                 className={`w-28 h-28 rounded-full flex items-center justify-center ${isActive ? "bg-success/20" : "bg-danger/20"}`}
               >
-                <FiUser className={`w-14 h-14 ${isActive ? "text-success" : "text-danger"}`} />
+                <FiUser
+                  className={`w-14 h-14 ${isActive ? "text-success" : "text-danger"}`}
+                />
               </div>
             </div>
 
             <p className="title-small font-bold text-foreground">Resident</p>
 
             {(isEnded || isMissed) && (
-              <p className={`body-medium font-medium ${statusConfig.colorClass}`}>
+              <p
+                className={`body-medium font-medium ${statusConfig.colorClass}`}
+              >
                 {statusConfig.label}
               </p>
             )}
@@ -216,12 +236,18 @@ export default function VoiceCallView({
                 <FiUser className="w-6 h-6 text-success" />
               </div>
               <div className="flex flex-col">
-                <p className="body-medium font-bold text-foreground">Resident</p>
+                <p className="body-medium font-bold text-foreground">
+                  Resident
+                </p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                  <p className="text-xs font-medium text-success">Active Call</p>
+                  <p className="text-xs font-medium text-success">
+                    Active Call
+                  </p>
                   <span className="text-foreground/40 text-[10px]">•</span>
-                  <p className="text-xs font-mono text-foreground/80">{formatDuration(call.answered_at, call.ended_at)}</p>
+                  <p className="text-xs font-mono text-foreground/80">
+                    {formatDuration(call.answered_at, call.ended_at)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -236,7 +262,11 @@ export default function VoiceCallView({
                     : "bg-background/80 text-foreground hover:bg-background"
                 }`}
               >
-                {isMuted ? <FiMicOff className="w-5 h-5" /> : <FiMic className="w-5 h-5" />}
+                {isMuted ? (
+                  <FiMicOff className="w-5 h-5" />
+                ) : (
+                  <FiMic className="w-5 h-5" />
+                )}
               </button>
               <button
                 onClick={handleEndCall}

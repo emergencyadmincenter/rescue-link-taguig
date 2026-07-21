@@ -83,12 +83,13 @@ export default function LogDetailsPanel({
 }: LogDetailsPanelProps) {
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes("admin");
-  const isOwner = user && log && (
-    isAdmin ||
-    log.assigned_coordinator_id === user.id || 
-    log.created_by_coordinator_id === user.id ||
-    !log.assigned_coordinator_id
-  );
+  const isOwner =
+    user &&
+    log &&
+    (isAdmin ||
+      log.assigned_coordinator_id === user.id ||
+      log.created_by_coordinator_id === user.id ||
+      !log.assigned_coordinator_id);
   const isReadOnly = !isOwner;
 
   const [formData, setFormData] = useState({
@@ -369,7 +370,9 @@ export default function LogDetailsPanel({
             <FiChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex flex-col gap-1">
-            <h2 className="title-medium text-foreground leading-none">Incident Details</h2>
+            <h2 className="title-medium text-foreground leading-none">
+              Incident Details
+            </h2>
           </div>
         </div>
         <StatusSelector
@@ -379,7 +382,6 @@ export default function LogDetailsPanel({
         />
       </div>
 
-
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
         {isReadOnly && (
@@ -388,7 +390,9 @@ export default function LogDetailsPanel({
             <div>
               <h3 className="font-bold text-sm">View-Only Mode</h3>
               <p className="text-xs mt-0.5 opacity-90 text-warning-hover">
-                This log is currently owned by {log.assigned_coordinator?.name || "another coordinator"}. You cannot make changes to it.
+                This log is currently owned by{" "}
+                {log.assigned_coordinator?.name || "another coordinator"}. You
+                cannot make changes to it.
               </p>
             </div>
           </div>
@@ -396,7 +400,6 @@ export default function LogDetailsPanel({
         {renderMetadata()}
 
         <div className="w-full space-y-6 pb-8">
-          
           {/* Caller Information Card */}
           <section className="bg-white rounded-xl border border-background-subtle shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-background-subtle/50 bg-gray-50/50">
@@ -417,7 +420,9 @@ export default function LogDetailsPanel({
                   <input
                     type="text"
                     value={formData.caller_name}
-                    onChange={(e) => handleChange("caller_name", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("caller_name", e.target.value)
+                    }
                     disabled={isReadOnly}
                     placeholder="e.g. John Doe"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -436,7 +441,9 @@ export default function LogDetailsPanel({
                   <input
                     type="text"
                     value={formData.caller_contact}
-                    onChange={(e) => handleChange("caller_contact", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("caller_contact", e.target.value)
+                    }
                     disabled={isReadOnly}
                     placeholder="e.g. 09123456789"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -582,8 +589,6 @@ export default function LogDetailsPanel({
             </div>
           </section>
         </div>
-
-
       </div>
 
       <ConfirmationDialog

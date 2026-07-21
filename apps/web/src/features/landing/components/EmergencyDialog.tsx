@@ -26,7 +26,6 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
     }
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
@@ -93,7 +92,6 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
       >
         <div className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-white px-8 pt-10 pb-6 border-b border-gray-100/50">
           <div className="absolute top-0 right-0 w-64 h-64 bg-danger/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3"></div>
-
           <div className="flex justify-between items-start mb-2 relative z-10">
             <div className="flex items-center gap-3">
               <div className="relative flex h-4 w-4">

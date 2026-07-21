@@ -67,7 +67,6 @@ export default function CallSessionPage() {
         return { ...prev, latitude: data.latitude, longitude: data.longitude };
       });
     };
-
     socket.on("location_updated", onLocationUpdated);
 
     return () => {

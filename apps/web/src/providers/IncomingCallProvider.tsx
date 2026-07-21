@@ -81,7 +81,6 @@ export function IncomingCallProvider({
       const stored = localStorage.getItem("activeCallId");
       if (stored) {
         setActiveCallIdState(stored);
-
         const storedMethod = localStorage.getItem("activeCallMethod");
         if (storedMethod) setActiveCallMethodState(storedMethod);
 
@@ -132,7 +131,6 @@ export function IncomingCallProvider({
       setActiveCallIdState(id);
       setActiveLogIdState(logId || null);
       setActiveCallMethodState(method || null);
-
       if (id) {
         localStorage.setItem("activeCallId", id);
       } else {
@@ -589,7 +587,6 @@ const FloatingCallWindow = ({
           <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
           <span className="text-xs font-medium text-white">Active Call</span>
         </div>
-
         {/* Return to Call Button */}
         <button
           onClick={() => router.push(`/calls/${activeCallId}`)}
