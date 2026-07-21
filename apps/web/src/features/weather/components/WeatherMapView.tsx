@@ -16,6 +16,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from "react-leaflet";
+import { FiMaximize, FiMinimize } from "react-icons/fi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -108,6 +109,33 @@ const CONDITION_EMOJI: Record<string, string> = {
   thunderstorm: "⛈️",
 };
 
+// --- Sub-components ---
+
+function MapResizer({ isFullScreen }: { isFullScreen?: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    resizeObserver.observe(map.getContainer());
+    return () => resizeObserver.disconnect();
+  }, [map]);
+
+  // Extra safety fallback to ensure tiles render properly after a full-screen transition
+  useEffect(() => {
+    if (typeof isFullScreen !== "undefined") {
+      const t1 = setTimeout(() => map.invalidateSize(), 150);
+      const t2 = setTimeout(() => map.invalidateSize(), 400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+  }, [map, isFullScreen]);
+
+  return null;
+}
+
 // --- Sub-component: Map Updater (handles search → pan/zoom) ---
 
 function MapSearchHandler({
@@ -189,7 +217,30 @@ export default function WeatherMapView({
   const [colorMode, setColorMode] = useState<MapColorMode>("severity");
   const [selectedBarangay, setSelectedBarangay] =
     useState<BarangayWeather | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(document.fullscreenElement === mapContainerRef.current);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      mapContainerRef.current?.requestFullscreen().catch((err) => {
+        console.error(
+          `Error attempting to enable full-screen mode: ${err.message}`,
+        );
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   // --- Build lookup: barangay name → weather data ---
   // TODO: BACKEND — This lookup matches GeoJSON feature names to weather data.
@@ -385,7 +436,8 @@ export default function WeatherMapView({
           const w = findWeatherForFeature(feature.properties.name);
           if (w) {
             if (w.severity === "severe") severe++;
-            else if (w.severity === "warning" || w.severity === "advisory") advisory++;
+            else if (w.severity === "warning" || w.severity === "advisory")
+              advisory++;
             else normal++;
           } else {
             noDataCount++;
@@ -526,18 +578,31 @@ export default function WeatherMapView({
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Map Container */}
         <div
-          className={`mb-10 flex-1 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
-            selectedBarangay ? "hidden lg:block" : ""
-          }`}
+          ref={mapContainerRef}
+          className={`mb-10 flex-1 overflow-hidden border border-gray-200 shadow-sm relative z-0 ${
+            selectedBarangay && !isFullScreen ? "hidden lg:block" : ""
+          } rounded-xl bg-white min-h-[600px] ${!isFullScreen ? "h-[70vh]" : ""}`}
         >
+          <button
+            onClick={toggleFullScreen}
+            className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
+            title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+          >
+            {isFullScreen ? (
+              <FiMinimize className="w-5 h-5" />
+            ) : (
+              <FiMaximize className="w-5 h-5" />
+            )}
+          </button>
+
           <MapContainer
             center={TAGUIG_CENTER}
             zoom={DEFAULT_ZOOM}
-            className="h-full w-full"
-            style={{ minHeight: "600px", height: "70vh" }}
+            className="w-full h-full z-0 absolute inset-0"
             scrollWheelZoom={true}
             zoomControl={true}
           >
+            <MapResizer isFullScreen={isFullScreen} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -566,7 +631,7 @@ export default function WeatherMapView({
         </div>
 
         {/* Detail Side Panel — shows the WeatherCard for the clicked barangay */}
-        {selectedBarangay && (
+        {selectedBarangay && !isFullScreen && (
           <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0 animate-fade-in">
             <div className="flex items-center justify-between mb-2">
               <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">

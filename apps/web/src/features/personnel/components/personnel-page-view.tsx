@@ -188,7 +188,7 @@ export default function PersonnelPageView() {
               <FiShield className="w-4 h-4" />
               <span>Permissions</span>
             </Link>
-            
+
             <button
               onClick={() => setShowAddForm(true)}
               className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
@@ -286,9 +286,15 @@ export default function PersonnelPageView() {
                               setOpenMenuId(null);
                               try {
                                 await resendActivationEmail(person.id);
-                                toast.success("Activation email resent successfully");
+                                toast.success(
+                                  "Activation email resent successfully",
+                                );
                               } catch (error: unknown) {
-                                toast.error(error instanceof Error ? error.message : "Failed to resend activation email");
+                                toast.error(
+                                  error instanceof Error
+                                    ? error.message
+                                    : "Failed to resend activation email",
+                                );
                               }
                             }}
                             onRemove={() => {
@@ -391,7 +397,11 @@ export default function PersonnelPageView() {
             refresh();
             setConfirmAction(null);
           } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : `Failed to ${confirmAction.type} personnel`);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : `Failed to ${confirmAction.type} personnel`,
+            );
           } finally {
             setIsActionLoading(false);
           }

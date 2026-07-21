@@ -48,7 +48,6 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
   const { user } = useAuth();
-
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   // Check if a nav item is active (either directly or via a child route)

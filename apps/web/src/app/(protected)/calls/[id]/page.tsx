@@ -16,7 +16,6 @@ export default function CallSessionPage() {
   const callId = params?.id as string;
   const router = useRouter();
   const { socket } = useIncomingCall() || {};
-
   const [log, setLog] = useState<Log | null>(null);
   const [call, setCall] = useState<Call | null>(null);
   const [resources, setResources] = useState<Resource[]>([]);
@@ -58,14 +57,17 @@ export default function CallSessionPage() {
     };
 
     socket.on("call_ended", onCallEnded);
-    
-    const onLocationUpdated = (data: { latitude: number; longitude: number }) => {
-      setLog(prev => {
+
+    const onLocationUpdated = (data: {
+      latitude: number;
+      longitude: number;
+    }) => {
+      setLog((prev) => {
         if (!prev) return prev;
         return { ...prev, latitude: data.latitude, longitude: data.longitude };
       });
     };
-    
+
     socket.on("location_updated", onLocationUpdated);
 
     return () => {
@@ -165,7 +167,11 @@ export default function CallSessionPage() {
           <div
             className={`w-full h-full flex flex-col bg-background ${activeTab === "location" ? "flex" : "hidden"}`}
           >
-            <LocationPanel latitude={log.latitude ?? null} longitude={log.longitude ?? null} />
+            <LocationPanel
+              latitude={log.latitude ?? null}
+              longitude={log.longitude ?? null}
+              channels={log.channels}
+            />
           </div>
         </div>
 

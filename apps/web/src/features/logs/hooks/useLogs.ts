@@ -20,12 +20,16 @@ export function useLogs(initialParams?: LogsQueryParams) {
     );
     const cacheKey = JSON.stringify(cleanParams);
 
+    const isLoadMore = currentParams.limit && params.limit && currentParams.limit > params.limit;
+
     if (logsCache[cacheKey]) {
       setLogs(logsCache[cacheKey].data);
       setMeta(logsCache[cacheKey].meta);
       // We do a background refresh without setting loading to true
     } else {
-      setLogs([]); // clear old logs to show skeleton for new data
+      if (!isLoadMore) {
+        setLogs([]); // clear old logs to show skeleton for new data only if not loading more
+      }
       setLoading(true);
     }
 
