@@ -96,7 +96,7 @@ export default function ManualLogDialog({
 
   const predefinedNeeds: SelectorOption[] = (() => {
     const fallbackLabels = new Set(
-      PREDEFINED_NEEDS_FALLBACK.map((n) => n.label.toLowerCase())
+      PREDEFINED_NEEDS_FALLBACK.map((n) => n.label.toLowerCase()),
     );
 
     const dbNeeds: SelectorOption[] = resources

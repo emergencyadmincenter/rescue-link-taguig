@@ -27,13 +27,20 @@ function formatTimeAgo(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-export default function LogCard({ log, onClick, onStatusChange, isActive }: LogCardProps) {
+export default function LogCard({
+  log,
+  onClick,
+  onStatusChange,
+  isActive,
+}: LogCardProps) {
   return (
     <div
       onClick={() => onClick(log.id)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') onClick(log.id); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onClick(log.id);
+      }}
       className={`w-full text-left py-4 px-4 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
         isActive ? "bg-gray-50" : ""
       }`}
@@ -61,7 +68,7 @@ export default function LogCard({ log, onClick, onStatusChange, isActive }: LogC
             Coord: {log.assigned_coordinator?.name || "Unassigned"}
           </span>
         </div>
-        
+
         <div className="shrink-0 flex items-center">
           <span className="text-[10px] font-mono text-gray-500 font-medium px-1.5 py-0.5 rounded-md bg-gray-100/80 border border-gray-200/50">
             {log.reference_no}

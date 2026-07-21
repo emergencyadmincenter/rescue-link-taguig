@@ -188,7 +188,6 @@ export default function PersonnelPageView() {
               <FiShield className="w-4 h-4" />
               <span>Permissions</span>
             </Link>
-
             <button
               onClick={() => setShowAddForm(true)}
               className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-center transition-colors shrink-0 text-[18px] leading-none font-light"
