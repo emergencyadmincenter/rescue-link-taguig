@@ -166,10 +166,10 @@ export default function ActiveSOSChatView({
               return (
                 <div
                   key={msg.id || idx}
-                  className={`flex flex-col ${isResident ? "items-end" : "items-start"} animate-in fade-in slide-in-from-bottom-2`}
+                  className={`flex flex-col ${isResident ? "items-end" : "items-start"} animate-in fade-in slide-in-from-bottom-2 w-full`}
                 >
                   <div
-                    className={`px-4 py-3 text-sm shadow-sm max-w-[85%] ${
+                    className={`min-w-0 break-words whitespace-pre-wrap px-4 py-3 text-sm shadow-sm max-w-[85%] sm:max-w-[80%] ${
                       isResident
                         ? "bg-primary text-white rounded-2xl rounded-tr-sm"
                         : "bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm"

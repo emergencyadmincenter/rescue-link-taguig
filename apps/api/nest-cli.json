@@ -4,6 +4,6 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["**/*.geojson"]
+    "assets": [{"include": "**/*.geojson", "watchAssets": true}]
   }
 }

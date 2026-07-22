@@ -86,8 +86,8 @@ export default function LogDetailsPanel({
   const isOwner =
     user &&
     log &&
-    (isAdmin ||
-      log.assigned_coordinator_id === user.id ||
+    !isAdmin &&
+    (log.assigned_coordinator_id === user.id ||
       log.created_by_coordinator_id === user.id ||
       !log.assigned_coordinator_id);
   const isReadOnly = !isOwner;

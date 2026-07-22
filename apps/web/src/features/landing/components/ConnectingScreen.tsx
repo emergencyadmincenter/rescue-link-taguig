@@ -88,9 +88,10 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
       } else {
         throw new Error("Could not fetch previous call details");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to reconnect. Please try again or call 911.", {
+      const errorMsg = err.message || "Failed to reconnect. Please try again or call 911.";
+      toast.error(errorMsg, {
         id: "reconnect-error",
       });
       setStatus("missed");

@@ -16,6 +16,8 @@ export class LocationValidationService implements OnModuleInit {
     try {
       const candidatePaths = [
         path.join(__dirname, '..', 'data', 'taguig-boundary.geojson'),
+        // Fallback for local development when Nest CLI does not copy assets to dist
+        path.join(process.cwd(), 'src', 'common', 'data', 'taguig-boundary.geojson'),
       ];
 
       let geojsonPath: string | null = null;
@@ -34,7 +36,7 @@ export class LocationValidationService implements OnModuleInit {
         );
       } else {
         this.logger.warn(
-          'Could not find Taguig boundary GeoJSON. Geofencing validation will be skipped (fail-open).',
+          'Could not find Taguig boundary GeoJSON. Geofencing validation will be skipped (fail-closed).',
         );
       }
     } catch (error) {
@@ -49,7 +51,8 @@ export class LocationValidationService implements OnModuleInit {
    */
   isWithinTaguig(latitude: number, longitude: number): boolean {
     if (!this.boundaryGeojson) {
-      return true; // Fail open if boundary is not loaded
+      this.logger.error('Boundary GeoJSON not loaded. Failing closed.');
+      return false; // Fail closed if boundary is not loaded
     }
 
     if (
@@ -93,7 +96,7 @@ export class LocationValidationService implements OnModuleInit {
       this.logger.error(
         `Error during Point-in-Polygon validation: ${error.message}`,
       );
-      return true; // Fail open on error
+      return false; // Fail closed on error
     }
   }
 }
