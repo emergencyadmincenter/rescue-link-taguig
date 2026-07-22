@@ -5,10 +5,15 @@ import { CommunicationsController } from './communications.controller';
 import { CommunicationsDebugController } from './communications-debug.controller';
 import { PrismaModule } from '../../database/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
+import { LocationValidationService } from '../../common/services/location-validation.service';
 
 @Module({
   imports: [PrismaModule, AuthModule],
-  providers: [CommunicationsGateway, CommunicationsService],
+  providers: [
+    CommunicationsGateway,
+    CommunicationsService,
+    LocationValidationService,
+  ],
   controllers: [CommunicationsController, CommunicationsDebugController],
   exports: [CommunicationsService],
 })
