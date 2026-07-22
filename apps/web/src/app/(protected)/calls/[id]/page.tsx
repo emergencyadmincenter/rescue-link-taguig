@@ -176,7 +176,7 @@ export default function CallSessionPage() {
 
         {/* Right Panel: Incident Details Form (ALWAYS VISIBLE) */}
         <div className="w-[320px] md:w-[350px] lg:w-[400px] shrink-0 h-full bg-white flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.05)] z-20 border-l border-background-subtle overflow-hidden">
-          <IncidentFormPanel log={log} onUpdate={setLog} />
+          <IncidentFormPanel log={log} onUpdate={setLog} isActiveSession={isSessionActive} />
         </div>
       </div>
     </div>

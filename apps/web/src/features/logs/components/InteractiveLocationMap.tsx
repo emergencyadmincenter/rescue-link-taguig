@@ -437,10 +437,13 @@ const generateMockFacilities = (
   };
 
   types.forEach((type) => {
-    // Generate 3 random locations for each type
+    // Generate 3 locations for each type deterministically
+    const latOffsets = [0.01, -0.015, 0.02, -0.01, 0.015, -0.02];
+    const lngOffsets = [0.012, 0.008, -0.018, -0.012, -0.008, 0.018];
     for (let i = 0; i < 3; i++) {
-      const latOffset = (Math.random() - 0.5) * 0.04;
-      const lngOffset = (Math.random() - 0.5) * 0.04;
+      const idx = (types.indexOf(type) * 3 + i) % latOffsets.length;
+      const latOffset = latOffsets[idx];
+      const lngOffset = lngOffsets[idx];
       const fLat = lat + latOffset;
       const fLng = lng + lngOffset;
 
@@ -578,7 +581,7 @@ export default function InteractiveLocationMap({
                 lat: data.location.latLng.lat(),
                 lng: data.location.latLng.lng(),
               });
-              setIsStreetViewActive(true); // Default to true if available
+              // We intentionally do not auto-switch to street view here to avoid interrupting the user's view
             } else {
               setHasStreetView(false);
               setStreetViewLocation(null);

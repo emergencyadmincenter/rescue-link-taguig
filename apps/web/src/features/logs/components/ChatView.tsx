@@ -153,7 +153,7 @@ export default function ChatView({
                       </div>
                     )}
                     <div
-                      className={`px-4 py-3 body-small shadow-sm ${
+                      className={`px-4 py-3 body-small shadow-sm break-words whitespace-pre-wrap max-w-full overflow-hidden ${
                         isCoordinator
                           ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
                           : "bg-background-subtle text-foreground rounded-2xl rounded-tl-sm"
@@ -193,7 +193,12 @@ export default function ChatView({
           <div className="flex items-end gap-2 mx-auto">
             <textarea
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value.length <= 1000) {
+                  setText(e.target.value);
+                }
+              }}
+              maxLength={1000}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();

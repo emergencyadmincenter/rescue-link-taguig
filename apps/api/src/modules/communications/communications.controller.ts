@@ -48,7 +48,7 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         channels: [dto.communicationMethod],
-        description: 'Auto-generated emergency log.',
+        description: '',
       },
     });
 
