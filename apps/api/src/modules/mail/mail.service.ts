@@ -16,7 +16,9 @@ export class MailService {
 
     try {
       const { data, error } = await this.resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Rescue Link Taguig <rescuelinktaguig@gmail.com>',
+        from:
+          process.env.RESEND_FROM_EMAIL ||
+          'Rescue Link Taguig <rescuelinktaguig@gmail.com>',
         to,
         subject: 'Activate Your Rescue Link Taguig Account',
         html: `
@@ -50,7 +52,9 @@ export class MailService {
       });
 
       if (error) {
-        this.logger.error(`Failed to send activation email to ${to}: ${error.message}`);
+        this.logger.error(
+          `Failed to send activation email to ${to}: ${error.message}`,
+        );
         throw new Error(error.message);
       }
 

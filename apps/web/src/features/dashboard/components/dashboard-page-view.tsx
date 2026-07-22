@@ -82,6 +82,7 @@ export function DashboardPageView() {
           <h1 className="text-4xl md:text-5xl text-gray-900 tracking-tight font-bold font-outfit">
             {isAdmin ? "Command Center Overview" : "Operational Readiness"}
           </h1>
+          <div className="divider-primary-half" />
           <p className="text-lg text-gray-500">
             {isAdmin
               ? "System-wide insights into active emergencies, resource availability, and operational statistics."

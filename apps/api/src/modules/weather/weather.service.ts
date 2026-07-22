@@ -21,22 +21,70 @@ function mapWmoCode(code: number): {
   label: string;
   severity: 'normal' | 'advisory' | 'warning' | 'severe';
 } {
-  if (code === 0) return { condition: 'sunny', label: 'Clear sky', severity: 'normal' };
-  if (code === 1) return { condition: 'sunny', label: 'Mainly clear', severity: 'normal' };
-  if (code === 2) return { condition: 'partly_cloudy', label: 'Partly cloudy', severity: 'normal' };
-  if (code === 3) return { condition: 'overcast', label: 'Overcast', severity: 'normal' };
-  if (code >= 45 && code <= 48) return { condition: 'cloudy', label: 'Fog', severity: 'advisory' };
-  if (code >= 51 && code <= 55) return { condition: 'light_rain', label: 'Drizzle', severity: 'advisory' };
-  if (code >= 56 && code <= 57) return { condition: 'light_rain', label: 'Freezing drizzle', severity: 'advisory' };
-  if (code >= 61 && code <= 63) return { condition: 'light_rain', label: 'Rain', severity: 'advisory' };
-  if (code === 65) return { condition: 'heavy_rain', label: 'Heavy rain', severity: 'warning' };
-  if (code >= 66 && code <= 67) return { condition: 'heavy_rain', label: 'Freezing rain', severity: 'warning' };
-  if (code >= 71 && code <= 77) return { condition: 'cloudy', label: 'Snow', severity: 'advisory' };
-  if (code >= 80 && code <= 81) return { condition: 'light_rain', label: 'Rain showers', severity: 'advisory' };
-  if (code === 82) return { condition: 'heavy_rain', label: 'Violent rain showers', severity: 'warning' };
-  if (code >= 85 && code <= 86) return { condition: 'cloudy', label: 'Snow showers', severity: 'advisory' };
-  if (code === 95) return { condition: 'thunderstorm', label: 'Thunderstorm', severity: 'severe' };
-  if (code >= 96 && code <= 99) return { condition: 'thunderstorm', label: 'Thunderstorm with hail', severity: 'severe' };
+  if (code === 0)
+    return { condition: 'sunny', label: 'Clear sky', severity: 'normal' };
+  if (code === 1)
+    return { condition: 'sunny', label: 'Mainly clear', severity: 'normal' };
+  if (code === 2)
+    return {
+      condition: 'partly_cloudy',
+      label: 'Partly cloudy',
+      severity: 'normal',
+    };
+  if (code === 3)
+    return { condition: 'overcast', label: 'Overcast', severity: 'normal' };
+  if (code >= 45 && code <= 48)
+    return { condition: 'cloudy', label: 'Fog', severity: 'advisory' };
+  if (code >= 51 && code <= 55)
+    return { condition: 'light_rain', label: 'Drizzle', severity: 'advisory' };
+  if (code >= 56 && code <= 57)
+    return {
+      condition: 'light_rain',
+      label: 'Freezing drizzle',
+      severity: 'advisory',
+    };
+  if (code >= 61 && code <= 63)
+    return { condition: 'light_rain', label: 'Rain', severity: 'advisory' };
+  if (code === 65)
+    return {
+      condition: 'heavy_rain',
+      label: 'Heavy rain',
+      severity: 'warning',
+    };
+  if (code >= 66 && code <= 67)
+    return {
+      condition: 'heavy_rain',
+      label: 'Freezing rain',
+      severity: 'warning',
+    };
+  if (code >= 71 && code <= 77)
+    return { condition: 'cloudy', label: 'Snow', severity: 'advisory' };
+  if (code >= 80 && code <= 81)
+    return {
+      condition: 'light_rain',
+      label: 'Rain showers',
+      severity: 'advisory',
+    };
+  if (code === 82)
+    return {
+      condition: 'heavy_rain',
+      label: 'Violent rain showers',
+      severity: 'warning',
+    };
+  if (code >= 85 && code <= 86)
+    return { condition: 'cloudy', label: 'Snow showers', severity: 'advisory' };
+  if (code === 95)
+    return {
+      condition: 'thunderstorm',
+      label: 'Thunderstorm',
+      severity: 'severe',
+    };
+  if (code >= 96 && code <= 99)
+    return {
+      condition: 'thunderstorm',
+      label: 'Thunderstorm with hail',
+      severity: 'severe',
+    };
   return { condition: 'cloudy', label: 'Unknown', severity: 'normal' };
 }
 
@@ -103,7 +151,12 @@ export class WeatherService {
    * @param barangays  Array of { id, name, latitude, longitude }
    */
   async getWeatherForBarangays(
-    barangays: { id: string; name: string; latitude: number; longitude: number }[],
+    barangays: {
+      id: string;
+      name: string;
+      latitude: number;
+      longitude: number;
+    }[],
   ): Promise<BarangayWeatherResult[]> {
     // Return cached data if still fresh
     if (this.cache && this.cache.expiresAt > Date.now()) {
@@ -111,7 +164,9 @@ export class WeatherService {
       return this.cache.data;
     }
 
-    this.logger.log(`Fetching live weather for ${barangays.length} barangays from Open-Meteo`);
+    this.logger.log(
+      `Fetching live weather for ${barangays.length} barangays from Open-Meteo`,
+    );
 
     const results = await Promise.allSettled(
       barangays.map((b) => this.fetchOneBarangay(b)),
@@ -120,7 +175,9 @@ export class WeatherService {
     const data: BarangayWeatherResult[] = results
       .map((r, i) => {
         if (r.status === 'fulfilled') return r.value;
-        this.logger.warn(`Failed to fetch weather for ${barangays[i].name}: ${r.reason}`);
+        this.logger.warn(
+          `Failed to fetch weather for ${barangays[i].name}: ${r.reason}`,
+        );
         return null;
       })
       .filter((d): d is BarangayWeatherResult => d !== null);
@@ -166,7 +223,11 @@ export class WeatherService {
         ? (json.hourly.precipitation_probability[currentHourIndex] ?? 0)
         : 0;
 
-    const { condition, label: conditionLabel, severity } = mapWmoCode(current.weather_code);
+    const {
+      condition,
+      label: conditionLabel,
+      severity,
+    } = mapWmoCode(current.weather_code);
 
     return {
       id: b.id,

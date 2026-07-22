@@ -277,7 +277,7 @@ export default function WeatherMapView({
         // TODO: BACKEND — When wired to a real source, the GeoJSON could come
         // from an API endpoint instead of a static file. Add error handling
         // for network failures and stale cache scenarios.
-        const response = await fetch("/taguig-barangays.geojson");
+        const response = await fetch("/geojsons/taguig-barangays.geojson");
 
         if (!response.ok) {
           throw new Error(`Failed to load map data (HTTP ${response.status})`);
