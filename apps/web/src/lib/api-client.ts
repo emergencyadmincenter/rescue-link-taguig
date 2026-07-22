@@ -19,6 +19,9 @@ apiClient.interceptors.response.use(
       // Check if it's our controlled custom ApiResponse format
       if (error.response.data && error.response.data.success === false && error.response.data.error?.message) {
         message = error.response.data.error.message;
+      } else if (error.response.data && error.response.data.message) {
+        // Check for standard NestJS exception format
+        message = error.response.data.message;
       } else {
         // Map generic HTTP status codes to user-friendly messages
         switch (error.response.status) {

@@ -59,6 +59,8 @@ RUN chown -R node:node /app
 # Copy runtime node_modules and compiled code
 COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
+# Manually copy the GeoJSON file since it's not bundled by the TS compiler
+COPY --chown=node:node src/common/data ./dist/src/common/data
 COPY --chown=node:node package*.json ./
 
 # Copy the Prisma schema, migrations, and AWS RDS CA certificate bundle

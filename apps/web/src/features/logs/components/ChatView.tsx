@@ -144,16 +144,16 @@ export default function ChatView({
               return (
                 <div
                   key={msg.id}
-                  className={`flex flex-col ${isCoordinator ? "items-end" : "items-start"}`}
+                  className={`flex flex-col ${isCoordinator ? "items-end" : "items-start"} w-full`}
                 >
-                  <div className="flex items-end gap-2 max-w-[80%]">
+                  <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[80%]">
                     {!isCoordinator && (
                       <div className="w-6 h-6 rounded-full bg-danger/10 flex items-center justify-center shrink-0 mb-1">
                         <FiUser className="w-3 h-3 text-danger" />
                       </div>
                     )}
                     <div
-                      className={`px-4 py-3 body-small shadow-sm break-words whitespace-pre-wrap max-w-full overflow-hidden ${
+                      className={`min-w-0 px-4 py-3 body-small shadow-sm break-words whitespace-pre-wrap max-w-full ${
                         isCoordinator
                           ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
                           : "bg-background-subtle text-foreground rounded-2xl rounded-tl-sm"
