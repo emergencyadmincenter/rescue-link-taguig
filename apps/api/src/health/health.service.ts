@@ -27,7 +27,10 @@ export class HealthService {
         uptime: process.uptime(),
       };
     } catch (error) {
-      this.logger.error('Readiness check failed: Database is unreachable', error);
+      this.logger.error(
+        'Readiness check failed: Database is unreachable',
+        error,
+      );
       throw error;
     }
   }

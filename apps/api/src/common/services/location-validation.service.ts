@@ -15,9 +15,28 @@ export class LocationValidationService implements OnModuleInit {
   private loadBoundaryGeojson() {
     try {
       const candidatePaths = [
-        path.join(process.cwd(), '..', 'web', 'public', 'geojsons', 'taguig-boundary.geojson'),
-        path.join(process.cwd(), 'apps', 'web', 'public', 'geojsons', 'taguig-boundary.geojson'),
-        path.join(process.cwd(), 'public', 'geojsons', 'taguig-boundary.geojson'),
+        path.join(
+          process.cwd(),
+          '..',
+          'web',
+          'public',
+          'geojsons',
+          'taguig-boundary.geojson',
+        ),
+        path.join(
+          process.cwd(),
+          'apps',
+          'web',
+          'public',
+          'geojsons',
+          'taguig-boundary.geojson',
+        ),
+        path.join(
+          process.cwd(),
+          'public',
+          'geojsons',
+          'taguig-boundary.geojson',
+        ),
       ];
 
       let geojsonPath: string | null = null;
@@ -31,14 +50,18 @@ export class LocationValidationService implements OnModuleInit {
       if (geojsonPath) {
         const fileContent = fs.readFileSync(geojsonPath, 'utf8');
         this.boundaryGeojson = JSON.parse(fileContent);
-        this.logger.log(`Successfully loaded Taguig boundary GeoJSON from ${geojsonPath}`);
+        this.logger.log(
+          `Successfully loaded Taguig boundary GeoJSON from ${geojsonPath}`,
+        );
       } else {
         this.logger.warn(
           'Could not find Taguig boundary GeoJSON. Geofencing validation will be skipped (fail-open).',
         );
       }
     } catch (error) {
-      this.logger.error(`Error loading Taguig boundary GeoJSON: ${error.message}`);
+      this.logger.error(
+        `Error loading Taguig boundary GeoJSON: ${error.message}`,
+      );
     }
   }
 
@@ -88,7 +111,9 @@ export class LocationValidationService implements OnModuleInit {
 
       return false;
     } catch (error) {
-      this.logger.error(`Error during Point-in-Polygon validation: ${error.message}`);
+      this.logger.error(
+        `Error during Point-in-Polygon validation: ${error.message}`,
+      );
       return true; // Fail open on error
     }
   }
