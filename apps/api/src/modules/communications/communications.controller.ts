@@ -15,6 +15,7 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { LocationValidationService } from '../../common/services/location-validation.service';
 
 @Controller('calls')
 export class CommunicationsController {
@@ -23,6 +24,7 @@ export class CommunicationsController {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly locationValidationService: LocationValidationService,
   ) {}
 
   @Post('emergency')
@@ -35,6 +37,18 @@ export class CommunicationsController {
     },
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const isInside = this.locationValidationService.isWithinTaguig(
+        dto.latitude,
+        dto.longitude,
+      );
+      if (!isInside) {
+        throw new ForbiddenException(
+          'Your location is outside Taguig City limits. Please call 911 or your local command center.',
+        );
+      }
+    }
+
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const log = await this.prisma.log.create({
@@ -48,7 +62,7 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         channels: [dto.communicationMethod],
-        description: 'Auto-generated emergency log.',
+        description: '',
       },
     });
 

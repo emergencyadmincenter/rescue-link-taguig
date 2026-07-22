@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Post, Query, Patch, Param, Delete, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Patch,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { PersonnelService } from './personnel.service';
 import { CreatePersonnelDto } from './dto/create-personnel.dto';
 import { ActivatePersonnelDto } from './dto/activate-personnel.dto';
@@ -32,7 +42,10 @@ export class PersonnelController {
   }
 
   @Patch(':id')
-  async updatePersonnel(@Param('id') id: string, @Body() dto: UpdatePersonnelDto) {
+  async updatePersonnel(
+    @Param('id') id: string,
+    @Body() dto: UpdatePersonnelDto,
+  ) {
     return this.personnelService.updatePersonnel(id, dto);
   }
 
