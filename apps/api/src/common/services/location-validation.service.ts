@@ -15,28 +15,7 @@ export class LocationValidationService implements OnModuleInit {
   private loadBoundaryGeojson() {
     try {
       const candidatePaths = [
-        path.join(
-          process.cwd(),
-          '..',
-          'web',
-          'public',
-          'geojsons',
-          'taguig-boundary.geojson',
-        ),
-        path.join(
-          process.cwd(),
-          'apps',
-          'web',
-          'public',
-          'geojsons',
-          'taguig-boundary.geojson',
-        ),
-        path.join(
-          process.cwd(),
-          'public',
-          'geojsons',
-          'taguig-boundary.geojson',
-        ),
+        path.join(__dirname, '..', 'data', 'taguig-boundary.geojson'),
       ];
 
       let geojsonPath: string | null = null;
