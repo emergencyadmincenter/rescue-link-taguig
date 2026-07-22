@@ -52,11 +52,10 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
         } else {
           throw new Error("Invalid response from server");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
-        toast.error(
-          "Failed to connect to emergency services. Please call 911 directly if possible.",
-        );
+        const errorMsg = error.message || "Failed to connect to emergency services. Please call 911 directly if possible.";
+        toast.error(errorMsg);
         setIsSubmitting(false);
       }
     };
