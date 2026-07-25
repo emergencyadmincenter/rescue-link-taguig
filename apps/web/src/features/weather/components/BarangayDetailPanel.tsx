@@ -4,7 +4,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, Legend, Ca
 import WeatherCard from './WeatherCard';
 import { BarangayWeather } from '../types/weather.types';
 import { ClusterConfig } from '../data/clusters';
-import { generateHourlyTrend, generateHistoryLog, HourlyDataPoint } from '../data/weather-detail.mock';
+import { generateHourlyTrend, generateHistoryLog, type HistoryEntry } from '../data/weather-detail.mock';
 
 type TabType = 'overview' | 'trend' | 'history';
 
