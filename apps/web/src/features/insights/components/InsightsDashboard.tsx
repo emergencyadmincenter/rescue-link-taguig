@@ -35,7 +35,7 @@ export function InsightsDashboard() {
   // UI State
   const [hiddenPanels, setHiddenPanels] = useState<Set<string>>(new Set());
   const [unreadNotifications, setUnreadNotifications] = useState<Set<string>>(new Set());
-  const [isMapMaximized, setIsMapMaximized] = useState(false);
+  const [maximizedPanel, setMaximizedPanel] = useState<string | null>(null);
 
   const [filters, setFilters] = useState({
     dateFrom: "",
@@ -69,13 +69,21 @@ export function InsightsDashboard() {
     }
   }, []);
 
-  const fetchAggregates = async () => {
+  type FilterState = typeof filters;
+
+  const fetchAggregates = useCallback(async (f: FilterState) => {
     setLoadingAggregates(true);
     try {
+      const params = {
+        dateFrom: f.dateFrom || undefined,
+        dateTo: f.dateTo || undefined,
+        barangay: f.barangay || undefined,
+        incidentCategoryId: f.incidentCategoryId || undefined,
+      };
       const [rtData, wlData, ptData, catData] = await Promise.all([
-        insightsApi.getResponseTimes(),
-        insightsApi.getWorkload(),
-        insightsApi.getPeakTimes(),
+        insightsApi.getResponseTimes(params),
+        insightsApi.getWorkload(params),
+        insightsApi.getPeakTimes(params),
         insightsApi.getIncidentCategories(),
       ]);
       setResponseTimes(rtData);
@@ -87,16 +95,16 @@ export function InsightsDashboard() {
     } finally {
       setLoadingAggregates(false);
     }
-  };
+  }, []);
 
-  const fetchIncidents = async () => {
+  const fetchIncidents = useCallback(async (f: FilterState) => {
     setLoadingIncidents(true);
     try {
       const data = await insightsApi.getIncidents({
-        dateFrom: filters.dateFrom || undefined,
-        dateTo: filters.dateTo || undefined,
-        barangay: filters.barangay || undefined,
-        incidentCategoryId: filters.incidentCategoryId || undefined,
+        dateFrom: f.dateFrom || undefined,
+        dateTo: f.dateTo || undefined,
+        barangay: f.barangay || undefined,
+        incidentCategoryId: f.incidentCategoryId || undefined,
       });
       setIncidents(data);
     } catch (error) {
@@ -104,13 +112,22 @@ export function InsightsDashboard() {
     } finally {
       setLoadingIncidents(false);
     }
-  };
+  }, []);
 
+  const fetchAll = useCallback((f: FilterState) => {
+    fetchIncidents(f);
+    fetchAggregates(f);
+  }, [fetchIncidents, fetchAggregates]);
+
+  // Socket: real-time new incident
   useEffect(() => {
     if (!socket) return;
     const handleNewIncident = () => {
-      fetchIncidents();
-      fetchAggregates();
+      // Use the latest filters via functional ref to avoid stale closure
+      setFilters((currentFilters) => {
+        fetchAll(currentFilters);
+        return currentFilters;
+      });
       playAlertSound();
 
       setHiddenPanels((currentHidden) => {
@@ -125,22 +142,17 @@ export function InsightsDashboard() {
       });
     };
     socket.on("new_incident", handleNewIncident);
-    return () => {
-      socket.off("new_incident", handleNewIncident);
-    };
-  }, [socket, playAlertSound, filters]);
+    return () => { socket.off("new_incident", handleNewIncident); };
+  }, [socket, playAlertSound, fetchAll]);
 
+  // Fetch everything whenever filters change (and on mount)
   useEffect(() => {
-    fetchAggregates();
-  }, []);
-
-  useEffect(() => {
-    fetchIncidents();
+    fetchAll(filters);
   }, [filters]);
 
   const togglePanel = (panelId: string) => {
-    if (isMapMaximized && panelId !== "map") {
-      setIsMapMaximized(false);
+    if (maximizedPanel && panelId !== maximizedPanel) {
+      setMaximizedPanel(null);
       setHiddenPanels(prev => {
         const next = new Set(prev);
         next.delete(panelId);
@@ -165,7 +177,7 @@ export function InsightsDashboard() {
         });
       } else {
         next.add(panelId);
-        if (panelId === "map") setIsMapMaximized(false);
+        if (maximizedPanel === panelId) setMaximizedPanel(null);
       }
       return next;
     });
@@ -193,18 +205,18 @@ export function InsightsDashboard() {
     {
       id: "workload",
       title: "Coordinator Workload",
-      colSpan: "xl:col-span-1",
+      colSpan: "xl:col-span-2 2xl:col-span-1",
       content: <WorkloadPanel data={workload} isLoading={loadingAggregates} />
     }
   ];
 
   const activePanels = panels.filter(p => {
-    if (isMapMaximized) return p.id === "map";
+    if (maximizedPanel) return p.id === maximizedPanel;
     return !hiddenPanels.has(p.id);
   });
   
   const collapsedPanels = panels.filter(p => {
-    if (isMapMaximized) return p.id !== "map";
+    if (maximizedPanel) return p.id !== maximizedPanel;
     return hiddenPanels.has(p.id);
   });
 
@@ -229,21 +241,23 @@ export function InsightsDashboard() {
       <div className="flex flex-1 gap-5 min-h-0 overflow-hidden">
         {/* Center Arena */}
         <div className="flex-1 overflow-y-auto pr-2 pb-5">
-          {isMapMaximized ? (
+          {maximizedPanel ? (
             <div className="h-full w-full bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0 bg-white z-10">
-                <h3 className="title-medium text-foreground m-0">Incident Map</h3>
+                <h3 className="title-medium text-foreground m-0">
+                  {panels.find(p => p.id === maximizedPanel)?.title}
+                </h3>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsMapMaximized(false)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-subtle rounded-md transition-colors" title="Minimize Map">
+                  <button onClick={() => setMaximizedPanel(null)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-subtle rounded-md transition-colors" title="Minimize Panel">
                     <Minimize size={18} />
                   </button>
-                  <button onClick={() => togglePanel("map")} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Hide Panel">
+                  <button onClick={() => togglePanel(maximizedPanel)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Hide Panel">
                     <EyeOff size={18} />
                   </button>
                 </div>
               </div>
-              <div className="flex-1 w-full relative">
-                <IncidentMapView incidents={incidents} isLoading={loadingIncidents} selectedBarangay={filters.barangay} />
+              <div className="flex-1 w-full relative overflow-hidden">
+                {panels.find(p => p.id === maximizedPanel)?.content}
               </div>
             </div>
           ) : (
@@ -256,11 +270,9 @@ export function InsightsDashboard() {
                   <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0 bg-white z-10">
                     <h3 className="title-medium text-foreground m-0">{panel.title}</h3>
                     <div className="flex items-center gap-2">
-                      {panel.id === "map" && (
-                        <button onClick={() => setIsMapMaximized(true)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-subtle rounded-md transition-colors" title="Maximize Map">
-                          <Maximize size={18} />
-                        </button>
-                      )}
+                      <button onClick={() => setMaximizedPanel(panel.id)} className="p-1.5 text-gray-400 hover:text-primary hover:bg-primary-subtle rounded-md transition-colors" title="Maximize Panel">
+                        <Maximize size={18} />
+                      </button>
                       <button onClick={() => togglePanel(panel.id)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors" title="Hide Panel">
                         <EyeOff size={18} />
                       </button>

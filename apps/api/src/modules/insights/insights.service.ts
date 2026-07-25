@@ -9,14 +9,21 @@ interface InsightsFilters {
   incidentCategoryId?: string;
 }
 
+/** Parse a bare date string (YYYY-MM-DD) as start of day in Philippine Time (UTC+8) */
+function parsePhDateStart(d: string): Date {
+  return new Date(`${d}T00:00:00+08:00`);
+}
+
+/** Parse a bare date string (YYYY-MM-DD) as end of day in Philippine Time (UTC+8) */
+function parsePhDateEnd(d: string): Date {
+  return new Date(`${d}T23:59:59.999+08:00`);
+}
+
 @Injectable()
 export class InsightsService {
   private readonly logger = new Logger(InsightsService.name);
 
-  // In-memory cache for heavy queries (10 minutes)
-  private workloadCache: { data: any; expiresAt: number } | null = null;
-  private responseTimeCache: { data: any; expiresAt: number } | null = null;
-  private readonly CACHE_TTL = 10 * 60 * 1000;
+  // Caching removed to support real-time WebSocket dashboard updates
 
   constructor(private prisma: PrismaService) {}
 
@@ -28,8 +35,8 @@ export class InsightsService {
 
     if (filters.dateFrom || filters.dateTo) {
       where.created_at = {};
-      if (filters.dateFrom) where.created_at.gte = new Date(filters.dateFrom);
-      if (filters.dateTo) where.created_at.lte = new Date(filters.dateTo);
+      if (filters.dateFrom) where.created_at.gte = parsePhDateStart(filters.dateFrom);
+      if (filters.dateTo) where.created_at.lte = parsePhDateEnd(filters.dateTo);
     }
 
     if (filters.barangay) {
@@ -66,54 +73,50 @@ export class InsightsService {
     }));
   }
 
-  async getResponseTimesByBarangay() {
-    if (this.responseTimeCache && this.responseTimeCache.expiresAt > Date.now()) {
-      return this.responseTimeCache.data;
-    }
+  async getResponseTimesByBarangay(filters: InsightsFilters = {}) {
+    const conditions: string[] = ["status = 'resolved'", "barangay IS NOT NULL"];
 
-    // Use raw query for efficient time difference aggregation
-    const result = await this.prisma.$queryRaw`
+    if (filters.dateFrom) conditions.push(`created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`);
+    if (filters.dateTo) conditions.push(`created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`);
+    if (filters.barangay) conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}'`);
+    if (filters.incidentCategoryId) conditions.push(`incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `);
+
+    const whereClause = conditions.join(' AND ');
+
+    const result = await this.prisma.$queryRawUnsafe(`
       SELECT
         barangay,
-        AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) as avg_response_time_seconds,
+        AVG(EXTRACT(EPOCH FROM (COALESCE(resolved_at, created_at) - created_at))) as avg_response_time_seconds,
         COUNT(*) as total_resolved
       FROM logs
-      WHERE status = 'resolved' AND barangay IS NOT NULL AND resolved_at IS NOT NULL
+      WHERE ${whereClause}
       GROUP BY barangay
       ORDER BY avg_response_time_seconds DESC
-    `;
+    `);
 
-    // Prisma returns BigInt for COUNT, convert to Number
-    const formattedResult = (result as any[]).map(row => ({
+    return (result as any[]).map(row => ({
       barangay: row.barangay,
       avg_response_time_seconds: Number(row.avg_response_time_seconds),
       total_resolved: Number(row.total_resolved)
     }));
-
-    this.responseTimeCache = {
-      data: formattedResult,
-      expiresAt: Date.now() + this.CACHE_TTL,
-    };
-
-    return formattedResult;
   }
 
-  async getCoordinatorWorkload() {
-    if (this.workloadCache && this.workloadCache.expiresAt > Date.now()) {
-      return this.workloadCache.data;
+  async getCoordinatorWorkload(filters: InsightsFilters = {}) {
+    const where: Prisma.LogWhereInput = { assigned_coordinator_id: { not: null } };
+    if (filters.dateFrom || filters.dateTo) {
+      where.created_at = {};
+      if (filters.dateFrom) (where.created_at as any).gte = parsePhDateStart(filters.dateFrom);
+      if (filters.dateTo) (where.created_at as any).lte = parsePhDateEnd(filters.dateTo);
     }
+    if (filters.barangay) where.barangay = filters.barangay;
+    if (filters.incidentCategoryId) where.incident_category_id = filters.incidentCategoryId;
 
     const result = await this.prisma.log.groupBy({
       by: ['assigned_coordinator_id'],
-      _count: {
-        id: true,
-      },
-      where: {
-        assigned_coordinator_id: { not: null },
-      },
+      _count: { id: true },
+      where,
     });
 
-    // Fetch user details for these coordinators
     const coordinatorIds = result.map((r) => r.assigned_coordinator_id as string);
     const users = await this.prisma.user.findMany({
       where: { id: { in: coordinatorIds } },
@@ -122,30 +125,31 @@ export class InsightsService {
 
     const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-    const formattedResult = result.map((r) => ({
+    return result.map((r) => ({
       coordinator_id: r.assigned_coordinator_id,
       coordinator_name: userMap.get(r.assigned_coordinator_id as string) || 'Unknown',
       handled_cases: r._count.id,
     })).sort((a, b) => b.handled_cases - a.handled_cases);
-
-    this.workloadCache = {
-      data: formattedResult,
-      expiresAt: Date.now() + this.CACHE_TTL,
-    };
-
-    return formattedResult;
   }
 
-  async getPeakTimes() {
-    // Note: ISODOW returns 1 (Monday) to 7 (Sunday)
-    const result = await this.prisma.$queryRaw`
+  async getPeakTimes(filters: InsightsFilters = {}) {
+    const conditions: string[] = [];
+    if (filters.dateFrom) conditions.push(`created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`);
+    if (filters.dateTo) conditions.push(`created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`);
+    if (filters.barangay) conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}' `);
+    if (filters.incidentCategoryId) conditions.push(`incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `);
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const result = await this.prisma.$queryRawUnsafe(`
       SELECT 
         EXTRACT(ISODOW FROM created_at) as day_of_week,
         EXTRACT(HOUR FROM created_at) as hour_of_day,
         COUNT(*) as count
       FROM logs
+      ${whereClause}
       GROUP BY day_of_week, hour_of_day
-    `;
+    `);
 
     return (result as any[]).map(r => ({
       dayOfWeek: Number(r.day_of_week),

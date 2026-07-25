@@ -201,11 +201,8 @@ export function IncidentMapView({ incidents, isLoading, selectedBarangay = "" }:
     return map;
   }, [incidents]);
 
-  // Max count for normalisation (avoid divide-by-zero)
-  const maxCount = useMemo(() => {
-    const vals = [...incidentCountByBarangay.values()];
-    return vals.length ? Math.max(...vals) : 1;
-  }, [incidentCountByBarangay]);
+  // Note: maxCount is no longer used for color scaling to avoid false 'red' alerts on low volume, 
+  // but kept if we want to do dynamic radius markers later.
 
   const getFeatureStyle = useCallback(
     (feature: GeoJSON.Feature | undefined): L.PathOptions => {
@@ -216,24 +213,26 @@ export function IncidentMapView({ incidents, isLoading, selectedBarangay = "" }:
         0
       );
 
-      // Green → Yellow → Red intensity based on incident density
-      let fillColor = "#10b981"; // low / none
-      if (count > 0) {
-        const ratio = count / maxCount;
-        if (ratio < 0.33) fillColor = "#10b981";       // green
-        else if (ratio < 0.66) fillColor = "#f59e0b";  // amber
-        else fillColor = "#ef4444";                     // red
+      // Real-world practical absolute scale:
+      // Green = 1-4 incidents, Amber = 5-9 incidents, Red = 10+ incidents
+      let fillColor = "#10b981"; // default/none
+      if (count >= 10) {
+        fillColor = "#ef4444"; // red
+      } else if (count >= 5) {
+        fillColor = "#f59e0b"; // amber
+      } else if (count >= 1) {
+        fillColor = "#10b981"; // green
       }
 
       return {
         fillColor,
         weight: 1.5,
         color: "#6b7280",
-        fillOpacity: count > 0 ? 0.55 : 0.2,
+        fillOpacity: count > 0 ? 0.6 : 0.2,
         dashArray: "",
       };
     },
-    [incidentCountByBarangay, maxCount]
+    [incidentCountByBarangay]
   );
 
   const onEachFeature = useCallback(
@@ -298,9 +297,9 @@ export function IncidentMapView({ incidents, isLoading, selectedBarangay = "" }:
       <div className="absolute bottom-6 left-3 z-[400] bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-2.5 shadow-sm text-xs space-y-1.5">
         <p className="font-semibold text-gray-600 mb-1">Incident Density</p>
         {[
-          { color: "#ef4444", label: "High" },
-          { color: "#f59e0b", label: "Medium" },
-          { color: "#10b981", label: "Low / None" },
+          { color: "#ef4444", label: "High (10+)" },
+          { color: "#f59e0b", label: "Medium (5-9)" },
+          { color: "#10b981", label: "Low (1-4)" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-sm border border-gray-300 shrink-0" style={{ backgroundColor: item.color }} />

@@ -39,17 +39,14 @@ export function PeakTimePatterns({ data, isLoading }: Props) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm h-full flex flex-col">
-        <h3 className="title-medium mb-md text-foreground">Peak Time Patterns</h3>
+      <div className="flex flex-col h-full w-full">
         <div className="animate-pulse flex-1 bg-gray-100 rounded-md"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm flex flex-col h-full">
-      <h3 className="title-medium mb-md text-foreground shrink-0">Peak Time Patterns</h3>
-      
+    <div className="flex flex-col h-full w-full">
       <div className="flex-1 overflow-x-auto">
         <div className="min-w-[700px] flex">
           {/* Y Axis Labels (Days) */}

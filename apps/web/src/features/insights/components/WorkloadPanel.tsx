@@ -22,8 +22,7 @@ export function WorkloadPanel({ data, isLoading }: Props) {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm h-full">
-        <h3 className="title-medium mb-md text-foreground">Personnel Workload</h3>
+      <div className="flex flex-col h-full w-full">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-12 bg-gray-200 rounded w-full"></div>
@@ -35,18 +34,15 @@ export function WorkloadPanel({ data, isLoading }: Props) {
 
   if (!data.length) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm h-full">
-        <h3 className="title-medium mb-md text-foreground">Personnel Workload</h3>
-        <p className="text-gray-500 text-center py-xl">No workload data available.</p>
+      <div className="flex flex-col h-full w-full items-center justify-center">
+        <p className="text-gray-500 text-center">No workload data available.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm flex flex-col h-full overflow-hidden">
-      <h3 className="title-medium mb-md text-foreground shrink-0">Coordinator Workload</h3>
-      
-      <div className="flex flex-col xl:flex-row gap-6 flex-1 min-h-0 overflow-y-auto pr-2">
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      <div className="flex flex-col gap-6 flex-1 min-h-0 overflow-y-auto pr-2">
         {/* Compact Table */}
         <div className="flex-1 min-w-[200px]">
           <table className="w-full text-left border-collapse">
@@ -72,7 +68,7 @@ export function WorkloadPanel({ data, isLoading }: Props) {
         </div>
 
         {/* Horizontal Bar Chart */}
-        <div className="flex-1 min-w-[200px] h-[250px] xl:h-full">
+        <div className="w-full min-h-[250px] flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -80,7 +76,7 @@ export function WorkloadPanel({ data, isLoading }: Props) {
               margin={{ top: 5, right: 20, left: -20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_COLORS.grid} />
-              <XAxis type="number" tick={{ fontSize: 12, fill: CHART_COLORS.axisText }} />
+              <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: CHART_COLORS.axisText }} />
               <YAxis 
                 type="category" 
                 dataKey="name" 

@@ -56,6 +56,7 @@ export interface Log {
   caller_name: string | null;
   caller_contact: string | null;
   address: string | null;
+  barangay: string | null;
   latitude: number | null;
   longitude: number | null;
   description: string | null;
@@ -112,6 +113,7 @@ export interface CreateLogPayload {
   caller_name: string;
   caller_contact: string;
   address: string;
+  barangay?: string;
   description?: string;
   latitude?: number;
   longitude?: number;
@@ -124,6 +126,7 @@ export interface UpdateLogPayload {
   caller_name?: string;
   caller_contact?: string;
   address?: string;
+  barangay?: string;
   description?: string;
   status?: LogStatus;
   latitude?: number;

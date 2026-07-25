@@ -55,18 +55,51 @@ export const insightsApi = {
     return res.data.data;
   },
 
-  getResponseTimes: async (): Promise<InsightsResponseTime[]> => {
-    const res = await apiClient.get("/insights/response-times");
+  getResponseTimes: async (params?: {
+    dateFrom?: string;
+    dateTo?: string;
+    barangay?: string;
+    incidentCategoryId?: string;
+  }): Promise<InsightsResponseTime[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.dateFrom) searchParams.append("date_from", params.dateFrom);
+    if (params?.dateTo) searchParams.append("date_to", params.dateTo);
+    if (params?.barangay) searchParams.append("barangay", params.barangay);
+    if (params?.incidentCategoryId) searchParams.append("incident_category_id", params.incidentCategoryId);
+    const queryStr = searchParams.toString();
+    const res = await apiClient.get(`/insights/response-times${queryStr ? `?${queryStr}` : ""}`);
     return res.data.data;
   },
 
-  getWorkload: async (): Promise<InsightsWorkload[]> => {
-    const res = await apiClient.get("/insights/workload");
+  getWorkload: async (params?: {
+    dateFrom?: string;
+    dateTo?: string;
+    barangay?: string;
+    incidentCategoryId?: string;
+  }): Promise<InsightsWorkload[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.dateFrom) searchParams.append("date_from", params.dateFrom);
+    if (params?.dateTo) searchParams.append("date_to", params.dateTo);
+    if (params?.barangay) searchParams.append("barangay", params.barangay);
+    if (params?.incidentCategoryId) searchParams.append("incident_category_id", params.incidentCategoryId);
+    const queryStr = searchParams.toString();
+    const res = await apiClient.get(`/insights/workload${queryStr ? `?${queryStr}` : ""}`);
     return res.data.data;
   },
 
-  getPeakTimes: async (): Promise<InsightsPeakTime[]> => {
-    const res = await apiClient.get("/insights/peak-times");
+  getPeakTimes: async (params?: {
+    dateFrom?: string;
+    dateTo?: string;
+    barangay?: string;
+    incidentCategoryId?: string;
+  }): Promise<InsightsPeakTime[]> => {
+    const searchParams = new URLSearchParams();
+    if (params?.dateFrom) searchParams.append("date_from", params.dateFrom);
+    if (params?.dateTo) searchParams.append("date_to", params.dateTo);
+    if (params?.barangay) searchParams.append("barangay", params.barangay);
+    if (params?.incidentCategoryId) searchParams.append("incident_category_id", params.incidentCategoryId);
+    const queryStr = searchParams.toString();
+    const res = await apiClient.get(`/insights/peak-times${queryStr ? `?${queryStr}` : ""}`);
     return res.data.data;
   },
 

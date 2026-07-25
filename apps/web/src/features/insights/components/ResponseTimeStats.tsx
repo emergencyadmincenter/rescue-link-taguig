@@ -10,8 +10,7 @@ interface Props {
 export function ResponseTimeStats({ data, isLoading }: Props) {
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm">
-        <h3 className="title-medium mb-md text-foreground">Response Time Analytics</h3>
+      <div className="flex flex-col h-full w-full">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-10 bg-gray-200 rounded w-full"></div>
@@ -23,22 +22,22 @@ export function ResponseTimeStats({ data, isLoading }: Props) {
 
   if (!data.length) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm">
-        <h3 className="title-medium mb-md text-foreground">Response Time Analytics</h3>
-        <p className="text-gray-500 text-center py-xl">No resolved incidents found.</p>
+      <div className="flex flex-col h-full w-full items-center justify-center">
+        <p className="text-gray-500 text-center">No resolved incidents found.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-lg shadow-sm overflow-hidden flex flex-col h-full">
-      <h3 className="title-medium mb-md text-foreground shrink-0">Avg Resolution Time (Top 10)</h3>
+    <div className="flex flex-col h-full w-full overflow-hidden">
       <div className="overflow-y-auto flex-1 pr-2">
         <div className="space-y-3">
           {data.slice(0, 10).map((stat) => {
             const mins = Math.floor(stat.avg_response_time_seconds / 60);
             const hrs = Math.floor(mins / 60);
-            const displayTime = hrs > 0 ? `${hrs}h ${mins % 60}m` : `${mins}m`;
+            const displayTime = hrs > 0
+              ? `${hrs}h ${mins % 60}m`
+              : mins > 0 ? `${mins}m` : `<1m`;
 
             // Simple visual bar
             const maxMins = Math.max(...data.slice(0, 10).map(d => d.avg_response_time_seconds)) / 60;

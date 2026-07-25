@@ -82,8 +82,9 @@ export class LogsService {
 
     if (date_from || date_to) {
       where.created_at = {};
-      if (date_from) where.created_at.gte = new Date(date_from);
-      if (date_to) where.created_at.lte = new Date(date_to);
+      // Treat bare date strings as Philippine Time (UTC+8) boundaries
+      if (date_from) where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
+      if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
     }
 
     const skip = (page - 1) * limit;
@@ -187,6 +188,7 @@ export class LogsService {
         reference_no,
         source: LogSource.manual,
         status: (rest.status as LogStatus) || LogStatus.active,
+        resolved_at: rest.status === LogStatus.resolved ? new Date() : undefined,
         created_by_coordinator_id: userId,
         assigned_coordinator_id: userId,
         last_activity_at: new Date(),

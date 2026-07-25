@@ -28,20 +28,35 @@ export class InsightsController {
   }
 
   @Get('response-times')
-  async getResponseTimes() {
-    const data = await this.insightsService.getResponseTimesByBarangay();
+  async getResponseTimes(
+    @Query('date_from') dateFrom?: string,
+    @Query('date_to') dateTo?: string,
+    @Query('barangay') barangay?: string,
+    @Query('incident_category_id') incidentCategoryId?: string,
+  ) {
+    const data = await this.insightsService.getResponseTimesByBarangay({ dateFrom, dateTo, barangay, incidentCategoryId });
     return ApiResponse.success(data);
   }
 
   @Get('workload')
-  async getWorkload() {
-    const data = await this.insightsService.getCoordinatorWorkload();
+  async getWorkload(
+    @Query('date_from') dateFrom?: string,
+    @Query('date_to') dateTo?: string,
+    @Query('barangay') barangay?: string,
+    @Query('incident_category_id') incidentCategoryId?: string,
+  ) {
+    const data = await this.insightsService.getCoordinatorWorkload({ dateFrom, dateTo, barangay, incidentCategoryId });
     return ApiResponse.success(data);
   }
 
   @Get('peak-times')
-  async getPeakTimes() {
-    const data = await this.insightsService.getPeakTimes();
+  async getPeakTimes(
+    @Query('date_from') dateFrom?: string,
+    @Query('date_to') dateTo?: string,
+    @Query('barangay') barangay?: string,
+    @Query('incident_category_id') incidentCategoryId?: string,
+  ) {
+    const data = await this.insightsService.getPeakTimes({ dateFrom, dateTo, barangay, incidentCategoryId });
     return ApiResponse.success(data);
   }
 
