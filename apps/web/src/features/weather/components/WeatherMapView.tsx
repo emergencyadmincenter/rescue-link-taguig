@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * WeatherMapView — Interactive map of Taguig barangays with weather/flood risk overlay.
+ * WeatherMapView — Interactive map of Taguig barangays with weather/flood risk/cluster overlay.
  *
  * This component renders a Leaflet map with GeoJSON polygon boundaries for all
- * 38 Taguig City barangays. Polygons are colored by either weather severity or
- * flood risk tier, reusing the same color tokens and logic from the existing
- * card/list view.
+ * 38 Taguig City barangays. Polygons are colored by either weather severity,
+ * flood risk tier, or Emergency Command Center cluster assignment, reusing the
+ * same color tokens and logic from the existing card/list view.
  *
  * TODO: BACKEND — This component pulls weather data from the same shared data
  * source (passed via props from WeatherPageView) that the list view uses.
@@ -15,8 +15,8 @@
  */
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { MapContainer, TileLayer, GeoJSON, Popup, useMap } from "react-leaflet";
-import { FiMaximize, FiMinimize } from "react-icons/fi";
+import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
+import { FiMaximize, FiMinimize, FiUsers, FiMapPin, FiArrowLeft } from "react-icons/fi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -26,17 +26,26 @@ import {
   getFloodRiskConfig,
   type FloodRiskLevel,
 } from "../utils/flood-risk";
+import {
+  CLUSTERS,
+  getClusterForBarangay,
+  type ClusterConfig,
+} from "../data/clusters";
 import WeatherCard from "./WeatherCard";
+import ClusterLegendPanel from "./ClusterLegendPanel";
+import { BarangayDetailPanel } from "./BarangayDetailPanel";
 
 // --- Types ---
 
-type MapColorMode = "severity" | "flood_risk";
+export type MapColorMode = "severity" | "flood_risk" | "cluster";
 
 interface WeatherMapViewProps {
-  /** Shared weather data — same source as list view */
+  /** Shared weather data -- same source as list view */
   weatherData: BarangayWeather[];
   /** Current search query from parent toolbar */
   searchQuery: string;
+  /** Active cluster filters from parent (empty = no filter) */
+  activeClusterFilters: number[];
 }
 
 // --- Constants ---
@@ -97,16 +106,16 @@ function getFloodRiskFillColor(level: FloodRiskLevel): string {
   }
 }
 
-// --- Condition Icon Emoji (for tooltip) ---
+// --- Condition Labels (for tooltip) ---
 
-const CONDITION_EMOJI: Record<string, string> = {
-  sunny: "☀️",
-  partly_cloudy: "⛅",
-  cloudy: "☁️",
-  overcast: "🌥️",
-  light_rain: "🌧️",
-  heavy_rain: "🌧️",
-  thunderstorm: "⛈️",
+const CONDITION_LABELS: Record<string, string> = {
+  sunny: "Sunny",
+  partly_cloudy: "Partly Cloudy",
+  cloudy: "Cloudy",
+  overcast: "Overcast",
+  light_rain: "Light Rain",
+  heavy_rain: "Heavy Rain",
+  thunderstorm: "Thunderstorm",
 };
 
 // --- Sub-components ---
@@ -204,11 +213,172 @@ function MapSearchHandler({
   return null;
 }
 
+// --- Sub-component: Cluster Boundary Outlines ---
+
+/**
+ * Renders thicker outlines around each cluster's combined barangay group
+ * so the 5 cluster boundaries are visually obvious beyond individual
+ * barangay borders.
+ *
+ * Uses a distinct border-color per cluster with increased weight.
+ * A true merged polygon (union) would require Turf.js — this approach
+ * draws each barangay in a cluster with the cluster's thick border color,
+ * which visually groups them without the Turf dependency.
+ *
+ * // TODO: Consider using @turf/union to merge each cluster's polygons
+ * // into a single outline for cleaner visual boundaries.
+ */
+function ClusterBoundaryOutlines({
+  geoJsonData,
+  highlightedClusterId,
+}: {
+  geoJsonData: GeoJSON.FeatureCollection;
+  highlightedClusterId: number | null;
+}) {
+  const map = useMap();
+  const outlineLayersRef = useRef<L.LayerGroup | null>(null);
+
+  useEffect(() => {
+    // Remove previous outlines
+    if (outlineLayersRef.current) {
+      map.removeLayer(outlineLayersRef.current);
+    }
+
+    const layerGroup = L.layerGroup();
+
+    for (const cluster of CLUSTERS) {
+      const isHighlighted = highlightedClusterId === cluster.id;
+
+      // Find all GeoJSON features belonging to this cluster
+      const clusterFeatures = geoJsonData.features.filter((feature) => {
+        if (!feature.properties?.name) return false;
+        const geoName = feature.properties.name;
+        const dataName = GEOJSON_TO_DATA_NAME[geoName] || geoName;
+        return cluster.barangays.some(
+          (b) => b.toLowerCase() === dataName.toLowerCase(),
+        );
+      });
+
+      if (clusterFeatures.length === 0) continue;
+
+      // Draw each feature with the cluster's thick outline
+      for (const feature of clusterFeatures) {
+        const outlineLayer = L.geoJSON(feature as GeoJSON.Feature, {
+          style: {
+            color: cluster.borderColor,
+            weight: isHighlighted ? 5 : 3,
+            fill: false,
+            opacity: isHighlighted ? 1 : 0.7,
+            dashArray: isHighlighted ? "" : "6 3",
+          },
+          interactive: false, // Don't interfere with barangay click events
+        });
+        outlineLayer.addTo(layerGroup);
+      }
+    }
+
+    layerGroup.addTo(map);
+    outlineLayersRef.current = layerGroup;
+
+    return () => {
+      if (outlineLayersRef.current) {
+        map.removeLayer(outlineLayersRef.current);
+      }
+    };
+  }, [map, geoJsonData, highlightedClusterId]);
+
+  return null;
+}
+
+// --- Sub-component: Cluster Highlight (from legend hover/click) ---
+
+function ClusterHighlighter({
+  geoJsonData,
+  highlightedClusterId,
+  shouldFitBounds,
+  onFitBoundsComplete,
+}: {
+  geoJsonData: GeoJSON.FeatureCollection;
+  highlightedClusterId: number | null;
+  shouldFitBounds: boolean;
+  onFitBoundsComplete: () => void;
+}) {
+  const map = useMap();
+  const highlightLayerRef = useRef<L.LayerGroup | null>(null);
+
+  useEffect(() => {
+    // Clear previous highlights
+    if (highlightLayerRef.current) {
+      map.removeLayer(highlightLayerRef.current);
+      highlightLayerRef.current = null;
+    }
+
+    if (highlightedClusterId === null) return;
+
+    const cluster = CLUSTERS.find((c) => c.id === highlightedClusterId);
+    if (!cluster) return;
+
+    const layerGroup = L.layerGroup();
+    const allBounds: L.LatLngBounds[] = [];
+
+    // Find all GeoJSON features for this cluster
+    const clusterFeatures = geoJsonData.features.filter((feature) => {
+      if (!feature.properties?.name) return false;
+      const geoName = feature.properties.name;
+      const dataName = GEOJSON_TO_DATA_NAME[geoName] || geoName;
+      return cluster.barangays.some(
+        (b) => b.toLowerCase() === dataName.toLowerCase(),
+      );
+    });
+
+    for (const feature of clusterFeatures) {
+      const glowLayer = L.geoJSON(feature as GeoJSON.Feature, {
+        style: {
+          color: cluster.borderColor,
+          weight: 4,
+          fillColor: cluster.color,
+          fillOpacity: 0.25,
+          dashArray: "",
+        },
+        interactive: false,
+      });
+
+      glowLayer.addTo(layerGroup);
+      allBounds.push(glowLayer.getBounds());
+    }
+
+    layerGroup.addTo(map);
+    highlightLayerRef.current = layerGroup;
+
+    // Fit bounds if triggered by a click
+    if (shouldFitBounds && allBounds.length > 0) {
+      let combinedBounds = allBounds[0];
+      for (let i = 1; i < allBounds.length; i++) {
+        combinedBounds = combinedBounds.extend(allBounds[i]);
+      }
+      if (combinedBounds.isValid()) {
+        map.fitBounds(combinedBounds, { padding: [50, 50], maxZoom: 15 });
+      }
+      onFitBoundsComplete();
+    }
+
+    return () => {
+      if (highlightLayerRef.current) {
+        map.removeLayer(highlightLayerRef.current);
+        highlightLayerRef.current = null;
+      }
+    };
+  }, [map, geoJsonData, highlightedClusterId, shouldFitBounds, onFitBoundsComplete]);
+
+  return null;
+}
+
 // --- Main Component ---
 
 export default function WeatherMapView({
   weatherData,
   searchQuery,
+  activeClusterFilters,
 }: WeatherMapViewProps) {
   const [geoJsonData, setGeoJsonData] =
     useState<GeoJSON.FeatureCollection | null>(null);
@@ -218,6 +388,14 @@ export default function WeatherMapView({
   const [selectedBarangay, setSelectedBarangay] =
     useState<BarangayWeather | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [highlightedClusterId, setHighlightedClusterId] = useState<
+    number | null
+  >(null);
+  const [shouldFitClusterBounds, setShouldFitClusterBounds] = useState(false);
+  // Panel showing barangay list for a clicked cluster
+  const [selectedClusterForList, setSelectedClusterForList] = useState<
+    number | null
+  >(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -309,6 +487,27 @@ export default function WeatherMapView({
     };
   }, []);
 
+  // --- Sync cluster filter from parent to map color mode ---
+  useEffect(() => {
+    if (activeClusterFilters.length > 0 && colorMode !== "cluster") {
+      setColorMode("cluster");
+    }
+  }, [activeClusterFilters, colorMode]);
+
+  // --- Helper: check if a barangay belongs to any of the active cluster filters ---
+  const isBarangayInActiveFilters = useCallback(
+    (barangayName: string): boolean => {
+      if (activeClusterFilters.length === 0) return true; // no filter = everything visible
+      return activeClusterFilters.some((filterId) => {
+        const cluster = CLUSTERS.find((c) => c.id === filterId);
+        return cluster?.barangays.some(
+          (b) => b.toLowerCase() === barangayName.toLowerCase(),
+        );
+      });
+    },
+    [activeClusterFilters],
+  );
+
   // --- GeoJSON Style Function ---
   const getFeatureStyle = useCallback(
     (feature: GeoJSON.Feature | undefined): L.PathOptions => {
@@ -322,12 +521,41 @@ export default function WeatherMapView({
       }
 
       const featureName: string = feature.properties.name;
+      const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       const weather = findWeatherForFeature(featureName);
 
-      let fillColor: string;
+      // --- Cluster filter: dim polygons that don't match active filters ---
+      const matchesFilter = isBarangayInActiveFilters(dataName);
 
-      if (colorMode === "flood_risk") {
-        // TODO: BACKEND — Flood risk data comes from the same shared weather
+      let fillColor: string;
+      let borderColor = "#6b7280"; // gray-500 default border
+      let weight = 1.5;
+      let fillOpacity = matchesFilter ? 0.55 : 0.1;
+
+      if (!matchesFilter) {
+        // Dimmed style for filtered-out barangays
+        return {
+          fillColor: "#e5e7eb",
+          weight: 1,
+          color: "#d1d5db",
+          fillOpacity: 0.15,
+          dashArray: "",
+        };
+      }
+
+      if (colorMode === "cluster") {
+        // Resolve the data name for cluster lookup
+        const cluster = getClusterForBarangay(dataName);
+        if (cluster) {
+          fillColor = cluster.color;
+          borderColor = cluster.borderColor;
+          weight = 2;
+          fillOpacity = 0.5;
+        } else {
+          fillColor = "#e5e7eb"; // no cluster assignment
+        }
+      } else if (colorMode === "flood_risk") {
+        // TODO: BACKEND -- Flood risk data comes from the same shared weather
         // data source via calculateFloodRisk(). When real API data is available,
         // ensure the flood risk calculation uses live precipitation data.
         if (weather) {
@@ -342,13 +570,13 @@ export default function WeatherMapView({
 
       return {
         fillColor,
-        weight: 1.5,
-        color: "#6b7280", // gray-500 border
-        fillOpacity: 0.55,
+        weight,
+        color: borderColor,
+        fillOpacity,
         dashArray: "",
       };
     },
-    [colorMode, findWeatherForFeature],
+    [colorMode, findWeatherForFeature, isBarangayInActiveFilters],
   );
 
   // --- Feature Interaction Handlers ---
@@ -358,18 +586,27 @@ export default function WeatherMapView({
 
       const featureName: string = feature.properties.name;
       const weather = findWeatherForFeature(featureName);
+      const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
+      const cluster = getClusterForBarangay(dataName);
 
       // --- Hover Tooltip ---
       if (weather) {
-        const emoji = CONDITION_EMOJI[weather.condition] || "🌤️";
+        const conditionLabel = CONDITION_LABELS[weather.condition] || weather.condition.replace(/_/g, " ");
+        const clusterInfo =
+          colorMode === "cluster" && cluster
+            ? `<div style="font-size: 11px; color: ${cluster.color}; margin-top: 2px; font-weight: 600;">
+                ${cluster.label} · ${cluster.area}
+              </div>`
+            : "";
         const tooltipContent = `
           <div style="font-family: Inter, sans-serif; min-width: 140px;">
             <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">
               ${featureName}
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              ${emoji} ${weather.temperature}°C · ${weather.condition.replace(/_/g, " ")}
+              ${weather.temperature}°C · ${conditionLabel}
             </div>
+            ${clusterInfo}
           </div>
         `;
 
@@ -415,15 +652,21 @@ export default function WeatherMapView({
         click: () => {
           if (weather) {
             setSelectedBarangay(weather);
+            setSelectedClusterForList(null);
           }
         },
       });
     },
-    [findWeatherForFeature],
+    [findWeatherForFeature, colorMode],
   );
 
   // --- Legend Data ---
   const legendItems = useMemo(() => {
+    if (colorMode === "cluster") {
+      // In cluster mode, the ClusterLegendPanel handles the legend
+      return [];
+    }
+
     if (colorMode === "severity") {
       let severe = 0;
       let advisory = 0;
@@ -483,6 +726,46 @@ export default function WeatherMapView({
       ];
     }
   }, [colorMode, geoJsonData, findWeatherForFeature]);
+
+  // --- Cluster Legend Handlers ---
+  const handleClusterHover = useCallback((clusterId: number | null) => {
+    setHighlightedClusterId(clusterId);
+  }, []);
+
+  const handleClusterClick = useCallback((clusterId: number) => {
+    setHighlightedClusterId(clusterId);
+    setShouldFitClusterBounds(true);
+    // Show the barangay list for this cluster
+    setSelectedClusterForList(clusterId);
+    setSelectedBarangay(null);
+  }, []);
+
+  const handleFitBoundsComplete = useCallback(() => {
+    setShouldFitClusterBounds(false);
+  }, []);
+
+  // --- Determine the cluster for the selected barangay (for detail panel) ---
+  const selectedBarangayCluster = useMemo(() => {
+    if (!selectedBarangay) return null;
+    return getClusterForBarangay(selectedBarangay.name) ?? null;
+  }, [selectedBarangay]);
+
+  // --- Get the cluster config and its barangay weather data for the cluster list panel ---
+  const selectedClusterConfig = useMemo(() => {
+    if (selectedClusterForList === null) return null;
+    return CLUSTERS.find((c) => c.id === selectedClusterForList) ?? null;
+  }, [selectedClusterForList]);
+
+  const selectedClusterBarangayWeather = useMemo(() => {
+    if (!selectedClusterConfig) return [];
+    return selectedClusterConfig.barangays
+      .map((name) => weatherDataByName.get(name.toLowerCase()))
+      .filter((w): w is BarangayWeather => w !== undefined)
+      .sort((a, b) => {
+        const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      });
+  }, [selectedClusterConfig, weatherDataByName]);
 
   // --- Loading State ---
   if (geoJsonLoading) {
@@ -558,23 +841,35 @@ export default function WeatherMapView({
           >
             Flood Risk
           </button>
+          <button
+            onClick={() => setColorMode("cluster")}
+            className={`px-3 py-1.5 rounded-md body-xsmall font-medium transition-all duration-200 ${
+              colorMode === "cluster"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
+            }`}
+          >
+            Command Center Clusters
+          </button>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-3">
-          {legendItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div
-                className="w-3 h-3 rounded-sm border border-gray-300"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="body-xsmall text-gray-600">{item.label}</span>
-            </div>
-          ))}
-        </div>
+        {/* Inline Legend (severity/flood_risk modes only) */}
+        {colorMode !== "cluster" && (
+          <div className="flex items-center gap-3">
+            {legendItems.map((item) => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <div
+                  className="w-3 h-3 rounded-sm border border-gray-300"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="body-xsmall text-gray-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Map + Detail Panel Container */}
+      {/* Map + Detail/Legend Panel Container */}
       <div className="flex-1 flex gap-4 min-h-0">
         {/* Map Container */}
         <div
@@ -611,13 +906,31 @@ export default function WeatherMapView({
 
             {geoJsonData && (
               <GeoJSON
-                key={colorMode} // Force re-render when color mode changes
+                key={`${colorMode}-${activeClusterFilters.join(",")}`} // Force re-render when color mode or filters change
                 data={geoJsonData}
                 style={getFeatureStyle}
                 onEachFeature={onEachFeature}
                 ref={(layer) => {
                   geoJsonLayerRef.current = layer;
                 }}
+              />
+            )}
+
+            {/* Cluster boundary outlines (visible only in cluster mode) */}
+            {colorMode === "cluster" && geoJsonData && (
+              <ClusterBoundaryOutlines
+                geoJsonData={geoJsonData}
+                highlightedClusterId={highlightedClusterId}
+              />
+            )}
+
+            {/* Cluster highlight from legend interaction */}
+            {colorMode === "cluster" && geoJsonData && highlightedClusterId !== null && (
+              <ClusterHighlighter
+                geoJsonData={geoJsonData}
+                highlightedClusterId={highlightedClusterId}
+                shouldFitBounds={shouldFitClusterBounds}
+                onFitBoundsComplete={handleFitBoundsComplete}
               />
             )}
 
@@ -630,37 +943,118 @@ export default function WeatherMapView({
           </MapContainer>
         </div>
 
-        {/* Detail Side Panel — shows the WeatherCard for the clicked barangay */}
-        {selectedBarangay && !isFullScreen && (
-          <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0 animate-fade-in">
-            <div className="flex items-center justify-between mb-2">
-              <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
-                Barangay Details
-              </span>
-              <button
-                onClick={() => setSelectedBarangay(null)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-all duration-200"
-                aria-label="Close detail panel"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="overflow-y-auto custom-scrollbar flex-1">
-              {/* Reuse the existing WeatherCard component — no duplicate UI */}
-              <WeatherCard weather={selectedBarangay} />
-            </div>
+        {/* Right Panel -- either Detail Card, Cluster Barangay List, or Cluster Legend */}
+        {!isFullScreen && (
+          <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0">
+            {/* Selected Barangay Detail Panel */}
+            {selectedBarangay ? (
+              <BarangayDetailPanel
+                weather={selectedBarangay}
+                cluster={selectedBarangayCluster}
+                onClose={() => setSelectedBarangay(null)}
+              />
+            ) : selectedClusterForList && selectedClusterConfig ? (
+              /* Cluster Barangay List Panel */
+              <div className="flex flex-col min-h-0 animate-fade-in">
+                <div className="flex items-center gap-2 mb-3">
+                  <button
+                    onClick={() => setSelectedClusterForList(null)}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-all duration-200"
+                    aria-label="Back to cluster legend"
+                  >
+                    <FiArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div className={`w-3 h-3 rounded-sm ${selectedClusterConfig.dotClass}`} />
+                  <span className={`body-small font-semibold ${selectedClusterConfig.textClass}`}>
+                    {selectedClusterConfig.label}
+                  </span>
+                  <span className="body-xsmall text-gray-400">
+                    · {selectedClusterConfig.area}
+                  </span>
+                </div>
+
+                {/* Cluster Meta */}
+                <div className="flex items-center gap-3 mb-3 px-1">
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <FiUsers className="w-3 h-3" />
+                    <span className="body-xsmall">{selectedClusterConfig.assignedTeam}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <FiMapPin className="w-3 h-3" />
+                    <span className="body-xsmall">{selectedClusterConfig.commandPost}</span>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-2 mb-2">
+                  <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
+                    Barangays ({selectedClusterBarangayWeather.length})
+                  </span>
+                </div>
+
+                {/* Barangay List */}
+                <div className="overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-2">
+                  {selectedClusterBarangayWeather.map((w) => {
+                    const isSevere = w.severity === "severe";
+                    const isAdvisory = w.severity === "advisory" || w.severity === "warning";
+                    return (
+                      <button
+                        key={w.id}
+                        onClick={() => {
+                          setSelectedBarangay(w);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200 hover:shadow-sm cursor-pointer ${
+                          isSevere
+                            ? "border-red-200 bg-red-50/50 hover:bg-red-50"
+                            : isAdvisory
+                              ? "border-amber-200 bg-amber-50/50 hover:bg-amber-50"
+                              : "border-gray-100 bg-white hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="body-small font-medium text-gray-800">
+                            {w.name}
+                          </span>
+                          {(isSevere || isAdvisory) && (
+                            <span
+                              className={`body-xsmall font-semibold px-1.5 py-0.5 rounded-full ${
+                                isSevere
+                                  ? "bg-red-100 text-red-600"
+                                  : "bg-amber-100 text-amber-600"
+                              }`}
+                            >
+                              {isSevere ? "Severe" : "Advisory"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="body-xsmall text-gray-500">
+                            {w.temperature}°C
+                          </span>
+                          <span className="body-xsmall text-gray-400">
+                            {w.condition.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {selectedClusterBarangayWeather.length === 0 && (
+                    <p className="body-xsmall text-gray-400 py-4 text-center">
+                      No weather data available for this cluster.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : colorMode === "cluster" ? (
+              /* Cluster Legend Panel (shown when no barangay is selected) */
+              <div className="overflow-y-auto custom-scrollbar flex-1 animate-fade-in">
+                <ClusterLegendPanel
+                  weatherData={weatherData}
+                  highlightedClusterId={highlightedClusterId}
+                  onClusterHover={handleClusterHover}
+                  onClusterClick={handleClusterClick}
+                />
+              </div>
+            ) : null}
           </div>
         )}
       </div>

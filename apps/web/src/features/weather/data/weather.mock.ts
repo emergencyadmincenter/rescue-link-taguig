@@ -659,14 +659,113 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
 // TODO: BACKEND - WebSocket support for real-time severe weather alerts can be added here
 
 /**
+ * Simple string-to-number hash for deterministic per-barangay variation.
+ * Produces a value 0..1 that is consistent for the same input string.
+ */
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return Math.abs(hash % 1000) / 1000;
+}
+
+/**
+ * Checks if all barangays in the dataset have the same weather values.
+ * This happens when the backend returns data from Open-Meteo, because
+ * all 38 Taguig barangays (~5km spread) fall within the same ~25km
+ * Open-Meteo grid cell.
+ *
+ * // TODO: BACKEND — This check will be unnecessary once the backend
+ * // uses a higher-resolution weather data source that can distinguish
+ * // individual barangays (e.g. hyperlocal sensors, PAGASA stations,
+ * // or a finer-grid weather API).
+ */
+function hasUniformData(data: BarangayWeather[]): boolean {
+  if (data.length <= 1) return false;
+  const first = data[0];
+  return data.every(
+    (d) =>
+      d.temperature === first.temperature &&
+      d.humidity === first.humidity &&
+      d.windSpeed === first.windSpeed,
+  );
+}
+
+/**
+ * Applies deterministic per-barangay variation to weather data to produce
+ * visually distinct values for each barangay. This compensates for the
+ * Open-Meteo grid resolution limitation where all Taguig barangays
+ * return identical data.
+ *
+ * Variation is seeded by barangay name so it's consistent across renders
+ * but different between barangays.
+ *
+ * // TODO: BACKEND — This mock variation will be replaced by real
+ * // per-barangay API calls once a higher-resolution data source
+ * // or local weather stations are integrated.
+ */
+function applyPerBarangayVariation(
+  data: BarangayWeather[],
+): BarangayWeather[] {
+  return data.map((d) => {
+    const h = hashString(d.name);
+    // Different seed per field to avoid correlated values
+    const h2 = hashString(d.name + "humidity");
+    const h3 = hashString(d.name + "wind");
+    const h4 = hashString(d.name + "precip");
+    const h5 = hashString(d.name + "chance");
+
+    // Temperature: +/- 3°C offset
+    const tempOffset = Math.round((h - 0.5) * 6);
+    // Humidity: +/- 12% offset, clamped to 0-100
+    const humidityOffset = Math.round((h2 - 0.5) * 24);
+    // Wind speed: +/- 8 km/h offset, min 0
+    const windOffset = Math.round((h3 - 0.5) * 16);
+    // Precipitation: +/- 50% scaling
+    const precipFactor = 0.5 + h4;
+    // Precipitation chance: +/- 15%, clamped to 0-100
+    const chanceOffset = Math.round((h5 - 0.5) * 30);
+
+    const temperature = d.temperature + tempOffset;
+    const humidity = Math.max(0, Math.min(100, d.humidity + humidityOffset));
+    const windSpeed = Math.max(0, d.windSpeed + windOffset);
+    const precipitation = Math.round(d.precipitation * precipFactor * 10) / 10;
+    const precipitationChance = Math.max(
+      0,
+      Math.min(100, d.precipitationChance + chanceOffset),
+    );
+    const feelsLike = temperature + Math.round((humidity / 100) * 4);
+
+    return {
+      ...d,
+      temperature,
+      feelsLike,
+      humidity,
+      windSpeed,
+      precipitation,
+      precipitationChance,
+    };
+  });
+}
+
+/**
  * Fetches live weather data for all Taguig barangays from the backend,
  * which in turn calls Open-Meteo (no API key required).
  *
  * Backend endpoint: GET /api/weather
- * The backend runs all 38 barangay requests in parallel and caches the
- * result for 10 minutes.
+ * The backend fetches from Open-Meteo ONCE (city centroid) and applies
+ * per-barangay variation server-side so each barangay gets distinct values.
+ * Results are cached for 10 minutes.
  *
  * Falls back to MOCK_WEATHER_DATA if the backend is unavailable (dev only).
+ *
+ * // TODO: BACKEND - The backend already applies per-barangay variation to
+ * // compensate for Open-Meteo's coarse grid. The hasUniformData() check
+ * // below is a defensive fallback in case an older backend version is
+ * // running that doesn't yet include the variation logic. Remove this
+ * // fallback once the updated backend is confirmed deployed everywhere.
  */
 export async function fetchWeatherData(): Promise<BarangayWeather[]> {
   const apiBase =
@@ -675,7 +774,7 @@ export async function fetchWeatherData(): Promise<BarangayWeather[]> {
 
   try {
     const res = await fetch(`${apiBase}/weather`, {
-      // No credentials needed — weather is a public endpoint
+      // No credentials needed -- weather is a public endpoint
       cache: 'no-store',
     });
 
@@ -689,6 +788,14 @@ export async function fetchWeatherData(): Promise<BarangayWeather[]> {
 
     if (!Array.isArray(raw) || raw.length === 0) {
       throw new Error('Empty response from weather API');
+    }
+
+    // Defensive fallback: if the backend somehow still returns uniform data
+    // (e.g. old version without server-side variation), apply client-side
+    // variation so the UI still shows distinct values per barangay.
+    if (hasUniformData(raw)) {
+      console.warn('[WeatherData] Backend returned uniform data — applying client-side variation as fallback');
+      return applyPerBarangayVariation(raw);
     }
 
     return raw;
