@@ -72,14 +72,9 @@ enum ResourceCategory {
   utility
 }
 
-model IncidentCategory {
-  id String @id @default(uuid()) @db.Uuid
-  name String @unique
-  created_at DateTime @default(now())
-  
-  logs Log[]
-
-  @@map("incident_categories")
+enum FraudRiskClassification {
+  low_risk
+  high_fraud_risk
 }
 
 model User {
@@ -230,6 +225,8 @@ model Log {
 
   resource_assignments LogResourceAssignment[]
 
+  fraud_assessments FraudAssessment[]
+
   @@index([status])
   @@index([assigned_coordinator_id])
   @@index([created_by_coordinator_id])
@@ -294,6 +291,8 @@ model Call {
 
   messages Message[]
 
+  fraud_assessments FraudAssessment[]
+
   @@index([status])
   @@index([coordinator_id])
   @@index([log_id])
@@ -324,3 +323,42 @@ model Message {
   @@index([created_at])
   @@map("messages")
 }
+
+model FraudAssessment {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String? @db.Uuid
+  log    Log?    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  call_id String? @db.Uuid
+  call    Call?   @relation(fields: [call_id], references: [id], onDelete: Cascade)
+
+  client_ip String
+
+  ip_latitude  Decimal? @db.Decimal(10, 7)
+  ip_longitude Decimal? @db.Decimal(10, 7)
+  ip_country   String?
+  ip_region    String?
+  ip_city      String?
+
+  resident_latitude  Decimal? @db.Decimal(10, 7)
+  resident_longitude Decimal? @db.Decimal(10, 7)
+
+  location_permission_granted Boolean @default(true)
+
+  distance_km Decimal? @db.Decimal(10, 2)
+
+  is_vpn     Boolean @default(false)
+  is_proxy   Boolean @default(false)
+  is_hosting Boolean @default(false)
+
+  risk_classification FraudRiskClassification
+
+  created_at DateTime @default(now())
+
+  @@index([log_id])
+  @@index([call_id])
+  @@index([created_at])
+  @@map("fraud_assessments")
+}
+

@@ -110,6 +110,7 @@ export class LogsService {
           resource_assignments: {
             include: { resource: true },
           },
+          fraud_assessments: true,
         },
       }),
       this.prisma.log.count({ where }),
@@ -143,6 +144,7 @@ export class LogsService {
         resource_assignments: {
           include: { resource: true },
         },
+        fraud_assessments: true,
       },
     });
 
@@ -207,6 +209,7 @@ export class LogsService {
           select: { id: true, name: true, email: true },
         },
         resource_assignments: { include: { resource: true } },
+        fraud_assessments: true,
       },
     });
 
@@ -319,6 +322,7 @@ export class LogsService {
               select: { id: true, name: true, email: true },
             },
             resource_assignments: { include: { resource: true } },
+            fraud_assessments: true,
           },
         });
       });
@@ -333,6 +337,7 @@ export class LogsService {
           select: { id: true, name: true, email: true },
         },
         resource_assignments: { include: { resource: true } },
+        fraud_assessments: true,
       },
     });
   }

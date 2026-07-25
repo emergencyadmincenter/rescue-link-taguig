@@ -6,6 +6,7 @@ import { CommunicationsDebugController } from './communications-debug.controller
 import { PrismaModule } from '../../database/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { LocationValidationService } from '../../common/services/location-validation.service';
+import { FraudDetectionService } from '../../common/services/fraud-detection.service';
 
 @Module({
   imports: [PrismaModule, AuthModule],
@@ -13,6 +14,7 @@ import { LocationValidationService } from '../../common/services/location-valida
     CommunicationsGateway,
     CommunicationsService,
     LocationValidationService,
+    FraudDetectionService,
   ],
   controllers: [CommunicationsController, CommunicationsDebugController],
   exports: [CommunicationsService],

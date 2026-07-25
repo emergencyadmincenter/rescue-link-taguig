@@ -116,7 +116,15 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
           <Icon className={`w-7 h-7 ${iconColor}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="title-small text-gray-900 truncate pr-16">
+          <h3
+            className={`text-gray-900 font-semibold whitespace-nowrap pr-16 ${
+              weather.name.length > 22
+                ? "text-xs leading-5"
+                : weather.name.length > 18
+                  ? "text-[13px] leading-5"
+                  : "title-small"
+            }`}
+          >
             {weather.name}
           </h3>
           <p className="body-xsmall text-gray-500">{label}</p>

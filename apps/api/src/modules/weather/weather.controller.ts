@@ -108,8 +108,8 @@ const TAGUIG_BARANGAYS = [
     longitude: 121.041,
   },
   {
-    id: 'brgy-palingon',
-    name: 'Palingon',
+    id: 'brgy-palingon-tipas',
+    name: 'Palingon-Tipas',
     latitude: 14.51,
     longitude: 121.075,
   },
