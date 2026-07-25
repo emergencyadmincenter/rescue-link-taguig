@@ -127,7 +127,7 @@ export function ExportReportButton({ weatherData }: ExportReportButtonProps) {
             if (severity === 'Severe') {
               data.cell.styles.fillColor = [254, 226, 226]; // red-100
               data.cell.styles.textColor = [153, 27, 27]; // red-800
-            } else if (severity === 'Advisory') {
+            } else if (severity === 'Advisory' || severity === 'Warning') {
               data.cell.styles.fillColor = [254, 249, 195]; // yellow-100
               data.cell.styles.textColor = [133, 77, 14]; // yellow-800
             }
