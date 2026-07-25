@@ -42,6 +42,12 @@ const NAVIGATION: NavItem[] = [
     icon: HiOutlineUserGroup,
     roles: ["admin"], // Only Admin
   },
+  {
+    label: "Insights",
+    href: "/insights",
+    icon: FiFileText, // Or a better chart icon if we want to import it, but FiFileText is already imported
+    roles: ["admin", "coordinator"],
+  },
 ];
 
 export function Sidebar() {

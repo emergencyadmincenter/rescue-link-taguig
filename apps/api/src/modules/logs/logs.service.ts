@@ -13,9 +13,15 @@ import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { Prisma, LogStatus, LogSource } from '../../generated/prisma/client';
 import { randomInt } from 'crypto';
 
+import { CommunicationsService } from '../communications/communications.service';
+
 @Injectable()
 export class LogsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => CommunicationsService))
+    private readonly communicationsService: CommunicationsService,
+  ) {}
 
   private async generateReferenceNo(): Promise<string> {
     const maxRetries = 50;
@@ -40,6 +46,8 @@ export class LogsService {
       status,
       source,
       assigned_coordinator_id,
+      barangay,
+      incident_category_id,
       date_from,
       date_to,
       page = 1,
@@ -69,11 +77,14 @@ export class LogsService {
     if (source) where.source = source;
     if (assigned_coordinator_id)
       where.assigned_coordinator_id = assigned_coordinator_id;
+    if (barangay) where.barangay = barangay;
+    if (incident_category_id) where.incident_category_id = incident_category_id;
 
     if (date_from || date_to) {
       where.created_at = {};
-      if (date_from) where.created_at.gte = new Date(date_from);
-      if (date_to) where.created_at.lte = new Date(date_to);
+      // Treat bare date strings as Philippine Time (UTC+8) boundaries
+      if (date_from) where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
+      if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
     }
 
     const skip = (page - 1) * limit;
@@ -173,12 +184,13 @@ export class LogsService {
     }
     const finalResourceIds = [...validResourceIds, ...customResourceIds];
 
-    return this.prisma.log.create({
+    const log = await this.prisma.log.create({
       data: {
         ...rest,
         reference_no,
         source: LogSource.manual,
         status: (rest.status as LogStatus) || LogStatus.active,
+        resolved_at: rest.status === LogStatus.resolved ? new Date() : undefined,
         created_by_coordinator_id: userId,
         assigned_coordinator_id: userId,
         last_activity_at: new Date(),
@@ -200,6 +212,9 @@ export class LogsService {
         fraud_assessments: true,
       },
     });
+
+    this.communicationsService.broadcastNewIncident(log.id);
+    return log;
   }
 
   async update(id: string, dto: UpdateLogDto, userId: string) {

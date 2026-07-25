@@ -195,9 +195,14 @@ model Log {
   caller_contact String?
 
   address String?
+  barangay String?
 
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
+
+  incident_category_id String? @db.Uuid
+  incident_category    IncidentCategory? @relation(fields: [incident_category_id], references: [id], onDelete: SetNull)
+  weather_condition String?
 
   description String?
 

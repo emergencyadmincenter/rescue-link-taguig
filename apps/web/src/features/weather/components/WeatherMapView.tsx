@@ -49,6 +49,8 @@ interface WeatherMapViewProps {
   activeClusterFilter: number | null;
   /** Callback to select/clear active cluster filter */
   onClusterSelect: (clusterId: number | null) => void;
+  /** Callback to clear the search bar from map actions */
+  onSearchClear: () => void;
 }
 
 // --- Constants ---
@@ -154,21 +156,16 @@ function MapSearchHandler({
   searchQuery,
   geoJsonData,
   weatherDataByName,
+  onSearchResult,
 }: {
   searchQuery: string;
   geoJsonData: GeoJSON.FeatureCollection | null;
   weatherDataByName: Map<string, BarangayWeather>;
+  onSearchResult: (weather: BarangayWeather) => void;
 }) {
   const map = useMap();
-  const highlightLayerRef = useRef<L.GeoJSON | null>(null);
 
   useEffect(() => {
-    // Clear previous highlight
-    if (highlightLayerRef.current) {
-      map.removeLayer(highlightLayerRef.current);
-      highlightLayerRef.current = null;
-    }
-
     if (!searchQuery.trim() || !geoJsonData) return;
 
     const normalizedQuery = searchQuery.toLowerCase().trim();
@@ -184,7 +181,56 @@ function MapSearchHandler({
     });
 
     if (matchingFeature) {
-      // Create a highlight layer for the matched barangay
+      // Pan/zoom to the matching barangay
+      const layer = L.geoJSON(matchingFeature as GeoJSON.Feature);
+      const bounds = layer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+      }
+
+      // Automatically show side panel information for the searched barangay
+      const geoName = matchingFeature.properties?.name || "";
+      const dataName = GEOJSON_TO_DATA_NAME[geoName] || geoName;
+      const weather = weatherDataByName.get(dataName.toLowerCase());
+      if (weather) {
+        onSearchResult(weather);
+      }
+    }
+  }, [searchQuery, geoJsonData, map, weatherDataByName, onSearchResult]);
+
+  return null;
+}
+
+// --- Sub-component: Selected Barangay Highlighter ---
+
+function SelectedBarangayHighlighter({
+  geoJsonData,
+  selectedBarangay,
+}: {
+  geoJsonData: GeoJSON.FeatureCollection | null;
+  selectedBarangay: BarangayWeather | null;
+}) {
+  const map = useMap();
+  const highlightLayerRef = useRef<L.GeoJSON | null>(null);
+
+  useEffect(() => {
+    // Clear previous highlight
+    if (highlightLayerRef.current) {
+      map.removeLayer(highlightLayerRef.current);
+      highlightLayerRef.current = null;
+    }
+
+    if (!selectedBarangay || !geoJsonData) return;
+
+    // Find matching feature
+    const matchingFeature = geoJsonData.features.find((feature) => {
+      const geoName = feature.properties?.name || "";
+      const dataName = GEOJSON_TO_DATA_NAME[geoName] || geoName;
+      return dataName.toLowerCase() === selectedBarangay.name.toLowerCase();
+    });
+
+    if (matchingFeature) {
+      // Create a highlight layer
       const highlightLayer = L.geoJSON(matchingFeature as GeoJSON.Feature, {
         style: {
           color: "#2563eb", // blue-600 — distinct highlight border
@@ -193,16 +239,11 @@ function MapSearchHandler({
           fillColor: "#3b82f6",
           dashArray: "",
         },
+        interactive: false, // CRITICAL: Don't block clicks on the underlying polygon!
       });
 
       highlightLayer.addTo(map);
       highlightLayerRef.current = highlightLayer;
-
-      // Pan/zoom to the matching barangay
-      const bounds = highlightLayer.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
-      }
     }
 
     return () => {
@@ -211,7 +252,7 @@ function MapSearchHandler({
         highlightLayerRef.current = null;
       }
     };
-  }, [searchQuery, geoJsonData, map, weatherDataByName]);
+  }, [selectedBarangay, geoJsonData, map]);
 
   return null;
 }
@@ -383,6 +424,7 @@ export default function WeatherMapView({
   searchQuery,
   activeClusterFilter,
   onClusterSelect,
+  onSearchClear,
 }: WeatherMapViewProps) {
   const [geoJsonData, setGeoJsonData] =
     useState<GeoJSON.FeatureCollection | null>(null);
@@ -396,8 +438,19 @@ export default function WeatherMapView({
     number | null
   >(null);
   const [shouldFitClusterBounds, setShouldFitClusterBounds] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const selectedBarangayRef = useRef<BarangayWeather | null>(null);
+  const onSearchClearRef = useRef(onSearchClear);
+
+  useEffect(() => {
+    selectedBarangayRef.current = selectedBarangay;
+  }, [selectedBarangay]);
+
+  useEffect(() => {
+    onSearchClearRef.current = onSearchClear;
+  }, [onSearchClear]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -602,8 +655,8 @@ export default function WeatherMapView({
       const matchesFilter = isBarangayInActiveFilters(displayName);
       const isFilteredOut = activeClusterFilter !== null && !matchesFilter;
 
-      if (isFilteredOut) {
-        // Do NOT display text label for non-selected cluster barangays
+      if (isFilteredOut || !showLabels) {
+        // Do NOT display text label for non-selected cluster barangays or when labels are hidden
         (layer as L.Path).unbindTooltip();
       } else {
         const labelContent = `
@@ -641,13 +694,18 @@ export default function WeatherMapView({
         },
         click: () => {
           if (weather) {
-            setSelectedBarangay(weather);
-            onClusterSelect(null);
+            if (selectedBarangayRef.current?.id === weather.id) {
+              setSelectedBarangay(null);
+            } else {
+              setSelectedBarangay(weather);
+              onClusterSelect(null);
+            }
+            onSearchClearRef.current(); // Always clear search on any map click
           }
         },
       });
     },
-    [findWeatherForFeature, colorMode, isBarangayInActiveFilters, activeClusterFilter],
+    [findWeatherForFeature, colorMode, isBarangayInActiveFilters, activeClusterFilter, showLabels],
   );
 
   // --- Legend Data ---
@@ -843,6 +901,7 @@ export default function WeatherMapView({
           </button>
         </div>
 
+
         {/* Inline Legend (severity/flood_risk modes only) */}
         {colorMode !== "cluster" && (
           <div className="flex items-center gap-3">
@@ -860,7 +919,7 @@ export default function WeatherMapView({
       </div>
 
       {/* Map + Detail/Legend Panel Container */}
-      <div className="flex-1 flex gap-4 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
         {/* Map Container */}
         <div
           ref={mapContainerRef}
@@ -868,17 +927,26 @@ export default function WeatherMapView({
             selectedBarangay && !isFullScreen ? "hidden lg:block" : ""
           } rounded-xl bg-white min-h-[600px] ${!isFullScreen ? "h-[70vh]" : ""}`}
         >
-          <button
-            onClick={toggleFullScreen}
-            className="absolute top-4 right-4 z-[1000] bg-white p-2.5 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
-            title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
-          >
-            {isFullScreen ? (
-              <FiMinimize className="w-5 h-5" />
-            ) : (
-              <FiMaximize className="w-5 h-5" />
-            )}
-          </button>
+          <div className="absolute top-4 right-4 z-[1000] flex items-center gap-2">
+            <button
+              onClick={() => setShowLabels((prev) => !prev)}
+              className="bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-gray-900 hover:bg-white hover:border-gray-300 transition-all duration-200 body-xsmall font-semibold"
+            >
+              {showLabels ? "Hide Map Labels" : "Show Map Labels"}
+            </button>
+
+            <button
+              onClick={toggleFullScreen}
+              className="bg-white p-2.5 rounded-lg shadow-md border border-gray-200 text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
+              title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+            >
+              {isFullScreen ? (
+                <FiMinimize className="w-5 h-5" />
+              ) : (
+                <FiMaximize className="w-5 h-5" />
+              )}
+            </button>
+          </div>
 
           <MapContainer
             center={TAGUIG_CENTER}
@@ -896,7 +964,7 @@ export default function WeatherMapView({
 
             {geoJsonData && (
               <GeoJSON
-                key={`${colorMode}-${activeClusterFilter ?? "none"}`} // Force re-render when color mode or filter changes
+                key={`${colorMode}-${activeClusterFilter ?? "none"}-${showLabels}`} // Force re-render when color mode, filter or labels toggle changes
                 data={geoJsonData}
                 style={getFeatureStyle}
                 onEachFeature={onEachFeature}
@@ -929,19 +997,29 @@ export default function WeatherMapView({
               searchQuery={searchQuery}
               geoJsonData={geoJsonData}
               weatherDataByName={weatherDataByName}
+              onSearchResult={setSelectedBarangay}
+            />
+
+            {/* Selected Barangay Highlighter */}
+            <SelectedBarangayHighlighter
+              geoJsonData={geoJsonData}
+              selectedBarangay={selectedBarangay}
             />
           </MapContainer>
         </div>
 
         {/* Right Panel -- either Detail Card, Cluster Barangay List, or Cluster Legend */}
-        {!isFullScreen && (
+        {!isFullScreen && (selectedBarangay || (activeClusterFilter !== null && selectedClusterConfig) || colorMode === "cluster") && (
           <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0">
             {/* Selected Barangay Detail Panel */}
             {selectedBarangay ? (
               <BarangayDetailPanel
                 weather={selectedBarangay}
                 cluster={selectedBarangayCluster}
-                onClose={() => setSelectedBarangay(null)}
+                onClose={() => {
+                  setSelectedBarangay(null);
+                  onSearchClear();
+                }}
               />
             ) : activeClusterFilter !== null && selectedClusterConfig ? (
               /* Cluster Detail Panel — consolidated summary + per-barangay breakdown */
