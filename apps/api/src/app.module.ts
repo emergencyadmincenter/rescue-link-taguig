@@ -15,6 +15,7 @@ import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { PersonnelModule } from './modules/personnel/personnel.module';
 import { WeatherModule } from './modules/weather/weather.module';
 import { HealthModule } from './health/health.module';
+import { InsightsModule } from './modules/insights/insights.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { HealthModule } from './health/health.module';
     PersonnelModule,
     WeatherModule,
     HealthModule,
+    InsightsModule,
   ],
   controllers: [AppController],
   providers: [

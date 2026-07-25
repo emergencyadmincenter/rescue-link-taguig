@@ -28,6 +28,14 @@ export class QueryLogsDto {
   assigned_coordinator_id?: string;
 
   @IsOptional()
+  @IsString()
+  barangay?: string;
+
+  @IsOptional()
+  @IsString()
+  incident_category_id?: string;
+
+  @IsOptional()
   @IsDateString()
   date_from?: string;
 

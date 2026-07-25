@@ -13,7 +13,13 @@
  */
 
 import { useMemo } from "react";
-import { FiArrowLeft, FiUsers, FiMapPin, FiThermometer, FiAlertTriangle } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiUsers,
+  FiMapPin,
+  FiThermometer,
+  FiAlertTriangle,
+} from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
 import type { BarangayWeather } from "../types/weather.types";
 import { type ClusterConfig } from "../data/clusters";
@@ -65,9 +71,12 @@ export default function ClusterDetailPanel({
 
   // Build severity summary label
   const severitySummaryParts: string[] = [];
-  if (stats.severeCount > 0) severitySummaryParts.push(`${stats.severeCount} Severe`);
-  if (stats.advisoryCount > 0) severitySummaryParts.push(`${stats.advisoryCount} Advisory`);
-  if (stats.normalCount > 0) severitySummaryParts.push(`${stats.normalCount} Normal`);
+  if (stats.severeCount > 0)
+    severitySummaryParts.push(`${stats.severeCount} Severe`);
+  if (stats.advisoryCount > 0)
+    severitySummaryParts.push(`${stats.advisoryCount} Advisory`);
+  if (stats.normalCount > 0)
+    severitySummaryParts.push(`${stats.normalCount} Normal`);
 
   return (
     <div className="flex flex-col min-h-0 animate-fade-in h-full">
@@ -84,9 +93,7 @@ export default function ClusterDetailPanel({
         <span className={`body-small font-semibold ${cluster.textClass}`}>
           {cluster.label}
         </span>
-        <span className="body-xsmall text-gray-400">
-          · {cluster.area}
-        </span>
+        <span className="body-xsmall text-gray-400">· {cluster.area}</span>
       </div>
 
       {/* Cluster Meta */}
@@ -102,10 +109,14 @@ export default function ClusterDetailPanel({
       </div>
 
       {/* ── Cluster-Level Summary Stats ── */}
-      <div className={`rounded-lg border p-3 mb-3 shrink-0 ${cluster.bgClass} ${cluster.borderClass}`}>
+      <div
+        className={`rounded-lg border p-3 mb-3 shrink-0 ${cluster.bgClass} ${cluster.borderClass}`}
+      >
         <div className="flex items-center gap-1.5 mb-2">
           <FiThermometer className={`w-3.5 h-3.5 ${cluster.textClass}`} />
-          <span className={`body-xsmall font-semibold ${cluster.textClass} uppercase tracking-wide`}>
+          <span
+            className={`body-xsmall font-semibold ${cluster.textClass} uppercase tracking-wide`}
+          >
             Cluster Summary
           </span>
         </div>
@@ -155,9 +166,15 @@ export default function ClusterDetailPanel({
         {highestFloodRisk && highestFloodRiskConfig && (
           <div className="mt-2 pt-2 border-t border-gray-200/50">
             <div className="flex items-center gap-1.5">
-              <WiFlood className={`w-4 h-4 ${highestFloodRiskConfig.textColor}`} />
-              <span className="body-xsmall text-gray-500">Highest Flood Risk:</span>
-              <span className={`body-xsmall font-semibold ${highestFloodRiskConfig.textColor}`}>
+              <WiFlood
+                className={`w-4 h-4 ${highestFloodRiskConfig.textColor}`}
+              />
+              <span className="body-xsmall text-gray-500">
+                Highest Flood Risk:
+              </span>
+              <span
+                className={`body-xsmall font-semibold ${highestFloodRiskConfig.textColor}`}
+              >
                 {highestFloodRiskConfig.label}
               </span>
               <span className="body-xsmall text-gray-400">

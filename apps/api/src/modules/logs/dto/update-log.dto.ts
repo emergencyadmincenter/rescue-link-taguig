@@ -53,4 +53,16 @@ export class UpdateLogDto {
   @IsOptional()
   @IsString()
   assigned_coordinator_id?: string;
+
+  @IsOptional()
+  @IsString()
+  barangay?: string;
+
+  @IsOptional()
+  @IsString()
+  incident_category_id?: string;
+
+  @IsOptional()
+  @IsString()
+  weather_condition?: string;
 }

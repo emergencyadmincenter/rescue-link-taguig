@@ -30,6 +30,12 @@ import { toast } from "react-hot-toast";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import SelectorDialog, { SelectorOption } from "./SelectorDialog";
 import { useAuth } from "@/providers/AuthProvider";
+import dynamic from "next/dynamic";
+
+const EditPinMap = dynamic(
+  () => import("./EditPinMap").then((m) => m.EditPinMap),
+  { ssr: false, loading: () => null }
+);
 
 interface LogDetailsPanelProps {
   log: Log | null;
@@ -183,6 +189,17 @@ export default function LogDetailsPanel({
     const requiredFields = ["caller_name", "caller_contact", "address"];
     if (requiredFields.includes(field) && !value.trim()) return;
     debouncedSave({ [field]: value });
+  };
+
+  const handlePinSave = async (lat: number, lng: number) => {
+    if (!log) return;
+    try {
+      const updated = await logsApi.updateLog(log.id, { latitude: lat, longitude: lng });
+      onUpdate(updated);
+      toast.success("Pin location updated.");
+    } catch {
+      toast.error("Failed to update pin location.");
+    }
   };
 
   const executeStatusChange = async (status: string) => {
@@ -492,6 +509,20 @@ export default function LogDetailsPanel({
                   disabled={isReadOnly}
                   placeholder="Provide any additional context or details..."
                   className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed disabled:opacity-70"
+                />
+              </div>
+
+              {/* Pin Location */}
+              <div>
+                <label className="block text-xs font-semibold text-foreground/60 uppercase tracking-wider mb-2 pl-1">
+                  GPS Pin Location
+                </label>
+                <EditPinMap
+                  initialLat={log.latitude}
+                  initialLng={log.longitude}
+                  barangay={log.barangay ?? ""}
+                  onSave={handlePinSave}
+                  disabled={isReadOnly}
                 />
               </div>
             </div>
