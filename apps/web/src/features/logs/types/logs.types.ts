@@ -25,6 +25,25 @@ export interface LogResourceAssignment {
   resource: Resource;
 }
 
+export interface FraudAssessment {
+  id: string;
+  client_ip: string;
+  ip_latitude: number | null;
+  ip_longitude: number | null;
+  ip_country: string | null;
+  ip_region: string | null;
+  ip_city: string | null;
+  resident_latitude: number | null;
+  resident_longitude: number | null;
+  location_permission_granted: boolean;
+  distance_km: number | null;
+  is_vpn: boolean;
+  is_proxy: boolean;
+  is_hosting: boolean;
+  risk_classification: "low_risk" | "high_fraud_risk";
+  created_at: string;
+}
+
 export interface Call {
   id: string;
   log_id: string;
@@ -73,6 +92,7 @@ export interface Log {
   calls: Call[];
   messages: Message[];
   resource_assignments: LogResourceAssignment[];
+  fraud_assessments?: FraudAssessment[];
   _count?: { messages: number };
 }
 

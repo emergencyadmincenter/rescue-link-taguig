@@ -642,6 +642,7 @@ export default function WeatherMapView({
         click: () => {
           if (weather) {
             setSelectedBarangay(weather);
+            setSelectedClusterForList(null);
           }
         },
       });

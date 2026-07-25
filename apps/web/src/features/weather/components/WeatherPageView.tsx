@@ -198,6 +198,17 @@ export default function WeatherPageView() {
     } else if (activeTab === "flood_risk") {
       const risk = calculateFloodRisk(item);
       matchesTab = risk.level === "elevated" || risk.level === "high";
+    } else if (activeTab === "cluster") {
+      // Filter by selected clusters (multi-select)
+      if (activeClusterFilters.length > 0) {
+        matchesTab = activeClusterFilters.some((filterId) => {
+          const cluster = CLUSTERS.find((c) => c.id === filterId);
+          return cluster?.barangays.some(
+            (b) => b.toLowerCase() === item.name.toLowerCase(),
+          );
+        });
+      }
+      // If no specific clusters are selected in cluster tab, show all
     }
 
     // Cluster filter (independent of tab)
@@ -219,6 +230,17 @@ export default function WeatherPageView() {
       const riskA = calculateFloodRisk(a);
       const riskB = calculateFloodRisk(b);
       return riskB.score - riskA.score;
+    }
+    // In cluster mode, group by cluster number
+    if (activeTab === "cluster") {
+      const clusterA = getClusterForBarangay(a.name);
+      const clusterB = getClusterForBarangay(b.name);
+      const idA = clusterA?.id ?? 999;
+      const idB = clusterB?.id ?? 999;
+      if (idA !== idB) return idA - idB;
+      // Within same cluster, sort severe first
+      const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
+      return severityOrder[a.severity] - severityOrder[b.severity];
     }
     const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
     return severityOrder[a.severity] - severityOrder[b.severity];
@@ -245,6 +267,17 @@ export default function WeatherPageView() {
       const risk = calculateFloodRisk(d);
       return risk.level === "elevated" || risk.level === "high";
     }).length,
+    cluster:
+      activeClusterFilters.length > 0
+        ? searchFilteredData.filter((d) =>
+            activeClusterFilters.some((filterId) => {
+              const cluster = CLUSTERS.find((c) => c.id === filterId);
+              return cluster?.barangays.some(
+                (b) => b.toLowerCase() === d.name.toLowerCase(),
+              );
+            }),
+          ).length
+        : searchFilteredData.length,
   };
 
   // Format last refreshed timestamp

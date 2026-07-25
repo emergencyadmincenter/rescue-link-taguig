@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { LocationValidationService } from '../../common/services/location-validation.service';
+import { FraudDetectionService } from '../../common/services/fraud-detection.service';
 
 @Controller('calls')
 export class CommunicationsController {
@@ -25,6 +26,7 @@ export class CommunicationsController {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly locationValidationService: LocationValidationService,
+    private readonly fraudDetectionService: FraudDetectionService,
   ) {}
 
   @Post('emergency')
@@ -35,6 +37,7 @@ export class CommunicationsController {
       latitude?: number;
       longitude?: number;
     },
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
@@ -75,6 +78,24 @@ export class CommunicationsController {
         log_id: log.id,
       },
     });
+
+    const clientIp = this.fraudDetectionService.extractClientIp(req);
+    try {
+      const assessmentPromise = this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude).then((assessment) => {
+        return this.fraudDetectionService.saveFraudAssessment(
+          log.id,
+          call.id,
+          assessment,
+          dto.latitude,
+          dto.longitude
+        );
+      });
+      // 2 second timeout to ensure it never blocks the emergency request if ip-api is slow
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fraud detection timeout')), 2000));
+      await Promise.race([assessmentPromise, timeoutPromise]);
+    } catch (err) {
+      console.warn('Fraud assessment timed out or failed, continuing emergency processing...', err);
+    }
 
     await this.communicationsService.startRouting(
       call.id,
@@ -122,6 +143,7 @@ export class CommunicationsController {
           include: {
             calls: { orderBy: { started_at: 'desc' } },
             messages: { orderBy: { created_at: 'asc' } },
+            fraud_assessments: true,
           },
         },
       },
