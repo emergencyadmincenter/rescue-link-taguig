@@ -52,7 +52,6 @@ export function UserProfileMenu() {
               {user?.email || ""}
             </p>
           </div>
-
         </div>
       )}
     </div>

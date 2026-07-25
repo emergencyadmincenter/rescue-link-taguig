@@ -79,25 +79,10 @@ export function DashboardPageView() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-12 pb-8 mb-8 border-b border-gray-100 relative">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/3"></div>
         <div className="relative z-10 flex flex-col gap-2">
-          <div className="flex items-center gap-4 mb-3">
-            <span
-              className={`px-3 py-1.5 text-xs font-bold rounded-full uppercase tracking-wider border ${isAdmin ? "bg-primary/10 text-primary border-primary/20" : "bg-info/10 text-info border-info/20"}`}
-            >
-              {isAdmin ? "Administrator Workspace" : "Coordinator Workspace"}
-            </span>
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-success/5 border border-success/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-              </span>
-              <span className="text-xs text-success font-bold uppercase tracking-wider">
-                System Online
-              </span>
-            </div>
-          </div>
           <h1 className="text-4xl md:text-5xl text-gray-900 tracking-tight font-bold font-outfit">
             {isAdmin ? "Command Center Overview" : "Operational Readiness"}
           </h1>
+          <div className="divider-primary-half" />
           <p className="text-lg text-gray-500">
             {isAdmin
               ? "System-wide insights into active emergencies, resource availability, and operational statistics."
@@ -237,11 +222,7 @@ function AdminDashboard({
             {activeEmergencies.length > 0 ? (
               <div className="space-y-4">
                 {activeEmergencies.slice(0, 5).map((log) => (
-                  <Link
-                    key={log.id}
-                    href={`/calls/${log.id}`}
-                    className="block"
-                  >
+                  <Link key={log.id} href={`/logs/${log.id}`} className="block">
                     <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group cursor-pointer">
                       <div className="flex items-center gap-4">
                         <div
@@ -399,11 +380,7 @@ function CoordinatorDashboard({
             {assignedLogs.length > 0 ? (
               <div className="space-y-4">
                 {assignedLogs.map((log) => (
-                  <Link
-                    key={log.id}
-                    href={`/calls/${log.id}`}
-                    className="block"
-                  >
+                  <Link key={log.id} href={`/logs/${log.id}`} className="block">
                     <div className="flex items-center justify-between p-4 rounded-2xl border border-primary/20 bg-primary/5 hover:border-primary/40 hover:bg-primary/10 transition-all group cursor-pointer shadow-sm">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-primary/20 text-primary">
@@ -468,7 +445,7 @@ function CoordinatorDashboard({
               {recentLogs.slice(0, 4).map((log) => (
                 <Link
                   key={log.id}
-                  href={`/calls/${log.id}`}
+                  href={`/logs/${log.id}`}
                   className="flex flex-col p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">

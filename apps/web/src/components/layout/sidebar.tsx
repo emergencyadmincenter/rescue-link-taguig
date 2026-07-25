@@ -42,13 +42,18 @@ const NAVIGATION: NavItem[] = [
     icon: HiOutlineUserGroup,
     roles: ["admin"], // Only Admin
   },
+  {
+    label: "Insights",
+    href: "/insights",
+    icon: FiFileText, // Or a better chart icon if we want to import it, but FiFileText is already imported
+    roles: ["admin", "coordinator"],
+  },
 ];
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
   const { user } = useAuth();
-
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
 
   // Check if a nav item is active (either directly or via a child route)

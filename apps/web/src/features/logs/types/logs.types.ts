@@ -1,10 +1,10 @@
-export type LogStatus = 'active' | 'dispatched' | 'resolved' | 'cancelled';
-export type LogSource = 'manual' | 'voice_call' | 'chat';
-export type CallStatus = 'ringing' | 'active' | 'ended' | 'missed' | 'rejected';
-export type MessageSenderType = 'resident' | 'coordinator' | 'system';
-export type MessageType = 'text' | 'image' | 'file';
-export type ResourceCategory = 'responder' | 'medical' | 'relief' | 'utility';
-export type CommunicationMethod = 'voice' | 'chat';
+export type LogStatus = "active" | "dispatched" | "resolved" | "cancelled";
+export type LogSource = "manual" | "voice_call" | "chat";
+export type CallStatus = "ringing" | "active" | "ended" | "missed" | "rejected";
+export type MessageSenderType = "resident" | "coordinator" | "system";
+export type MessageType = "text" | "image" | "file";
+export type ResourceCategory = "responder" | "medical" | "relief" | "utility";
+export type CommunicationMethod = "voice" | "chat";
 
 export interface User {
   id: string;
@@ -23,6 +23,25 @@ export interface LogResourceAssignment {
   log_id: string;
   resource_id: string;
   resource: Resource;
+}
+
+export interface FraudAssessment {
+  id: string;
+  client_ip: string;
+  ip_latitude: number | null;
+  ip_longitude: number | null;
+  ip_country: string | null;
+  ip_region: string | null;
+  ip_city: string | null;
+  resident_latitude: number | null;
+  resident_longitude: number | null;
+  location_permission_granted: boolean;
+  distance_km: number | null;
+  is_vpn: boolean;
+  is_proxy: boolean;
+  is_hosting: boolean;
+  risk_classification: "low_risk" | "high_fraud_risk";
+  created_at: string;
 }
 
 export interface Call {
@@ -56,6 +75,7 @@ export interface Log {
   caller_name: string | null;
   caller_contact: string | null;
   address: string | null;
+  barangay: string | null;
   latitude: number | null;
   longitude: number | null;
   description: string | null;
@@ -73,6 +93,7 @@ export interface Log {
   calls: Call[];
   messages: Message[];
   resource_assignments: LogResourceAssignment[];
+  fraud_assessments?: FraudAssessment[];
   _count?: { messages: number };
 }
 
@@ -86,7 +107,7 @@ export interface LogsQueryParams {
   page?: number;
   limit?: number;
   sort_by?: string;
-  sort_order?: 'asc' | 'desc';
+  sort_order?: "asc" | "desc";
 }
 
 export interface PaginatedResponse<T> {
@@ -112,17 +133,20 @@ export interface CreateLogPayload {
   caller_name: string;
   caller_contact: string;
   address: string;
+  barangay?: string;
   description?: string;
   latitude?: number;
   longitude?: number;
   resource_ids?: string[];
   channels?: string[];
+  status?: LogStatus;
 }
 
 export interface UpdateLogPayload {
   caller_name?: string;
   caller_contact?: string;
   address?: string;
+  barangay?: string;
   description?: string;
   status?: LogStatus;
   latitude?: number;

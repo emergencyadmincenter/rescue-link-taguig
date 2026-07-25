@@ -1,21 +1,40 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { FiCheck, FiUser, FiPhone, FiMapPin, FiAlignLeft, FiSave } from "react-icons/fi";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  FiCheck,
+  FiUser,
+  FiPhone,
+  FiMapPin,
+  FiAlignLeft,
+  FiSave,
+  FiAlertTriangle,
+} from "react-icons/fi";
 import { Log } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/providers/AuthProvider";
+import { useAutoSave } from "../hooks/useAutoSave";
 
 interface IncidentFormPanelProps {
   log: Log | null;
   onUpdate: (updatedLog: Log) => void;
+  isActiveSession?: boolean;
 }
 
-export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelProps) {
+export default function IncidentFormPanel({
+  log,
+  onUpdate,
+  isActiveSession,
+}: IncidentFormPanelProps) {
   const { user } = useAuth();
-  const isOwner = user && log && (log.assigned_coordinator_id === user.id || log.created_by_coordinator_id === user.id);
-  const isReadOnly = !isOwner;
+  const isOwner =
+    user &&
+    log &&
+    (log.assigned_coordinator_id === user.id ||
+      log.created_by_coordinator_id === user.id ||
+      !log.assigned_coordinator_id);
+  const isReadOnly = !isOwner || isActiveSession === false;
 
   const [formData, setFormData] = useState({
     caller_name: "",
@@ -24,38 +43,81 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
     description: "",
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  const { debouncedSave, isSaving } = useAutoSave({
+    onSave: async (dataToSave) => {
+      if (!log || isReadOnly) return;
+      try {
+        const updated = await logsApi.updateLog(log.id, dataToSave);
+        onUpdate({ ...log, ...updated });
+      } catch (error) {
+        toast.error("Failed to auto-save incident details.");
+      }
+    },
+    debounceMs: 1000,
+  });
+
+  const autoPopulatedRefs = useRef<Set<string>>(new Set());
+  const formDataRef = useRef(formData);
+
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   useEffect(() => {
     if (log) {
-      setFormData({
-        caller_name: log.caller_name || "",
-        caller_contact: log.caller_contact || "",
-        address: log.address || "",
-        description: log.description || "",
-      });
+      setFormData((prev) => ({
+        // We only override with log's value if we don't have local edits or if log has a new truthy value.
+        caller_name: log.caller_name || prev.caller_name || "",
+        caller_contact: log.caller_contact || prev.caller_contact || "",
+        address:
+          log.address && log.address !== "Unknown"
+            ? log.address
+            : prev.address || "",
+        description: log.description || prev.description || "",
+      }));
+
+      // Auto-populate address from lat/lng if not present or if it's "Unknown"
+      if (
+        (!log.address || log.address === "Unknown") &&
+        log.latitude &&
+        log.longitude &&
+        !isReadOnly &&
+        !autoPopulatedRefs.current.has(log.id)
+      ) {
+        autoPopulatedRefs.current.add(log.id);
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${log.latitude}&lon=${log.longitude}`,
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            if (data && data.display_name) {
+              const currentAddress = formDataRef.current.address;
+              if (!currentAddress || currentAddress === "Unknown") {
+                debouncedSave({ address: data.display_name });
+              }
+              setFormData((prev) => ({
+                ...prev,
+                address:
+                  !prev.address || prev.address === "Unknown"
+                    ? data.display_name
+                    : prev.address,
+              }));
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to reverse geocode", err);
+          });
+      }
     }
-  }, [log]);
+  }, [log, isReadOnly]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     if (isReadOnly) return;
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async () => {
-    if (!log || isReadOnly) return;
-    setIsSaving(true);
-    try {
-      const updated = await logsApi.updateLog(log.id, formData);
-      onUpdate({ ...log, ...updated });
-      toast.success("Incident details saved.");
-    } catch (error) {
-      toast.error("Failed to save incident details.");
-    } finally {
-      setIsSaving(false);
-    }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    debouncedSave({ [name]: value });
   };
 
   if (!log) return null;
@@ -69,28 +131,48 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
             <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
               {log.reference_no}
             </span>
+            {isSaving && (
+              <span className="text-xs text-foreground/50 ml-2 animate-pulse">
+                Saving...
+              </span>
+            )}
           </div>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving || isReadOnly}
-          className="px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
-        >
-          {isSaving ? (
-            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          ) : (
-            <FiSave className="w-4 h-4" />
-          )}
-          {isSaving ? "Saving..." : "Save"}
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-background-subtle/20">
         <div className="space-y-4 pb-8">
-          
+          {isReadOnly && (
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20 flex items-start gap-2.5 text-warning-hover shadow-sm">
+              <FiAlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-xs">View-Only Mode</h3>
+                <p className="text-[10px] mt-0.5 opacity-90 text-warning-hover leading-tight">
+                  {isActiveSession === false && isOwner ? (
+                    "This communication session has ended. To make further edits, please use the Emergency Logs page."
+                  ) : (
+                    <>
+                      This log is currently owned by{" "}
+                      {log.assigned_coordinator?.name || "another coordinator"}.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {log.fraud_assessments?.some((f) => f.risk_classification === "high_fraud_risk") && (
+            <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 flex items-start gap-2.5 text-danger shadow-sm">
+              <FiAlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-danger" />
+              <div>
+                <h3 className="font-bold text-xs text-danger">High Fraud Risk Detected</h3>
+                <p className="text-[10px] mt-0.5 opacity-90 text-danger leading-tight">
+                  This request was flagged for potential fraud (e.g., VPN/Proxy detected or IP location mismatch). Please verify the caller's identity carefully.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Caller Information Card */}
           <section className="bg-white rounded-xl border border-background-subtle shadow-sm overflow-hidden">
             <div className="px-3 py-2.5 border-b border-background-subtle/50 bg-gray-50/50">
@@ -191,7 +273,6 @@ export default function IncidentFormPanel({ log, onUpdate }: IncidentFormPanelPr
               </div>
             </div>
           </section>
-
         </div>
       </div>
     </div>

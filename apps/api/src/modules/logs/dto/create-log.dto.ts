@@ -4,20 +4,21 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
+  IsEnum,
 } from 'class-validator';
 
 export class CreateLogDto {
   @IsString()
   @IsNotEmpty()
-  caller_name: string;
+  caller_name!: string;
 
   @IsString()
   @IsNotEmpty()
-  caller_contact: string;
+  caller_contact!: string;
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  address!: string;
 
   @IsOptional()
   @IsString()
@@ -40,4 +41,20 @@ export class CreateLogDto {
   @IsArray()
   @IsString({ each: true })
   channels?: string[];
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  barangay?: string;
+
+  @IsOptional()
+  @IsString()
+  incident_category_id?: string;
+
+  @IsOptional()
+  @IsString()
+  weather_condition?: string;
 }

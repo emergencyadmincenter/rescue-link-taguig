@@ -1,0 +1,47 @@
+/**
+ * Canonical list of all 38 Taguig City barangays.
+ * Single source of truth — shared between WeatherMapView, IncidentMapView,
+ * InsightsFilterBar, and any other component that needs the full barangay list.
+ */
+export const TAGUIG_BARANGAYS = [
+  "Bagumbayan",
+  "Bambang",
+  "Calzada",
+  "Cembo",
+  "Central Bicutan",
+  "Central Signal Village",
+  "Comembo",
+  "East Rembo",
+  "Fort Bonifacio",
+  "Hagonoy",
+  "Ibayo-Tipas",
+  "Katuparan",
+  "Ligid-Tipas",
+  "Lower Bicutan",
+  "Maharlika Village",
+  "Napindan",
+  "New Lower Bicutan",
+  "North Daang Hari",
+  "North Signal Village",
+  "Palingon-Tipas",
+  "Pembo",
+  "Pinagsama",
+  "Pitogo",
+  "Post Proper Northside",
+  "Post Proper Southside",
+  "Rizal",
+  "San Miguel",
+  "Santa Ana",
+  "South Cembo",
+  "South Daang Hari",
+  "South Signal Village",
+  "Tanyag",
+  "Tuktukan",
+  "Upper Bicutan",
+  "Ususan",
+  "Wawa",
+  "Western Bicutan",
+  "West Rembo",
+] as const;
+
+export type TaguigBarangay = (typeof TAGUIG_BARANGAYS)[number];

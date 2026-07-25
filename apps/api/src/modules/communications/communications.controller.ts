@@ -8,12 +8,15 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CommunicationsService } from './communications.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import { LocationValidationService } from '../../common/services/location-validation.service';
+import { FraudDetectionService } from '../../common/services/fraud-detection.service';
 
 @Controller('calls')
 export class CommunicationsController {
@@ -22,6 +25,8 @@ export class CommunicationsController {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly locationValidationService: LocationValidationService,
+    private readonly fraudDetectionService: FraudDetectionService,
   ) {}
 
   @Post('emergency')
@@ -32,8 +37,21 @@ export class CommunicationsController {
       latitude?: number;
       longitude?: number;
     },
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const isInside = this.locationValidationService.isWithinTaguig(
+        dto.latitude,
+        dto.longitude,
+      );
+      if (!isInside) {
+        throw new ForbiddenException(
+          'Your location is outside Taguig City limits. Please call 911 or your local command center.',
+        );
+      }
+    }
+
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const log = await this.prisma.log.create({
@@ -47,7 +65,7 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         channels: [dto.communicationMethod],
-        description: 'Auto-generated emergency log.',
+        description: '',
       },
     });
 
@@ -60,6 +78,24 @@ export class CommunicationsController {
         log_id: log.id,
       },
     });
+
+    const clientIp = this.fraudDetectionService.extractClientIp(req);
+    try {
+      const assessmentPromise = this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude).then((assessment) => {
+        return this.fraudDetectionService.saveFraudAssessment(
+          log.id,
+          call.id,
+          assessment,
+          dto.latitude,
+          dto.longitude
+        );
+      });
+      // 2 second timeout to ensure it never blocks the emergency request if ip-api is slow
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fraud detection timeout')), 2000));
+      await Promise.race([assessmentPromise, timeoutPromise]);
+    } catch (err) {
+      console.warn('Fraud assessment timed out or failed, continuing emergency processing...', err);
+    }
 
     await this.communicationsService.startRouting(
       call.id,
@@ -107,6 +143,7 @@ export class CommunicationsController {
           include: {
             calls: { orderBy: { started_at: 'desc' } },
             messages: { orderBy: { created_at: 'asc' } },
+            fraud_assessments: true,
           },
         },
       },
@@ -123,7 +160,7 @@ export class CommunicationsController {
 
     const isActive = call.status === 'active' || call.status === 'ringing';
     if (isActive && call.coordinator_id !== user.sub) {
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'Access denied: Call is active and assigned to another coordinator',
       );
     }

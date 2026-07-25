@@ -116,7 +116,15 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
           <Icon className={`w-7 h-7 ${iconColor}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="title-small text-gray-900 truncate pr-16">
+          <h3
+            className={`text-gray-900 font-semibold whitespace-nowrap pr-16 ${
+              weather.name.length > 22
+                ? "text-xs leading-5"
+                : weather.name.length > 18
+                  ? "text-[13px] leading-5"
+                  : "title-small"
+            }`}
+          >
             {weather.name}
           </h3>
           <p className="body-xsmall text-gray-500">{label}</p>
@@ -239,6 +247,72 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// --- Compact Weather Card ---
+
+export function CompactWeatherCard({ weather, clusterColor }: WeatherCardProps & { clusterColor?: string }) {
+  const Icon = WEATHER_ICONS[weather.condition];
+  const iconColor = ICON_COLORS[weather.condition];
+  
+  const isSevere = weather.severity === "severe";
+  const isAdvisory = weather.severity === "advisory" || weather.severity === "warning";
+
+  let cardStyles = "";
+  if (clusterColor) {
+    cardStyles = isSevere 
+      ? "border-danger/40 hover:opacity-80"
+      : isAdvisory
+        ? "border-warning/40 hover:opacity-80"
+        : "border-transparent hover:opacity-80";
+  } else {
+    cardStyles = isSevere
+      ? "border-danger/40 bg-red-50/30"
+      : isAdvisory
+        ? "border-warning/40 bg-yellow-50/30"
+        : "border-gray-100 bg-white hover:bg-gray-50/50";
+  }
+
+  const risk = calculateFloodRisk(weather);
+  const config = getFloodRiskConfig(risk.level);
+
+  const inlineStyle = clusterColor 
+    ? { backgroundColor: `${clusterColor}15` } // 15 = ~8% opacity for a very subtle highlight
+    : {};
+
+  return (
+    <div 
+      className={`rounded-lg border p-3 flex items-center gap-3 transition-all duration-200 ${cardStyles}`}
+      style={inlineStyle}
+    >
+      <div
+        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
+          isSevere ? "bg-danger/10" : isAdvisory ? "bg-warning/10" : "bg-gray-100"
+        }`}
+      >
+        <Icon className={`w-6 h-6 ${iconColor}`} />
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <h4 className="body-small font-semibold text-gray-900 truncate">
+          {weather.name}
+        </h4>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="body-xsmall text-gray-500 font-medium">
+            {weather.temperature}°C
+          </span>
+          <span className="w-1 h-1 rounded-full bg-gray-300" />
+          <span className={`body-xsmall font-medium ${config.textColor} truncate`}>
+            {config.label} Risk
+          </span>
+        </div>
+      </div>
+      
+      {(isSevere || isAdvisory) && (
+        <FiAlertTriangle className={`w-4 h-4 shrink-0 ${isSevere ? "text-danger" : "text-warning"}`} />
+      )}
     </div>
   );
 }

@@ -168,11 +168,15 @@ export default function ActiveSOSView({
       <div className="absolute top-4 sm:top-6 left-4 right-4 sm:left-6 sm:right-6 z-10 flex items-center justify-between p-3 sm:p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 relative">
-            <span className="text-white font-bold text-sm sm:text-base">CC</span>
+            <span className="text-white font-bold text-sm sm:text-base">
+              CC
+            </span>
             <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-success border-2 border-black" />
           </div>
           <div>
-            <h3 className="text-white font-medium text-sm sm:text-base">Command Center</h3>
+            <h3 className="text-white font-medium text-sm sm:text-base">
+              Command Center
+            </h3>
             <p className="text-white/70 text-xs sm:text-sm flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
               Connected
@@ -196,7 +200,6 @@ export default function ActiveSOSView({
 
       {/* Controls */}
       <div className="absolute bottom-0 inset-x-0 p-6 pb-8 flex justify-center items-center gap-4 sm:gap-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20">
-
         <button
           onClick={toggleVideo}
           className={`p-4 sm:p-5 rounded-full transition-all duration-300 shadow-lg backdrop-blur-md ${isVideoEnabled ? "bg-white/15 text-white hover:bg-white/25 border border-white/10" : "bg-danger text-white hover:bg-danger-hover"}`}
