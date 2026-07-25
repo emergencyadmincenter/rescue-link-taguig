@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
+  IsEnum,
 } from 'class-validator';
 
 export class CreateLogDto {
@@ -44,4 +45,16 @@ export class CreateLogDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @IsOptional()
+  @IsString()
+  barangay?: string;
+
+  @IsOptional()
+  @IsString()
+  incident_category_id?: string;
+
+  @IsOptional()
+  @IsString()
+  weather_condition?: string;
 }
