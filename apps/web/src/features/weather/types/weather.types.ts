@@ -59,7 +59,7 @@ export interface BarangayWeather {
 }
 
 /** Filter options for the weather page */
-export type WeatherFilterTab = "all" | "severe" | "advisory" | "flood_risk" | "cluster";
+export type WeatherFilterTab = "all" | "severe" | "advisory" | "flood_risk";
 
 /** Summary statistics for the weather overview */
 export interface WeatherSummary {

@@ -55,6 +55,39 @@
   border-top-color: #e5e7eb !important;
 }
 
+/* Permanent Barangay Map Labels — crisp white text with dark outline */
+.barangay-map-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-family: var(--font-inter), Inter, sans-serif !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+}
+
+.barangay-map-label::before {
+  display: none !important;
+}
+
+/* Dimmed / De-highlighted Barangay Map Labels for non-selected clusters */
+.barangay-map-label-dimmed {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: rgba(255, 255, 255, 0.25) !important;
+  font-family: var(--font-inter), Inter, sans-serif !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  padding: 0 !important;
+  opacity: 0.3 !important;
+}
+
+.barangay-map-label-dimmed::before {
+  display: none !important;
+}
+
 /* Ensure Leaflet map container respects our layout */
 .leaflet-container {
   font-family: var(--font-inter), Inter, sans-serif;

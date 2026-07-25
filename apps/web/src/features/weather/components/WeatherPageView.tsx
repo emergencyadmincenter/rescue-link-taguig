@@ -10,7 +10,6 @@ import {
   FiMap,
   FiX,
   FiChevronDown,
-  FiCheck,
 } from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
 import WeatherCard from "./WeatherCard";
@@ -20,7 +19,6 @@ import { calculateFloodRisk } from "../utils/flood-risk";
 import {
   CLUSTERS,
   getClusterForBarangay,
-  type ClusterConfig,
 } from "../data/clusters";
 import ClusterSummaryTiles from "./ClusterSummaryTiles";
 import { ExportReportButton } from "./ExportReportButton";
@@ -97,10 +95,10 @@ export default function WeatherPageView() {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // --- Cluster Filter State (Multi-select) ---
-  // Keeps list and map views in sync: selecting cluster filters here
-  // filters the list view and also communicates the active clusters to the map.
-  const [activeClusterFilters, setActiveClusterFilters] = useState<number[]>([]);
+  // --- Cluster Filter State (Single-select) ---
+  // Keeps list and map views in sync: selecting a cluster filter here
+  // filters the list view and also communicates the active cluster to the map.
+  const [activeClusterFilter, setActiveClusterFilter] = useState<number | null>(null);
 
   // --- Cluster Dropdown Open State ---
   const [clusterDropdownOpen, setClusterDropdownOpen] = useState(false);
@@ -167,37 +165,22 @@ export default function WeatherPageView() {
   // --- Handle tab change ---
   const handleTabChange = useCallback((tab: WeatherFilterTab) => {
     setActiveTab(tab);
-    // Clear cluster filters when switching to a non-cluster tab
-    if (tab !== "cluster") {
-      setActiveClusterFilters([]);
-    }
   }, []);
 
-  // --- Handle cluster filter toggle (multi-select) ---
-  const handleClusterToggle = useCallback(
+  // --- Handle cluster filter select (single-select: click to select, click again to deselect) ---
+  const handleClusterSelect = useCallback(
     (clusterId: number) => {
-      setActiveClusterFilters((prev) => {
-        const next = prev.includes(clusterId)
-          ? prev.filter((id) => id !== clusterId)
-          : [...prev, clusterId];
-        if (next.length > 0) {
-          setActiveTab("cluster");
-        } else if (activeTab === "cluster") {
-          setActiveTab("all");
-        }
-        return next;
-      });
+      setActiveClusterFilter((prev) =>
+        prev === clusterId ? null : clusterId,
+      );
     },
-    [activeTab],
+    [],
   );
 
-  // --- Clear all cluster filters ---
-  const handleClearClusterFilters = useCallback(() => {
-    setActiveClusterFilters([]);
-    if (activeTab === "cluster") {
-      setActiveTab("all");
-    }
-  }, [activeTab]);
+  // --- Clear cluster filter ---
+  const handleClearClusterFilter = useCallback(() => {
+    setActiveClusterFilter(null);
+  }, []);
 
   // --- Filtering logic ---
   // Base data after search but before tab filter
@@ -206,6 +189,7 @@ export default function WeatherPageView() {
   );
 
   const filteredData = searchFilteredData.filter((item) => {
+    // Tab-based severity/flood filter
     let matchesTab = true;
     if (activeTab === "severe") {
       matchesTab = item.severity === "severe";
@@ -214,19 +198,18 @@ export default function WeatherPageView() {
     } else if (activeTab === "flood_risk") {
       const risk = calculateFloodRisk(item);
       matchesTab = risk.level === "elevated" || risk.level === "high";
-    } else if (activeTab === "cluster") {
-      // Filter by selected clusters (multi-select)
-      if (activeClusterFilters.length > 0) {
-        matchesTab = activeClusterFilters.some((filterId) => {
-          const cluster = CLUSTERS.find((c) => c.id === filterId);
-          return cluster?.barangays.some(
-            (b) => b.toLowerCase() === item.name.toLowerCase(),
-          );
-        });
-      }
-      // If no specific clusters are selected in cluster tab, show all
     }
-    return matchesTab;
+
+    // Cluster filter (independent of tab)
+    let matchesCluster = true;
+    if (activeClusterFilter !== null) {
+      const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+      matchesCluster = cluster?.barangays.some(
+        (b) => b.toLowerCase() === item.name.toLowerCase(),
+      ) ?? false;
+    }
+
+    return matchesTab && matchesCluster;
   });
 
   // Sort: severe first, then advisory, then normal
@@ -237,43 +220,31 @@ export default function WeatherPageView() {
       const riskB = calculateFloodRisk(b);
       return riskB.score - riskA.score;
     }
-    // In cluster mode, group by cluster number
-    if (activeTab === "cluster") {
-      const clusterA = getClusterForBarangay(a.name);
-      const clusterB = getClusterForBarangay(b.name);
-      const idA = clusterA?.id ?? 999;
-      const idB = clusterB?.id ?? 999;
-      if (idA !== idB) return idA - idB;
-      // Within same cluster, sort severe first
-      const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
-      return severityOrder[a.severity] - severityOrder[b.severity];
-    }
     const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
     return severityOrder[a.severity] - severityOrder[b.severity];
   });
 
-  // Tab counts
+  // Base data for tab counts: apply cluster filter first so tab counts reflect the filtered subset
+  const clusterFilteredData = activeClusterFilter !== null
+    ? searchFilteredData.filter((d) => {
+        const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+        return cluster?.barangays.some(
+          (b) => b.toLowerCase() === d.name.toLowerCase(),
+        ) ?? false;
+      })
+    : searchFilteredData;
+
+  // Tab counts (reflect cluster filter if active)
   const tabCounts: Record<WeatherFilterTab, number> = {
-    all: searchFilteredData.length,
-    severe: searchFilteredData.filter((d) => d.severity === "severe").length,
-    advisory: searchFilteredData.filter(
+    all: clusterFilteredData.length,
+    severe: clusterFilteredData.filter((d) => d.severity === "severe").length,
+    advisory: clusterFilteredData.filter(
       (d) => d.severity === "advisory" || d.severity === "warning",
     ).length,
-    flood_risk: searchFilteredData.filter((d) => {
+    flood_risk: clusterFilteredData.filter((d) => {
       const risk = calculateFloodRisk(d);
       return risk.level === "elevated" || risk.level === "high";
     }).length,
-    cluster:
-      activeClusterFilters.length > 0
-        ? searchFilteredData.filter((d) =>
-            activeClusterFilters.some((filterId) => {
-              const cluster = CLUSTERS.find((c) => c.id === filterId);
-              return cluster?.barangays.some(
-                (b) => b.toLowerCase() === d.name.toLowerCase(),
-              );
-            }),
-          ).length
-        : searchFilteredData.length,
   };
 
   // Format last refreshed timestamp
@@ -286,9 +257,9 @@ export default function WeatherPageView() {
     });
   };
 
-  // Cluster badge for list view cards
+  // Cluster badge for list view cards (shown when a cluster filter is active)
   const renderClusterBadge = (weather: BarangayWeather) => {
-    if (activeTab !== "cluster") return null;
+    if (activeClusterFilter === null) return null;
     const cluster = getClusterForBarangay(weather.name);
     if (!cluster) return null;
     return (
@@ -340,22 +311,20 @@ export default function WeatherPageView() {
             <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-[15px] h-[15px]" />
           </div>
 
-          {/* Cluster Filter Multi-Select Dropdown */}
+          {/* Cluster Filter Single-Select Dropdown */}
           <div className="relative shrink-0" ref={clusterDropdownRef}>
             <button
               onClick={() => setClusterDropdownOpen((prev) => !prev)}
               className={`flex items-center gap-2 pl-3 pr-2.5 py-2.5 border rounded-lg body-xsmall font-medium bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 cursor-pointer ${
-                activeClusterFilters.length > 0
+                activeClusterFilter !== null
                   ? "border-primary/40 text-primary"
                   : "border-gray-200 text-gray-700"
               }`}
             >
               <span>
-                {activeClusterFilters.length === 0
+                {activeClusterFilter === null
                   ? "All Clusters"
-                  : activeClusterFilters.length === 1
-                    ? CLUSTERS.find((c) => c.id === activeClusterFilters[0])?.label ?? "Cluster"
-                    : `${activeClusterFilters.length} Clusters`}
+                  : CLUSTERS.find((c) => c.id === activeClusterFilter)?.label ?? "Cluster"}
               </span>
               <FiChevronDown
                 className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -368,27 +337,30 @@ export default function WeatherPageView() {
             {clusterDropdownOpen && (
               <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
                 {CLUSTERS.map((c) => {
-                  const isSelected = activeClusterFilters.includes(c.id);
+                  const isSelected = activeClusterFilter === c.id;
                   return (
                     <button
                       key={c.id}
-                      onClick={() => handleClusterToggle(c.id)}
+                      onClick={() => {
+                        handleClusterSelect(c.id);
+                        setClusterDropdownOpen(false);
+                      }}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-150 ${
                         isSelected
                           ? "bg-primary/5 text-gray-900"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      {/* Checkbox indicator */}
+                      {/* Radio indicator */}
                       <div
-                        className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
                           isSelected
-                            ? "bg-primary border-primary"
+                            ? "border-primary"
                             : "border-gray-300"
                         }`}
                       >
                         {isSelected && (
-                          <FiCheck className="w-3 h-3 text-white" />
+                          <div className="w-2 h-2 rounded-full bg-primary" />
                         )}
                       </div>
                       {/* Cluster dot + label */}
@@ -404,18 +376,18 @@ export default function WeatherPageView() {
                     </button>
                   );
                 })}
-                {/* Clear All */}
-                {activeClusterFilters.length > 0 && (
+                {/* Clear Filter */}
+                {activeClusterFilter !== null && (
                   <>
                     <div className="border-t border-gray-100 my-1" />
                     <button
                       onClick={() => {
-                        handleClearClusterFilters();
+                        handleClearClusterFilter();
                         setClusterDropdownOpen(false);
                       }}
                       className="w-full px-3 py-2 text-left body-xsmall font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-150"
                     >
-                      Clear All
+                      Clear Filter
                     </button>
                   </>
                 )}
@@ -423,16 +395,15 @@ export default function WeatherPageView() {
             )}
           </div>
 
-          {/* Active Cluster Filter Badges */}
-          {activeClusterFilters.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {activeClusterFilters.map((filterId) => {
-                const cluster = CLUSTERS.find((c) => c.id === filterId);
+          {/* Active Cluster Filter Badge (single) */}
+          {activeClusterFilter !== null && (
+            <div className="flex items-center gap-1.5">
+              {(() => {
+                const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
                 if (!cluster) return null;
                 return (
                   <button
-                    key={filterId}
-                    onClick={() => handleClusterToggle(filterId)}
+                    onClick={handleClearClusterFilter}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary body-xsmall font-medium hover:bg-primary/20 transition-all duration-200"
                   >
                     <div className={`w-2 h-2 rounded-sm ${cluster.dotClass}`} />
@@ -440,15 +411,7 @@ export default function WeatherPageView() {
                     <FiX className="w-3 h-3" />
                   </button>
                 );
-              })}
-              {activeClusterFilters.length > 1 && (
-                <button
-                  onClick={handleClearClusterFilters}
-                  className="px-2.5 py-1 rounded-full text-gray-500 body-xsmall font-medium hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
-                >
-                  Clear All
-                </button>
-              )}
+              })()}
             </div>
           )}
 
@@ -536,8 +499,8 @@ export default function WeatherPageView() {
       <div className="mb-4">
         <ClusterSummaryTiles
           weatherData={weatherData}
-          activeClusterFilters={activeClusterFilters}
-          onClusterToggle={handleClusterToggle}
+          activeClusterFilter={activeClusterFilter}
+          onClusterSelect={handleClusterSelect}
         />
       </div>
 
@@ -627,7 +590,8 @@ export default function WeatherPageView() {
           <WeatherMapView
             weatherData={weatherData}
             searchQuery={debouncedSearch}
-            activeClusterFilters={activeClusterFilters}
+            activeClusterFilter={activeClusterFilter}
+            onClusterSelect={handleClusterSelect}
           />
         )}
       </div>

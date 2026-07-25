@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
-import { FiMaximize, FiMinimize, FiUsers, FiMapPin, FiArrowLeft } from "react-icons/fi";
+import { FiMaximize, FiMinimize } from "react-icons/fi";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -34,6 +34,7 @@ import {
 import WeatherCard from "./WeatherCard";
 import ClusterLegendPanel from "./ClusterLegendPanel";
 import { BarangayDetailPanel } from "./BarangayDetailPanel";
+import ClusterDetailPanel from "./ClusterDetailPanel";
 
 // --- Types ---
 
@@ -44,8 +45,10 @@ interface WeatherMapViewProps {
   weatherData: BarangayWeather[];
   /** Current search query from parent toolbar */
   searchQuery: string;
-  /** Active cluster filters from parent (empty = no filter) */
-  activeClusterFilters: number[];
+  /** Active cluster filter from parent (null = no filter) */
+  activeClusterFilter: number | null;
+  /** Callback to select/clear active cluster filter */
+  onClusterSelect: (clusterId: number | null) => void;
 }
 
 // --- Constants ---
@@ -378,7 +381,8 @@ function ClusterHighlighter({
 export default function WeatherMapView({
   weatherData,
   searchQuery,
-  activeClusterFilters,
+  activeClusterFilter,
+  onClusterSelect,
 }: WeatherMapViewProps) {
   const [geoJsonData, setGeoJsonData] =
     useState<GeoJSON.FeatureCollection | null>(null);
@@ -392,10 +396,6 @@ export default function WeatherMapView({
     number | null
   >(null);
   const [shouldFitClusterBounds, setShouldFitClusterBounds] = useState(false);
-  // Panel showing barangay list for a clicked cluster
-  const [selectedClusterForList, setSelectedClusterForList] = useState<
-    number | null
-  >(null);
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
@@ -487,25 +487,33 @@ export default function WeatherMapView({
     };
   }, []);
 
-  // --- Sync cluster filter from parent to map color mode ---
-  useEffect(() => {
-    if (activeClusterFilters.length > 0 && colorMode !== "cluster") {
-      setColorMode("cluster");
-    }
-  }, [activeClusterFilters, colorMode]);
+  // NOTE: colorMode and activeClusterFilter are intentionally independent.
+  // Users should be able to filter by a cluster AND view it in any coloring mode
+  // (severity, flood_risk, or cluster). No useEffect coupling these two states.
 
-  // --- Helper: check if a barangay belongs to any of the active cluster filters ---
+  // --- Sync activeClusterFilter from parent toolbar/tiles to map bounds & highlights ---
+  useEffect(() => {
+    if (activeClusterFilter !== null) {
+      setHighlightedClusterId(activeClusterFilter);
+      setShouldFitClusterBounds(true);
+      setSelectedBarangay(null);
+    } else {
+      setHighlightedClusterId(null);
+    }
+  }, [activeClusterFilter]);
+
+  // --- Helper: check if a barangay belongs to the active cluster filter ---
   const isBarangayInActiveFilters = useCallback(
     (barangayName: string): boolean => {
-      if (activeClusterFilters.length === 0) return true; // no filter = everything visible
-      return activeClusterFilters.some((filterId) => {
-        const cluster = CLUSTERS.find((c) => c.id === filterId);
-        return cluster?.barangays.some(
+      if (activeClusterFilter === null) return true; // no filter = everything visible
+      const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+      return (
+        cluster?.barangays.some(
           (b) => b.toLowerCase() === barangayName.toLowerCase(),
-        );
-      });
+        ) ?? false
+      );
     },
-    [activeClusterFilters],
+    [activeClusterFilter],
   );
 
   // --- GeoJSON Style Function ---
@@ -589,46 +597,28 @@ export default function WeatherMapView({
       const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       const cluster = getClusterForBarangay(dataName);
 
-      // --- Hover Tooltip ---
-      if (weather) {
-        const conditionLabel = CONDITION_LABELS[weather.condition] || weather.condition.replace(/_/g, " ");
-        const clusterInfo =
-          colorMode === "cluster" && cluster
-            ? `<div style="font-size: 11px; color: ${cluster.color}; margin-top: 2px; font-weight: 600;">
-                ${cluster.label} · ${cluster.area}
-              </div>`
-            : "";
-        const tooltipContent = `
-          <div style="font-family: Inter, sans-serif; min-width: 140px;">
-            <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">
-              ${featureName}
-            </div>
-            <div style="font-size: 12px; color: #6b7280;">
-              ${weather.temperature}°C · ${conditionLabel}
-            </div>
-            ${clusterInfo}
+      // --- Permanent White Text Label on Polygon Center ---
+      const displayName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
+      const matchesFilter = isBarangayInActiveFilters(displayName);
+      const isFilteredOut = activeClusterFilter !== null && !matchesFilter;
+
+      if (isFilteredOut) {
+        // Do NOT display text label for non-selected cluster barangays
+        (layer as L.Path).unbindTooltip();
+      } else {
+        const labelContent = `
+          <div style="font-weight: 700; font-size: 11px; color: #ffffff; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); text-align: center; line-height: 1.1; pointer-events: none;">
+            ${displayName}
+            ${weather ? `<div style="font-size: 10px; font-weight: 600; opacity: 0.95; margin-top: 1px;">${weather.temperature}°C</div>` : ""}
           </div>
         `;
 
-        (layer as L.Path).bindTooltip(tooltipContent, {
-          sticky: true,
-          direction: "top",
-          offset: [0, -10],
-          className: "weather-map-tooltip",
+        (layer as L.Path).bindTooltip(labelContent, {
+          permanent: true,
+          direction: "center",
+          className: "barangay-map-label",
+          interactive: false,
         });
-      } else {
-        (layer as L.Path).bindTooltip(
-          `<div style="font-family: Inter, sans-serif;">
-            <div style="font-weight: 600; font-size: 13px;">${featureName}</div>
-            <div style="font-size: 12px; color: #9ca3af;">No weather data</div>
-          </div>`,
-          {
-            sticky: true,
-            direction: "top",
-            offset: [0, -10],
-            className: "weather-map-tooltip",
-          },
-        );
       }
 
       // --- Hover Highlight ---
@@ -652,12 +642,11 @@ export default function WeatherMapView({
         click: () => {
           if (weather) {
             setSelectedBarangay(weather);
-            setSelectedClusterForList(null);
           }
         },
       });
     },
-    [findWeatherForFeature, colorMode],
+    [findWeatherForFeature, colorMode, isBarangayInActiveFilters, activeClusterFilter],
   );
 
   // --- Legend Data ---
@@ -732,13 +721,13 @@ export default function WeatherMapView({
     setHighlightedClusterId(clusterId);
   }, []);
 
-  const handleClusterClick = useCallback((clusterId: number) => {
-    setHighlightedClusterId(clusterId);
-    setShouldFitClusterBounds(true);
-    // Show the barangay list for this cluster
-    setSelectedClusterForList(clusterId);
-    setSelectedBarangay(null);
-  }, []);
+  const handleClusterClick = useCallback(
+    (clusterId: number) => {
+      onClusterSelect(clusterId);
+      setSelectedBarangay(null);
+    },
+    [onClusterSelect],
+  );
 
   const handleFitBoundsComplete = useCallback(() => {
     setShouldFitClusterBounds(false);
@@ -752,9 +741,9 @@ export default function WeatherMapView({
 
   // --- Get the cluster config and its barangay weather data for the cluster list panel ---
   const selectedClusterConfig = useMemo(() => {
-    if (selectedClusterForList === null) return null;
-    return CLUSTERS.find((c) => c.id === selectedClusterForList) ?? null;
-  }, [selectedClusterForList]);
+    if (activeClusterFilter === null) return null;
+    return CLUSTERS.find((c) => c.id === activeClusterFilter) ?? null;
+  }, [activeClusterFilter]);
 
   const selectedClusterBarangayWeather = useMemo(() => {
     if (!selectedClusterConfig) return [];
@@ -906,7 +895,7 @@ export default function WeatherMapView({
 
             {geoJsonData && (
               <GeoJSON
-                key={`${colorMode}-${activeClusterFilters.join(",")}`} // Force re-render when color mode or filters change
+                key={`${colorMode}-${activeClusterFilter ?? "none"}`} // Force re-render when color mode or filter changes
                 data={geoJsonData}
                 style={getFeatureStyle}
                 onEachFeature={onEachFeature}
@@ -916,16 +905,16 @@ export default function WeatherMapView({
               />
             )}
 
-            {/* Cluster boundary outlines (visible only in cluster mode) */}
-            {colorMode === "cluster" && geoJsonData && (
+            {/* Cluster boundary outlines (visible in cluster mode OR when a cluster filter is active) */}
+            {(colorMode === "cluster" || activeClusterFilter !== null) && geoJsonData && (
               <ClusterBoundaryOutlines
                 geoJsonData={geoJsonData}
                 highlightedClusterId={highlightedClusterId}
               />
             )}
 
-            {/* Cluster highlight from legend interaction */}
-            {colorMode === "cluster" && geoJsonData && highlightedClusterId !== null && (
+            {/* Cluster highlight from legend interaction or active cluster filter */}
+            {(colorMode === "cluster" || activeClusterFilter !== null) && geoJsonData && highlightedClusterId !== null && (
               <ClusterHighlighter
                 geoJsonData={geoJsonData}
                 highlightedClusterId={highlightedClusterId}
@@ -953,97 +942,17 @@ export default function WeatherMapView({
                 cluster={selectedBarangayCluster}
                 onClose={() => setSelectedBarangay(null)}
               />
-            ) : selectedClusterForList && selectedClusterConfig ? (
-              /* Cluster Barangay List Panel */
-              <div className="flex flex-col min-h-0 animate-fade-in">
-                <div className="flex items-center gap-2 mb-3">
-                  <button
-                    onClick={() => setSelectedClusterForList(null)}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-100 transition-all duration-200"
-                    aria-label="Back to cluster legend"
-                  >
-                    <FiArrowLeft className="w-4 h-4" />
-                  </button>
-                  <div className={`w-3 h-3 rounded-sm ${selectedClusterConfig.dotClass}`} />
-                  <span className={`body-small font-semibold ${selectedClusterConfig.textClass}`}>
-                    {selectedClusterConfig.label}
-                  </span>
-                  <span className="body-xsmall text-gray-400">
-                    · {selectedClusterConfig.area}
-                  </span>
-                </div>
-
-                {/* Cluster Meta */}
-                <div className="flex items-center gap-3 mb-3 px-1">
-                  <div className="flex items-center gap-1 text-gray-400">
-                    <FiUsers className="w-3 h-3" />
-                    <span className="body-xsmall">{selectedClusterConfig.assignedTeam}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-gray-400">
-                    <FiMapPin className="w-3 h-3" />
-                    <span className="body-xsmall">{selectedClusterConfig.commandPost}</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 pt-2 mb-2">
-                  <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
-                    Barangays ({selectedClusterBarangayWeather.length})
-                  </span>
-                </div>
-
-                {/* Barangay List */}
-                <div className="overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-2">
-                  {selectedClusterBarangayWeather.map((w) => {
-                    const isSevere = w.severity === "severe";
-                    const isAdvisory = w.severity === "advisory" || w.severity === "warning";
-                    return (
-                      <button
-                        key={w.id}
-                        onClick={() => {
-                          setSelectedBarangay(w);
-                        }}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200 hover:shadow-sm cursor-pointer ${
-                          isSevere
-                            ? "border-red-200 bg-red-50/50 hover:bg-red-50"
-                            : isAdvisory
-                              ? "border-amber-200 bg-amber-50/50 hover:bg-amber-50"
-                              : "border-gray-100 bg-white hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="body-small font-medium text-gray-800">
-                            {w.name}
-                          </span>
-                          {(isSevere || isAdvisory) && (
-                            <span
-                              className={`body-xsmall font-semibold px-1.5 py-0.5 rounded-full ${
-                                isSevere
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-amber-100 text-amber-600"
-                              }`}
-                            >
-                              {isSevere ? "Severe" : "Advisory"}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="body-xsmall text-gray-500">
-                            {w.temperature}°C
-                          </span>
-                          <span className="body-xsmall text-gray-400">
-                            {w.condition.replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  {selectedClusterBarangayWeather.length === 0 && (
-                    <p className="body-xsmall text-gray-400 py-4 text-center">
-                      No weather data available for this cluster.
-                    </p>
-                  )}
-                </div>
-              </div>
+            ) : activeClusterFilter !== null && selectedClusterConfig ? (
+              /* Cluster Detail Panel — consolidated summary + per-barangay breakdown */
+              <ClusterDetailPanel
+                cluster={selectedClusterConfig}
+                barangayWeather={selectedClusterBarangayWeather}
+                weatherByName={weatherDataByName}
+                onBack={() => onClusterSelect(null)}
+                onBarangaySelect={(w) => {
+                  setSelectedBarangay(w);
+                }}
+              />
             ) : colorMode === "cluster" ? (
               /* Cluster Legend Panel (shown when no barangay is selected) */
               <div className="overflow-y-auto custom-scrollbar flex-1 animate-fade-in">
