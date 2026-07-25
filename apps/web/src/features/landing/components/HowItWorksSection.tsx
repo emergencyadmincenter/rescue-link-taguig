@@ -4,23 +4,23 @@ import Image from "next/image";
 const steps = [
   {
     num: "01",
-    title: "Report an Emergency",
-    desc: "Quickly signal that you need assistance using the app."
+    title: "Trigger Taguig SOS",
+    desc: "Tap the SOS button. No account required. The system automatically acquires your coordinates."
   },
   {
     num: "02",
-    title: "Choose Communication",
-    desc: "Select between live chat or a voice call based on your safety."
+    title: "Location & IP Validation",
+    desc: "Our system instantly verifies if your GPS and IP address are within Taguig City bounds to prevent spam."
   },
   {
     num: "03",
-    title: "Connect with Coordinator",
-    desc: "Speak with a trained professional who will assess your situation."
+    title: "Real-time Connection",
+    desc: "Establish a live video, voice, or chat connection directly with the Taguig Command Center."
   },
   {
     num: "04",
-    title: "Responders Dispatched",
-    desc: "The appropriate emergency units are sent to your exact location."
+    title: "Immediate Dispatch",
+    desc: "The Command Center accurately drops a pin on your location and deploys nearby resources immediately."
   },
 ];
 
