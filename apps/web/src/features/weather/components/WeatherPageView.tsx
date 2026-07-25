@@ -59,31 +59,7 @@ const FILTER_TABS: {
   { label: "Flood Risk", value: "flood_risk", icon: WiFlood },
 ];
 
-// --- Helper: compute summary stats ---
-function computeSummary(data: BarangayWeather[]): WeatherSummary {
-  const severeCount = data.filter((d) => d.severity === "severe").length;
-  const advisoryCount = data.filter(
-    (d) => d.severity === "advisory" || d.severity === "warning",
-  ).length;
-  const floodRiskCount = data.filter((d) => {
-    const risk = calculateFloodRisk(d);
-    return risk.level === "elevated" || risk.level === "high";
-  }).length;
-  const avgTemp =
-    data.length > 0
-      ? Math.round(
-          data.reduce((sum, d) => sum + d.temperature, 0) / data.length,
-        )
-      : 0;
 
-  return {
-    totalBarangays: data.length,
-    severeCount,
-    advisoryCount,
-    averageTemperature: avgTemp,
-    floodRiskCount,
-  };
-}
 
 export default function WeatherPageView() {
   const [weatherData, setWeatherData] = useState<BarangayWeather[]>([]);
@@ -169,10 +145,14 @@ export default function WeatherPageView() {
 
   // --- Handle cluster filter select (single-select: click to select, click again to deselect) ---
   const handleClusterSelect = useCallback(
-    (clusterId: number) => {
-      setActiveClusterFilter((prev) =>
-        prev === clusterId ? null : clusterId,
-      );
+    (clusterId: number | null) => {
+      if (clusterId === null) {
+        setActiveClusterFilter(null);
+      } else {
+        setActiveClusterFilter((prev) =>
+          prev === clusterId ? null : clusterId,
+        );
+      }
     },
     [],
   );
@@ -199,16 +179,12 @@ export default function WeatherPageView() {
       const risk = calculateFloodRisk(item);
       matchesTab = risk.level === "elevated" || risk.level === "high";
     } else if (activeTab === "cluster") {
-      // Filter by selected clusters (multi-select)
-      if (activeClusterFilters.length > 0) {
-        matchesTab = activeClusterFilters.some((filterId) => {
-          const cluster = CLUSTERS.find((c) => c.id === filterId);
-          return cluster?.barangays.some(
-            (b) => b.toLowerCase() === item.name.toLowerCase(),
-          );
-        });
+      if (activeClusterFilter !== null) {
+        const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+        matchesTab = cluster?.barangays.some(
+          (b) => b.toLowerCase() === item.name.toLowerCase(),
+        ) ?? false;
       }
-      // If no specific clusters are selected in cluster tab, show all
     }
 
     // Cluster filter (independent of tab)
@@ -268,15 +244,13 @@ export default function WeatherPageView() {
       return risk.level === "elevated" || risk.level === "high";
     }).length,
     cluster:
-      activeClusterFilters.length > 0
-        ? searchFilteredData.filter((d) =>
-            activeClusterFilters.some((filterId) => {
-              const cluster = CLUSTERS.find((c) => c.id === filterId);
-              return cluster?.barangays.some(
-                (b) => b.toLowerCase() === d.name.toLowerCase(),
-              );
-            }),
-          ).length
+      activeClusterFilter !== null
+        ? searchFilteredData.filter((d) => {
+            const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+            return cluster?.barangays.some(
+              (b) => b.toLowerCase() === d.name.toLowerCase(),
+            ) ?? false;
+          }).length
         : searchFilteredData.length,
   };
 
