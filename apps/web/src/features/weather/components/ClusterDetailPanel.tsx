@@ -19,7 +19,7 @@ import type { BarangayWeather } from "../types/weather.types";
 import { type ClusterConfig } from "../data/clusters";
 import { computeClusterStats } from "../utils/cluster-stats";
 import { calculateFloodRisk, getFloodRiskConfig } from "../utils/flood-risk";
-import WeatherCard from "./WeatherCard";
+import WeatherCard, { CompactWeatherCard } from "./WeatherCard";
 
 interface ClusterDetailPanelProps {
   /** The cluster configuration to display */
@@ -175,7 +175,7 @@ export default function ClusterDetailPanel({
         </span>
       </div>
 
-      <div className="overflow-y-auto custom-scrollbar flex-1 flex flex-col gap-3 pb-4">
+      <div className="overflow-y-auto custom-scrollbar h-[350px] lg:h-[420px] flex flex-col gap-2.5 pb-4 pr-1">
         {barangayWeather.map((w) => (
           <div
             key={w.id}
@@ -187,7 +187,7 @@ export default function ClusterDetailPanel({
               if (e.key === "Enter" || e.key === " ") onBarangaySelect(w);
             }}
           >
-            <WeatherCard weather={w} />
+            <CompactWeatherCard weather={w} clusterColor={cluster.color} />
           </div>
         ))}
         {barangayWeather.length === 0 && (
