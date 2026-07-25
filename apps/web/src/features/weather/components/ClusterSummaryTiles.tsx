@@ -7,14 +7,14 @@ import { computeClusterStats } from "../utils/cluster-stats";
 
 interface ClusterSummaryTilesProps {
   weatherData: BarangayWeather[];
-  activeClusterFilters: number[];
-  onClusterToggle: (clusterId: number) => void;
+  activeClusterFilter: number | null;
+  onClusterSelect: (clusterId: number) => void;
 }
 
 export default function ClusterSummaryTiles({
   weatherData,
-  activeClusterFilters,
-  onClusterToggle,
+  activeClusterFilter,
+  onClusterSelect,
 }: ClusterSummaryTilesProps) {
   // Build weather lookup once
   const weatherByName = useMemo(() => {
@@ -38,7 +38,7 @@ export default function ClusterSummaryTiles({
   return (
     <div className="flex gap-3 overflow-x-auto pb-2 -mb-2 hide-scrollbar">
       {clusterStats.map(({ cluster, stats }) => {
-        const isActive = activeClusterFilters.includes(cluster.id);
+        const isActive = activeClusterFilter === cluster.id;
 
         // Build stats array to easily join with dots
         const statItems = [];
@@ -78,7 +78,7 @@ export default function ClusterSummaryTiles({
         return (
           <button
             key={cluster.id}
-            onClick={() => onClusterToggle(cluster.id)}
+            onClick={() => onClusterSelect(cluster.id)}
             className={`flex-1 min-w-[200px] md:min-w-0 text-left px-3 py-2.5 rounded-lg border transition-all duration-200 ${
               isActive
                 ? `${cluster.bgClass} ${cluster.borderClass} shadow-sm`
