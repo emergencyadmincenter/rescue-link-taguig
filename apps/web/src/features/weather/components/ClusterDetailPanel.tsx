@@ -49,7 +49,11 @@ export default function ClusterDetailPanel({
 
   // Find the highest flood risk barangay
   const highestFloodRisk = useMemo(() => {
-    let worst: { name: string; level: string; score: number } | null = null;
+    let worst: {
+      name: string;
+      level: ReturnType<typeof calculateFloodRisk>["level"];
+      score: number;
+    } | null = null;
     for (const w of barangayWeather) {
       const risk = calculateFloodRisk(w);
       if (!worst || risk.score > worst.score) {
@@ -60,7 +64,7 @@ export default function ClusterDetailPanel({
   }, [barangayWeather]);
 
   const highestFloodRiskConfig = highestFloodRisk
-    ? getFloodRiskConfig(highestFloodRisk.level as any)
+    ? getFloodRiskConfig(highestFloodRisk.level)
     : null;
 
   // Build severity summary label
