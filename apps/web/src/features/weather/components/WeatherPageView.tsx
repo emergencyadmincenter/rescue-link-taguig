@@ -16,10 +16,7 @@ import WeatherCard from "./WeatherCard";
 import WeatherCardSkeleton from "./WeatherCardSkeleton";
 import { fetchWeatherData } from "../data/weather.mock";
 import { calculateFloodRisk } from "../utils/flood-risk";
-import {
-  CLUSTERS,
-  getClusterForBarangay,
-} from "../data/clusters";
+import { CLUSTERS, getClusterForBarangay } from "../data/clusters";
 import ClusterSummaryTiles from "./ClusterSummaryTiles";
 import { ExportReportButton } from "./ExportReportButton";
 import type {
@@ -59,8 +56,6 @@ const FILTER_TABS: {
   { label: "Flood Risk", value: "flood_risk", icon: WiFlood },
 ];
 
-
-
 export default function WeatherPageView() {
   const [weatherData, setWeatherData] = useState<BarangayWeather[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +69,9 @@ export default function WeatherPageView() {
   // --- Cluster Filter State (Single-select) ---
   // Keeps list and map views in sync: selecting a cluster filter here
   // filters the list view and also communicates the active cluster to the map.
-  const [activeClusterFilter, setActiveClusterFilter] = useState<number | null>(null);
+  const [activeClusterFilter, setActiveClusterFilter] = useState<number | null>(
+    null,
+  );
 
   // --- Cluster Dropdown Open State ---
   const [clusterDropdownOpen, setClusterDropdownOpen] = useState(false);
@@ -144,18 +141,13 @@ export default function WeatherPageView() {
   }, []);
 
   // --- Handle cluster filter select (single-select: click to select, click again to deselect) ---
-  const handleClusterSelect = useCallback(
-    (clusterId: number | null) => {
-      if (clusterId === null) {
-        setActiveClusterFilter(null);
-      } else {
-        setActiveClusterFilter((prev) =>
-          prev === clusterId ? null : clusterId,
-        );
-      }
-    },
-    [],
-  );
+  const handleClusterSelect = useCallback((clusterId: number | null) => {
+    if (clusterId === null) {
+      setActiveClusterFilter(null);
+    } else {
+      setActiveClusterFilter((prev) => (prev === clusterId ? null : clusterId));
+    }
+  }, []);
 
   // --- Clear cluster filter ---
   const handleClearClusterFilter = useCallback(() => {
@@ -181,9 +173,10 @@ export default function WeatherPageView() {
     } else if (activeTab === "cluster") {
       if (activeClusterFilter !== null) {
         const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-        matchesTab = cluster?.barangays.some(
-          (b) => b.toLowerCase() === item.name.toLowerCase(),
-        ) ?? false;
+        matchesTab =
+          cluster?.barangays.some(
+            (b) => b.toLowerCase() === item.name.toLowerCase(),
+          ) ?? false;
       }
     }
 
@@ -191,9 +184,10 @@ export default function WeatherPageView() {
     let matchesCluster = true;
     if (activeClusterFilter !== null) {
       const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-      matchesCluster = cluster?.barangays.some(
-        (b) => b.toLowerCase() === item.name.toLowerCase(),
-      ) ?? false;
+      matchesCluster =
+        cluster?.barangays.some(
+          (b) => b.toLowerCase() === item.name.toLowerCase(),
+        ) ?? false;
     }
 
     return matchesTab && matchesCluster;
@@ -223,14 +217,17 @@ export default function WeatherPageView() {
   });
 
   // Base data for tab counts: apply cluster filter first so tab counts reflect the filtered subset
-  const clusterFilteredData = activeClusterFilter !== null
-    ? searchFilteredData.filter((d) => {
-        const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-        return cluster?.barangays.some(
-          (b) => b.toLowerCase() === d.name.toLowerCase(),
-        ) ?? false;
-      })
-    : searchFilteredData;
+  const clusterFilteredData =
+    activeClusterFilter !== null
+      ? searchFilteredData.filter((d) => {
+          const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+          return (
+            cluster?.barangays.some(
+              (b) => b.toLowerCase() === d.name.toLowerCase(),
+            ) ?? false
+          );
+        })
+      : searchFilteredData;
 
   // Tab counts (reflect cluster filter if active)
   const tabCounts: Record<WeatherFilterTab, number> = {
@@ -247,9 +244,11 @@ export default function WeatherPageView() {
       activeClusterFilter !== null
         ? searchFilteredData.filter((d) => {
             const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-            return cluster?.barangays.some(
-              (b) => b.toLowerCase() === d.name.toLowerCase(),
-            ) ?? false;
+            return (
+              cluster?.barangays.some(
+                (b) => b.toLowerCase() === d.name.toLowerCase(),
+              ) ?? false
+            );
           }).length
         : searchFilteredData.length,
   };
@@ -277,15 +276,13 @@ export default function WeatherPageView() {
         <span className={`body-xsmall font-medium ${cluster.textClass}`}>
           {cluster.label}
         </span>
-        <span className="body-xsmall text-gray-400">
-          · {cluster.area}
-        </span>
+        <span className="body-xsmall text-gray-400">· {cluster.area}</span>
       </div>
     );
   };
 
   return (
-    <div className="bg-white h-full rounded-xl w-full px-5 py-6 flex flex-col">
+    <div className="bg-white h-max rounded-xl w-full px-5 py-6 flex flex-col">
       {/* Header */}
       <div className="mb-4 shrink-0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
@@ -331,7 +328,8 @@ export default function WeatherPageView() {
               <span>
                 {activeClusterFilter === null
                   ? "All Clusters"
-                  : CLUSTERS.find((c) => c.id === activeClusterFilter)?.label ?? "Cluster"}
+                  : (CLUSTERS.find((c) => c.id === activeClusterFilter)
+                      ?.label ?? "Cluster")}
               </span>
               <FiChevronDown
                 className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -361,9 +359,7 @@ export default function WeatherPageView() {
                       {/* Radio indicator */}
                       <div
                         className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
-                          isSelected
-                            ? "border-primary"
-                            : "border-gray-300"
+                          isSelected ? "border-primary" : "border-gray-300"
                         }`}
                       >
                         {isSelected && (
@@ -371,7 +367,9 @@ export default function WeatherPageView() {
                         )}
                       </div>
                       {/* Cluster dot + label */}
-                      <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${c.dotClass}`} />
+                      <div
+                        className={`w-2.5 h-2.5 rounded-sm shrink-0 ${c.dotClass}`}
+                      />
                       <div className="flex-1 min-w-0">
                         <span className="body-xsmall font-medium">
                           {c.label}
@@ -406,7 +404,9 @@ export default function WeatherPageView() {
           {activeClusterFilter !== null && (
             <div className="flex items-center gap-1.5">
               {(() => {
-                const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+                const cluster = CLUSTERS.find(
+                  (c) => c.id === activeClusterFilter,
+                );
                 if (!cluster) return null;
                 return (
                   <button
@@ -599,6 +599,11 @@ export default function WeatherPageView() {
             searchQuery={debouncedSearch}
             activeClusterFilter={activeClusterFilter}
             onClusterSelect={handleClusterSelect}
+            onSearchClear={() => {
+              setSearchQuery("");
+              setDebouncedSearch("");
+              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+            }}
           />
         )}
       </div>
