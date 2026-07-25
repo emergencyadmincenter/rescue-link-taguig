@@ -336,7 +336,9 @@ const fetchRealFacilities = async (
       body: overpassQuery,
     });
 
-    if (!res.ok) throw new Error("Failed to fetch from Overpass API");
+    if (!res.ok) {
+      return generateMockFacilities(lat, lng, channels);
+    }
     const data = await res.json();
 
     const facilities: Facility[] = [];
@@ -400,7 +402,6 @@ const fetchRealFacilities = async (
 
     return bestFacilities.sort((a, b) => a.distance - b.distance);
   } catch (error) {
-    console.warn("Overpass API failed, falling back to mock data.", error);
     return generateMockFacilities(lat, lng, channels);
   }
 };

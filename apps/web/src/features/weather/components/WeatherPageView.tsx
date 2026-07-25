@@ -100,7 +100,9 @@ export default function WeatherPageView() {
   // --- Cluster Filter State (Multi-select) ---
   // Keeps list and map views in sync: selecting cluster filters here
   // filters the list view and also communicates the active clusters to the map.
-  const [activeClusterFilters, setActiveClusterFilters] = useState<number[]>([]);
+  const [activeClusterFilters, setActiveClusterFilters] = useState<number[]>(
+    [],
+  );
 
   // --- Cluster Dropdown Open State ---
   const [clusterDropdownOpen, setClusterDropdownOpen] = useState(false);
@@ -286,26 +288,6 @@ export default function WeatherPageView() {
     });
   };
 
-  // Cluster badge for list view cards
-  const renderClusterBadge = (weather: BarangayWeather) => {
-    if (activeTab !== "cluster") return null;
-    const cluster = getClusterForBarangay(weather.name);
-    if (!cluster) return null;
-    return (
-      <div
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${cluster.bgClass} ${cluster.borderClass} mb-2`}
-      >
-        <div className={`w-2 h-2 rounded-sm ${cluster.dotClass}`} />
-        <span className={`body-xsmall font-medium ${cluster.textClass}`}>
-          {cluster.label}
-        </span>
-        <span className="body-xsmall text-gray-400">
-          · {cluster.area}
-        </span>
-      </div>
-    );
-  };
-
   return (
     <div className="bg-white h-full rounded-xl w-full px-5 py-6 flex flex-col">
       {/* Header */}
@@ -354,7 +336,8 @@ export default function WeatherPageView() {
                 {activeClusterFilters.length === 0
                   ? "All Clusters"
                   : activeClusterFilters.length === 1
-                    ? CLUSTERS.find((c) => c.id === activeClusterFilters[0])?.label ?? "Cluster"
+                    ? (CLUSTERS.find((c) => c.id === activeClusterFilters[0])
+                        ?.label ?? "Cluster")
                     : `${activeClusterFilters.length} Clusters`}
               </span>
               <FiChevronDown
@@ -392,7 +375,9 @@ export default function WeatherPageView() {
                         )}
                       </div>
                       {/* Cluster dot + label */}
-                      <div className={`w-2.5 h-2.5 rounded-sm shrink-0 ${c.dotClass}`} />
+                      <div
+                        className={`w-2.5 h-2.5 rounded-sm shrink-0 ${c.dotClass}`}
+                      />
                       <div className="flex-1 min-w-0">
                         <span className="body-xsmall font-medium">
                           {c.label}
@@ -422,35 +407,6 @@ export default function WeatherPageView() {
               </div>
             )}
           </div>
-
-          {/* Active Cluster Filter Badges */}
-          {activeClusterFilters.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {activeClusterFilters.map((filterId) => {
-                const cluster = CLUSTERS.find((c) => c.id === filterId);
-                if (!cluster) return null;
-                return (
-                  <button
-                    key={filterId}
-                    onClick={() => handleClusterToggle(filterId)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary body-xsmall font-medium hover:bg-primary/20 transition-all duration-200"
-                  >
-                    <div className={`w-2 h-2 rounded-sm ${cluster.dotClass}`} />
-                    {cluster.label}
-                    <FiX className="w-3 h-3" />
-                  </button>
-                );
-              })}
-              {activeClusterFilters.length > 1 && (
-                <button
-                  onClick={handleClearClusterFilters}
-                  className="px-2.5 py-1 rounded-full text-gray-500 body-xsmall font-medium hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
-          )}
 
           {/* List / Map View Toggle */}
           <div className="inline-flex p-1 bg-gray-100 rounded-lg shrink-0">
@@ -613,7 +569,6 @@ export default function WeatherPageView() {
               <div className="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
                 {sortedData.map((weather) => (
                   <div key={weather.id}>
-                    {renderClusterBadge(weather)}
                     <WeatherCard weather={weather} />
                   </div>
                 ))}

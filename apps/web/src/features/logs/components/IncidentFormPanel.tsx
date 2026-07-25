@@ -161,6 +161,18 @@ export default function IncidentFormPanel({
             </div>
           )}
 
+          {log.fraud_assessments?.some((f) => f.risk_classification === "high_fraud_risk") && (
+            <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 flex items-start gap-2.5 text-danger shadow-sm">
+              <FiAlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-danger" />
+              <div>
+                <h3 className="font-bold text-xs text-danger">High Fraud Risk Detected</h3>
+                <p className="text-[10px] mt-0.5 opacity-90 text-danger leading-tight">
+                  This request was flagged for potential fraud (e.g., VPN/Proxy detected or IP location mismatch). Please verify the caller's identity carefully.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Caller Information Card */}
           <section className="bg-white rounded-xl border border-background-subtle shadow-sm overflow-hidden">
             <div className="px-3 py-2.5 border-b border-background-subtle/50 bg-gray-50/50">
