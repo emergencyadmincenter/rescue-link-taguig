@@ -65,6 +65,12 @@ export class CommunicationsService
     this.server = server;
   }
 
+  broadcastNewIncident(logId: string) {
+    if (this.server) {
+      this.server.emit('new_incident', { logId, timestamp: new Date() });
+    }
+  }
+
   onApplicationShutdown() {
     this.logger.log('Graceful shutdown: clearing active routing timeouts');
     for (const state of this.activeRoutings.values()) {
