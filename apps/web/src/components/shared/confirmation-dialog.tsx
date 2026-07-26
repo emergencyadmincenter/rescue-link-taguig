@@ -14,6 +14,8 @@ export interface ConfirmationDialogProps {
   onCancel: () => void;
   isDestructive?: boolean;
   isLoading?: boolean;
+  disabled?: boolean;
+  children?: React.ReactNode;
 }
 
 export function ConfirmationDialog({
@@ -26,6 +28,8 @@ export function ConfirmationDialog({
   onCancel,
   isDestructive = true,
   isLoading = false,
+  disabled = false,
+  children,
 }: ConfirmationDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
@@ -39,8 +43,6 @@ export function ConfirmationDialog({
 
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
-      // Focus the cancel button by default to prevent accidental confirmations
-      setTimeout(() => confirmBtnRef.current?.focus(), 10);
     }
     
     return () => {
@@ -74,6 +76,7 @@ export function ConfirmationDialog({
             <div className="body-small text-gray-600 leading-relaxed">
               {message}
             </div>
+            {children && <div className="w-full text-left mt-4">{children}</div>}
           </div>
 
           <div className="flex items-center justify-center gap-3 mt-8">
@@ -89,7 +92,7 @@ export function ConfirmationDialog({
               ref={confirmBtnRef}
               type="button"
               onClick={onConfirm}
-              disabled={isLoading}
+              disabled={isLoading || disabled}
               className={`px-5 py-2.5 body-small font-semibold text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center min-w-[100px] disabled:opacity-70 disabled:cursor-not-allowed ${
                 isDestructive 
                   ? 'bg-danger hover:bg-danger-hover focus:ring-danger/50' 

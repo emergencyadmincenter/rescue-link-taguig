@@ -28,8 +28,12 @@ export const logsApi = {
   getResources: (): Promise<Resource[]> =>
     apiClient.get('/logs/resources').then((res) => res.data.data),
 
-  createEmergency: (data: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number }): Promise<{ id: string }> =>
-    apiClient.post('/calls/emergency', data).then((res) => res.data.data),
+  createEmergency: async (data: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number }): Promise<{ id: string }> => {
+    const { getDeviceIdentifiers } = await import('@/lib/device-identification');
+    const identifiers = getDeviceIdentifiers();
+    const payload = { ...data, ...identifiers };
+    return apiClient.post('/calls/emergency', payload).then((res) => res.data.data);
+  },
 
   finalizeCall: (callId: string, data: CreateLogPayload): Promise<Log> =>
     apiClient.post(`/calls/${callId}/finalize`, data).then((res) => res.data.data),

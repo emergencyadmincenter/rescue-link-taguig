@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { FiTwitter, FiFacebook, FiInstagram } from "react-icons/fi";
+import { FiTwitter, FiFacebook, FiInstagram, FiYoutube } from "react-icons/fi";
 
 export function LandingFooter() {
   const currentYear = new Date().getFullYear();
@@ -11,7 +11,12 @@ export function LandingFooter() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
           <div className="lg:col-span-5 xl:col-span-6 pr-0 lg:pr-12">
             <div className="mb-8">
-              <div className="w-max bg-[#efefef] rounded-full px-3">
+              <a
+                href="https://www.taguig.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-max bg-[#efefef] rounded-full px-3 block"
+              >
                 <div className="relative w-40 md:w-48 h-12 flex-shrink-0">
                   <Image
                     src="/images/logos/rlt-main-logo.png"
@@ -20,31 +25,25 @@ export function LandingFooter() {
                     className="object-contain object-left"
                   />
                 </div>
-              </div>
+              </a>
             </div>
             <p className="text-gray-400 text-base md:text-lg mb-8 leading-relaxed">
-              A modern, reliable, and secure platform for emergency response
-              coordination. We connect residents with responders when every
-              second counts.
+              Taguig City's modern, reliable, and secure platform for emergency
+              response coordination.
+              <br />
+              <br />
+              📍 Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
+              <br />
+              📍 Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="#"
-                className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
-              >
-                <FiTwitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
+                href="https://www.facebook.com/taguigcity"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
               >
                 <FiFacebook className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
-              >
-                <FiInstagram className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -54,6 +53,16 @@ export function LandingFooter() {
               Quick Links
             </h4>
             <ul className="space-y-4">
+              <li>
+                <a
+                  href="https://www.taguig.gov.ph/our-departments/profile/?view=city-disaster-risk-reduction-and-management-office"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
+                >
+                  Taguig CDRRMO Website
+                </a>
+              </li>
               <li>
                 <a
                   href="#features"
@@ -121,10 +130,13 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-base text-gray-500">
-          <p>© {currentYear} Rescue Link. All rights reserved.</p>
+          <p>
+            © {currentYear} Rescue Link Taguig Command Center. All rights
+            reserved.
+          </p>
           <p className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-            Emergency systems are online
+            RescueLink Taguig is online
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { FiArrowRight } from "react-icons/fi";
+
 
 interface CTASectionProps {
   onRequestAssistance: () => void;
@@ -7,7 +7,7 @@ interface CTASectionProps {
 
 export function CTASection({ onRequestAssistance }: CTASectionProps) {
   return (
-    <section className="py-24 bg-white relative overflow-hidden">
+    <section className="py-16 md:py-18 lg:py-24 bg-white relative overflow-hidden">
       <div className="absolute inset-0 bg-primary/5"></div>
       <div className="max-w-[1400px] mx-auto px-3 md:px-8 lg:px-12 relative z-10">
         <div className="bg-gray-900 rounded-[2rem] p-10 md:p-16 lg:p-20 text-center shadow-2xl shadow-gray-900/20 border border-gray-800 relative overflow-hidden w-full">
@@ -24,10 +24,9 @@ export function CTASection({ onRequestAssistance }: CTASectionProps) {
 
           <button
             onClick={onRequestAssistance}
-            className="relative z-99 w-max px-10 py-5 bg-danger hover:bg-danger-hover text-white rounded-xl font-bold shadow-lg shadow-danger/25 flex items-center justify-center gap-3 mx-auto group transition-all body-small md:text-xl"
+            className="relative z-10 w-full sm:w-max mx-auto px-10 py-5 bg-danger hover:bg-danger-hover text-white rounded-xl font-semibold shadow-lg shadow-danger/30 hover:shadow-xl hover:shadow-danger/40 transition-all duration-300 md:text-xl hover:-translate-y-1 active:translate-y-0 active:scale-95 border-t border-white/20 flex items-center justify-center tracking-wide"
           >
             Request Emergency
-            <FiArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>

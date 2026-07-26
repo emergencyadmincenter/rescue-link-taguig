@@ -107,10 +107,9 @@ export function HeroSection({ onRequestAssistance }: HeroSectionProps) {
             <div className="flex flex-col sm:flex-row items-center gap-5 animate-in slide-in-from-bottom-4 duration-500 delay-200">
               <button
                 onClick={onRequestAssistance}
-                className="body-medium w-full sm:w-auto px-8 py-4 bg-danger hover:bg-danger-hover text-white rounded-xl font-semibold shadow-xl shadow-danger/20 flex items-center justify-center gap-3 group transition-all md:text-lg"
+                className="body-medium w-full sm:w-auto px-10 py-4 bg-danger hover:bg-danger-hover text-white rounded-xl font-semibold shadow-lg shadow-danger/30 hover:shadow-xl hover:shadow-danger/40 transition-all duration-300 md:text-lg hover:-translate-y-1 active:translate-y-0 active:scale-95 border-t border-white/20 flex items-center justify-center tracking-wide"
               >
                 Request Emergency
-                <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button

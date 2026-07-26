@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiFileText } from "react-icons/fi";
+import { FiFileText, FiBarChart2 } from "react-icons/fi";
 import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { useAuth } from "@/providers/AuthProvider";
@@ -45,7 +45,7 @@ const NAVIGATION: NavItem[] = [
   {
     label: "Insights",
     href: "/insights",
-    icon: FiFileText, // Or a better chart icon if we want to import it, but FiFileText is already imported
+    icon: FiBarChart2,
     roles: ["admin", "coordinator"],
   },
 ];

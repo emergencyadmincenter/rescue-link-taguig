@@ -85,8 +85,8 @@ export function DashboardPageView() {
           <div className="divider-primary-half" />
           <p className="text-lg text-gray-500">
             {isAdmin
-              ? "System-wide insights into active emergencies, resource availability, and operational statistics."
-              : "Your current assignments, active emergencies, and rapid response actions."}
+              ? "System-wide insights into Taguig active emergencies, resource availability, and operational statistics."
+              : "Your current assignments, active emergencies in Taguig City, and rapid response actions."}
           </p>
         </div>
 
@@ -190,7 +190,7 @@ function AdminDashboard({
           className="hover:border-primary/30"
         />
         <MetricCard
-          title="Registered Resources"
+          title="Taguig System Resources"
           value={resources.length}
           icon={<FiTruck className="w-6 h-6" />}
           href="/personnel"
@@ -201,7 +201,7 @@ function AdminDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-8 relative z-10">
         {/* Left Column: Recent Active Incidents */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 lg:h-[500px] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 font-outfit mb-1">
@@ -261,10 +261,11 @@ function AdminDashboard({
               <div className="py-12 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                 <FiCheckCircle className="w-12 h-12 text-success/50 mb-3" />
                 <p className="font-medium text-gray-900">
-                  No active emergencies
+                  No active emergencies in Taguig
                 </p>
                 <p className="text-sm text-gray-500">
-                  All incidents are currently resolved.
+                  All reported incidents across barangays are currently
+                  resolved.
                 </p>
               </div>
             )}
