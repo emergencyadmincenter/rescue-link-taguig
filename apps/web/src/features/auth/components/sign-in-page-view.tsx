@@ -1,9 +1,20 @@
 import Image from "next/image";
+import Link from "next/link";
+import { FiArrowLeft } from "react-icons/fi";
 import SignInForm from "@/features/auth/components/sign-in-form";
 
 export default function SignInPageView() {
   return (
     <div className="min-h-screen bg-background-subtle font-inter text-foreground flex flex-col lg:flex-row justify-center items-center gap-12 lg:gap-32 p-6 lg:p-24 relative overflow-hidden">
+      {/* Back to Home Link */}
+      <Link 
+        href="/"
+        className="absolute top-6 left-6 lg:top-10 lg:left-10 flex items-center gap-2 text-gray-500 hover:text-primary transition-colors duration-200 z-50 body-small font-medium group"
+      >
+        <FiArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+        Return to Homepage
+      </Link>
+
       {/* Decorative elements for the background */}
       <div className="hidden lg:block absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-subtle/50 blur-3xl mix-blend-multiply" />
       <div className="hidden lg:block absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-info/20 blur-3xl mix-blend-multiply" />
