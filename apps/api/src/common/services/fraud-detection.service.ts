@@ -123,12 +123,16 @@ export class FraudDetectionService {
     assessment: FraudAssessmentResult,
     residentLat?: number,
     residentLng?: number,
+    deviceUuid?: string,
+    fingerprintHash?: string,
   ) {
     try {
       await this.prisma.fraudAssessment.create({
         data: {
           log_id: logId,
           call_id: callId,
+          device_uuid: deviceUuid,
+          fingerprint_hash: fingerprintHash,
           client_ip: assessment.ipAddress,
           ip_latitude: assessment.ipLocation?.latitude,
           ip_longitude: assessment.ipLocation?.longitude,

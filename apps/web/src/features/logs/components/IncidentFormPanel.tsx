@@ -15,6 +15,7 @@ import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAutoSave } from "../hooks/useAutoSave";
+import { ShadowBanAction } from "./ShadowBanAction";
 
 interface IncidentFormPanelProps {
   log: Log | null;
@@ -35,6 +36,7 @@ export default function IncidentFormPanel({
       log.created_by_coordinator_id === user.id ||
       !log.assigned_coordinator_id);
   const isReadOnly = !isOwner || isActiveSession === false;
+  const isAdmin = user?.roles?.includes("admin") || false;
 
   const [formData, setFormData] = useState({
     caller_name: "",
@@ -124,7 +126,7 @@ export default function IncidentFormPanel({
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-background">
-      <div className="p-5 bg-white border-b border-background-subtle shrink-0 shadow-sm z-10 flex justify-between items-center">
+      <div className="p-5 bg-white border-b border-background-subtle shrink-0 shadow-sm z-10 flex justify-between items-start">
         <div>
           <h2 className="title-medium text-foreground">Incident Workspace</h2>
           <div className="flex items-center gap-2 mt-1.5">
@@ -138,6 +140,13 @@ export default function IncidentFormPanel({
             )}
           </div>
         </div>
+        {log.calls?.[0]?.id && (
+          <ShadowBanAction
+            callId={log.calls[0].id}
+            isOwner={Boolean(isOwner)}
+            isAdmin={isAdmin}
+          />
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-background-subtle/20">
@@ -161,13 +170,19 @@ export default function IncidentFormPanel({
             </div>
           )}
 
-          {log.fraud_assessments?.some((f) => f.risk_classification === "high_fraud_risk") && (
+          {log.fraud_assessments?.some(
+            (f) => f.risk_classification === "high_fraud_risk",
+          ) && (
             <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 flex items-start gap-2.5 text-danger shadow-sm">
               <FiAlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-danger" />
               <div>
-                <h3 className="font-bold text-xs text-danger">High Fraud Risk Detected</h3>
+                <h3 className="font-bold text-xs text-danger">
+                  High Fraud Risk Detected
+                </h3>
                 <p className="text-[10px] mt-0.5 opacity-90 text-danger leading-tight">
-                  This request was flagged for potential fraud (e.g., VPN/Proxy detected or IP location mismatch). Please verify the caller's identity carefully.
+                  This request was flagged for potential fraud (e.g., VPN/Proxy
+                  detected or IP location mismatch). Please verify the caller's
+                  identity carefully.
                 </p>
               </div>
             </div>

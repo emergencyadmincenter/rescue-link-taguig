@@ -7,9 +7,10 @@ import { PrismaModule } from '../../database/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { LocationValidationService } from '../../common/services/location-validation.service';
 import { FraudDetectionService } from '../../common/services/fraud-detection.service';
+import { ShadowBansModule } from '../shadow-bans/shadow-bans.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, ShadowBansModule],
   providers: [
     CommunicationsGateway,
     CommunicationsService,

@@ -10,7 +10,9 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { CommunicationsService } from './communications.service';
+import { ShadowBansService } from '../shadow-bans/shadow-bans.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -27,6 +29,7 @@ export class CommunicationsController {
     private readonly configService: ConfigService,
     private readonly locationValidationService: LocationValidationService,
     private readonly fraudDetectionService: FraudDetectionService,
+    private readonly shadowBansService: ShadowBansService,
   ) {}
 
   @Post('emergency')
@@ -36,6 +39,8 @@ export class CommunicationsController {
       communicationMethod: 'voice' | 'chat';
       latitude?: number;
       longitude?: number;
+      device_uuid?: string;
+      fingerprint_hash?: string;
     },
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
@@ -50,6 +55,31 @@ export class CommunicationsController {
           'Your location is outside Taguig City limits. Please call 911 or your local command center.',
         );
       }
+    }
+
+    const clientIp = this.fraudDetectionService.extractClientIp(req);
+
+    // Shadow Ban Check (Layer 3)
+    const shadowBan = await this.shadowBansService.getActiveBan(dto.device_uuid, dto.fingerprint_hash, clientIp);
+    if (shadowBan) {
+      // Create quarantined record and return success silently
+      await this.shadowBansService.quarantineRequest(dto, dto.device_uuid, dto.fingerprint_hash, clientIp, shadowBan.reason);
+      
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
+      const fakeId = randomUUID();
+
+      res.cookie(`resident_call_${fakeId}`, 'true', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        domain: cookieDomain,
+        path: '/',
+        maxAge: 1000 * 60 * 60 * 24,
+      });
+
+      return { success: true, data: { id: fakeId } };
     }
 
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
@@ -79,7 +109,6 @@ export class CommunicationsController {
       },
     });
 
-    const clientIp = this.fraudDetectionService.extractClientIp(req);
     try {
       const assessmentPromise = this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude).then((assessment) => {
         return this.fraudDetectionService.saveFraudAssessment(
@@ -87,7 +116,9 @@ export class CommunicationsController {
           call.id,
           assessment,
           dto.latitude,
-          dto.longitude
+          dto.longitude,
+          dto.device_uuid,
+          dto.fingerprint_hash
         );
       });
       // 2 second timeout to ensure it never blocks the emergency request if ip-api is slow

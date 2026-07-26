@@ -97,6 +97,7 @@ model User {
   assigned_logs Log[]  @relation("AssignedCoordinator")
   created_logs  Log[]  @relation("CreatedByCoordinator")
   calls         Call[]
+  shadow_bans   ShadowBan[]
 
   @@map("users")
 }
@@ -343,6 +344,9 @@ model FraudAssessment {
   call_id String? @db.Uuid
   call    Call?   @relation(fields: [call_id], references: [id], onDelete: Cascade)
 
+  device_uuid      String?
+  fingerprint_hash String?
+
   client_ip String
 
   ip_latitude  Decimal? @db.Decimal(10, 7)
@@ -370,5 +374,54 @@ model FraudAssessment {
   @@index([call_id])
   @@index([created_at])
   @@map("fraud_assessments")
+}
+
+model ShadowBan {
+  id String @id @default(uuid()) @db.Uuid
+
+  device_uuid      String?
+  fingerprint_hash String?
+  client_ip        String?
+  caller_contact   String?
+
+  reason       String
+  unban_reason String?
+
+  active Boolean @default(true)
+
+  created_by_id String? @db.Uuid
+  created_by    User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([device_uuid])
+  @@index([fingerprint_hash])
+  @@index([client_ip])
+  @@index([active])
+  @@map("shadow_bans")
+}
+
+model QuarantinedEmergencyRequest {
+  id String @id @default(uuid()) @db.Uuid
+
+  original_payload Json
+
+  device_uuid      String?
+  fingerprint_hash String?
+  client_ip        String?
+
+  resident_latitude    Decimal? @db.Decimal(10, 7)
+  resident_longitude   Decimal? @db.Decimal(10, 7)
+  communication_method String?
+
+  shadow_ban_reason String?
+
+  created_at DateTime @default(now())
+
+  @@index([device_uuid])
+  @@index([fingerprint_hash])
+  @@index([created_at])
+  @@map("quarantined_emergency_requests")
 }
 
