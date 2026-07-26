@@ -452,6 +452,17 @@ export default function WeatherMapView({
     onSearchClearRef.current = onSearchClear;
   }, [onSearchClear]);
 
+  const handleSearchResult = useCallback((weather: BarangayWeather) => {
+    setSelectedBarangay(weather);
+    // Smoothly scroll the map container into view
+    if (mapContainerRef.current) {
+      mapContainerRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
       setIsFullScreen(document.fullscreenElement === mapContainerRef.current);
@@ -997,7 +1008,7 @@ export default function WeatherMapView({
               searchQuery={searchQuery}
               geoJsonData={geoJsonData}
               weatherDataByName={weatherDataByName}
-              onSearchResult={setSelectedBarangay}
+              onSearchResult={handleSearchResult}
             />
 
             {/* Selected Barangay Highlighter */}

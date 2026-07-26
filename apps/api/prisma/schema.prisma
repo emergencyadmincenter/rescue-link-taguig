@@ -235,6 +235,16 @@ model Log {
   @@map("logs")
 }
 
+model IncidentCategory {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @unique
+  created_at DateTime @default(now())
+
+  logs       Log[]
+
+  @@map("incident_categories")
+}
+
 model Resource {
   id String @id @default(uuid()) @db.Uuid
 

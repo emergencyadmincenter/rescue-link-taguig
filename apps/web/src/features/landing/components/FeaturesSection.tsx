@@ -11,51 +11,54 @@ import {
 const features = [
   {
     icon: <FiZap className="w-6 h-6" />,
-    title: "Weather Clustering Insights",
+    title: "One-Tap SOS",
     description:
-      "Advanced geographical clustering of weather incidents to predict flooding and storm risks within specific Barangays.",
+      "Trigger an immediate distress signal with a single tap, instantly alerting local responders to your situation.",
   },
   {
     icon: <FiMessageCircle className="w-6 h-6" />,
-    title: "Real-time WebRTC",
+    title: "Live Video Assistance",
     description:
-      "High-fidelity voice and video connections enabling direct visual assessment between you and the Command Center.",
+      "Connect instantly with first responders via high-quality video or voice call so they can see exactly what's happening.",
   },
   {
     icon: <FiMapPin className="w-6 h-6" />,
-    title: "Precise Interactive Maps",
+    title: "Precise Location Sharing",
     description:
-      "Coordinators accurately drop pins on interactive Taguig maps rather than relying on vaguely typed addresses.",
+      "Share your exact location on the map with a single tap, eliminating the need to explain where you are during a crisis.",
   },
   {
     icon: <FiUsers className="w-6 h-6" />,
-    title: "Strict RBAC Control",
+    title: "Direct to Authorities",
     description:
-      "Dynamic Role-Based Access Control ensures only authorized dispatchers and admins can access critical resources.",
+      "Your emergency is immediately routed to the appropriate local responders and coordinators for quick action.",
   },
   {
     icon: <FiShield className="w-6 h-6" />,
-    title: "IP vs GPS Geoenforcing",
+    title: "Secure & Reliable",
     description:
-      "Robust fraud detection actively compares your network IP against your device GPS to block spam and prank calls.",
+      "Advanced location verification ensures the emergency network stays free of prank calls, keeping lines open for real needs.",
   },
   {
     icon: <FiBell className="w-6 h-6" />,
-    title: "Centralized Workload Tracking",
+    title: "Fastest Response Times",
     description:
-      "The system monitors dispatcher workloads, response times, and peak hours to optimize Taguig City's emergency response.",
+      "Our smart coordination system organizes dispatchers and responders to ensure you get the help you need without delay.",
   },
 ];
 
 export function FeaturesSection() {
   return (
-    <section id="features" className="py-24 bg-white relative overflow-hidden">
+    <section
+      id="features"
+      className="py-16 md:py-18 lg:py-24 bg-white relative overflow-hidden"
+    >
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-danger/5 rounded-full blur-[80px] pointer-events-none translate-y-1/2 -translate-x-1/2"></div>
 
       <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
-        <div className="text-center mx-auto mb-16">
+        <div className="text-center mx-auto mb-8 md:mb-16">
           <h2 className="title-large text-primary mb-3">Key Capabilities</h2>
           <h3 className="font-outfit font-bold text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 tracking-tight">
             Built for Critical Moments
@@ -66,13 +69,13 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 xl:gap-10">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="p-8 md:p-10 rounded-2xl bg-gray-50 border border-gray-100"
+              className="group p-8 md:p-10 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-gray-900/5 hover:-translate-y-1 transition-all duration-300"
             >
-              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-primary mb-6">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-primary mb-6 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
                 {feature.icon}
               </div>
               <h4 className="title-medium text-gray-900 mb-3">
