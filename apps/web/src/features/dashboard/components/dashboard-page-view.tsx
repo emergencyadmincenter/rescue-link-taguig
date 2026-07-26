@@ -80,13 +80,13 @@ export function DashboardPageView() {
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/3"></div>
         <div className="relative z-10 flex flex-col gap-2">
           <h1 className="text-4xl md:text-5xl text-gray-900 tracking-tight font-bold font-outfit">
-            {isAdmin ? "Command Center Overview" : "Operational Readiness"}
+            {isAdmin ? "Taguig Command Center Overview" : "Operational Readiness"}
           </h1>
           <div className="divider-primary-half" />
           <p className="text-lg text-gray-500">
             {isAdmin
-              ? "System-wide insights into active emergencies, resource availability, and operational statistics."
-              : "Your current assignments, active emergencies, and rapid response actions."}
+              ? "System-wide insights into Taguig active emergencies, resource availability, and operational statistics."
+              : "Your current assignments, active emergencies in Taguig City, and rapid response actions."}
           </p>
         </div>
 
@@ -190,7 +190,7 @@ function AdminDashboard({
           className="hover:border-primary/30"
         />
         <MetricCard
-          title="Registered Resources"
+          title="Taguig System Resources"
           value={resources.length}
           icon={<FiTruck className="w-6 h-6" />}
           href="/personnel"
@@ -261,10 +261,10 @@ function AdminDashboard({
               <div className="py-12 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                 <FiCheckCircle className="w-12 h-12 text-success/50 mb-3" />
                 <p className="font-medium text-gray-900">
-                  No active emergencies
+                  No active emergencies in Taguig
                 </p>
                 <p className="text-sm text-gray-500">
-                  All incidents are currently resolved.
+                  All reported incidents across barangays are currently resolved.
                 </p>
               </div>
             )}

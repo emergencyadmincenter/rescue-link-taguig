@@ -35,7 +35,7 @@ export function ActiveEmergenciesWidget({ logs, className = "" }: ActiveEmergenc
       <div className="flex-1 overflow-auto p-2">
         {activeOrDispatched.length === 0 ? (
           <div className="p-xl text-center text-gray-500 body-medium">
-            No active emergencies at this time.
+            No active emergencies in Taguig City at this time.
           </div>
         ) : (
           <div className="flex flex-col gap-2">

@@ -11,39 +11,39 @@ import {
 const features = [
   {
     icon: <FiZap className="w-6 h-6" />,
-    title: "Fast Emergency Reporting",
+    title: "Weather Clustering Insights",
     description:
-      "Submit emergency requests instantly with just a few clicks to alert authorities.",
+      "Advanced geographical clustering of weather incidents to predict flooding and storm risks within specific Barangays.",
   },
   {
     icon: <FiMessageCircle className="w-6 h-6" />,
-    title: "Real-time Communication",
+    title: "Real-time WebRTC",
     description:
-      "Chat or speak directly with trained emergency coordinators while help is on the way.",
+      "High-fidelity voice and video connections enabling direct visual assessment between you and the Command Center.",
   },
   {
     icon: <FiMapPin className="w-6 h-6" />,
-    title: "Location Sharing",
+    title: "Precise Interactive Maps",
     description:
-      "Automatically share your precise location to help responders find you faster.",
+      "Coordinators accurately drop pins on interactive Taguig maps rather than relying on vaguely typed addresses.",
   },
   {
     icon: <FiUsers className="w-6 h-6" />,
-    title: "Multi-agency Response",
+    title: "Strict RBAC Control",
     description:
-      "Seamless coordination between police, fire, and medical departments.",
+      "Dynamic Role-Based Access Control ensures only authorized dispatchers and admins can access critical resources.",
   },
   {
     icon: <FiShield className="w-6 h-6" />,
-    title: "Secure & Confidential",
+    title: "IP vs GPS Geoenforcing",
     description:
-      "Your data and communications are encrypted and kept strictly confidential.",
+      "Robust fraud detection actively compares your network IP against your device GPS to block spam and prank calls.",
   },
   {
     icon: <FiBell className="w-6 h-6" />,
-    title: "Reliable Notifications",
+    title: "Centralized Workload Tracking",
     description:
-      "Get updates on responder ETA and critical safety instructions.",
+      "The system monitors dispatcher workloads, response times, and peak hours to optimize Taguig City's emergency response.",
   },
 ];
 

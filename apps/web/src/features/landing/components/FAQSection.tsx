@@ -5,24 +5,24 @@ import { FiChevronDown } from "react-icons/fi";
 
 const faqs = [
   {
-    q: "When should I use Rescue Link?",
-    a: "Use Rescue Link for any situation that requires immediate assistance from police, fire, or medical emergency services. Do not use it for non-emergencies.",
+    q: "Do I need to download an app or create an account?",
+    a: "No. Rescue Link Taguig is a progressive web app. You can access it directly through your browser and trigger an SOS without needing an account.",
   },
   {
-    q: "What information should I provide?",
-    a: "Be prepared to provide your exact location (if not automatically shared), the nature of the emergency, and details about any individuals involved.",
+    q: "What happens if I am outside Taguig City?",
+    a: "The system is strictly geo-fenced to Taguig City. If you trigger an SOS from outside the boundary, the system will alert you and block the request to prevent resource misallocation.",
   },
   {
-    q: "Can I use Chat instead of Voice?",
-    a: "Yes. If you are in a situation where it is unsafe to speak, you can select the Live Chat option to communicate silently with an emergency coordinator.",
+    q: "Can I text instead of calling?",
+    a: "Yes! While we offer high-fidelity WebRTC voice and video calls, there is a real-time chat fallback where you can type and send images if it's unsafe to speak.",
   },
   {
-    q: "Is my information secure?",
-    a: "Absolutely. All communications and personal data are heavily encrypted and only shared with authorized emergency responders.",
+    q: "How does the system prevent fake emergency calls?",
+    a: "Our advanced fraud detection compares your network IP address footprint against your device's GPS coordinates. Mismatches (like using VPNs to spoof locations) are flagged and blocked.",
   },
   {
-    q: "Does it work without an internet connection?",
-    a: "Rescue Link requires an active cellular data or Wi-Fi connection to transmit your location and communicate with coordinators.",
+    q: "Will responders know my exact location?",
+    a: "Yes. With your browser permission, we instantly transmit your precise GPS coordinates. The Command Center drops a pin on our interactive Taguig map and dispatches resources directly to you.",
   },
 ];
 
