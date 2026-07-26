@@ -51,6 +51,11 @@ export interface Call {
   coordinator?: User;
   communication_method: CommunicationMethod;
   status: CallStatus;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy?: number | null;
+  location_timestamp?: string | null;
+  location_status?: string | null;
   rejection_reason: string | null;
   started_at: string;
   answered_at: string | null;
@@ -78,6 +83,9 @@ export interface Log {
   barangay: string | null;
   latitude: number | null;
   longitude: number | null;
+  location_accuracy?: number | null;
+  location_timestamp?: string | null;
+  location_status?: string | null;
   description: string | null;
   cancellation_reason: string | null;
   last_activity_at: string | null;

@@ -169,6 +169,9 @@ export default function CallSessionPage() {
             <LocationPanel
               latitude={log.latitude ?? null}
               longitude={log.longitude ?? null}
+              locationStatus={log.location_status}
+              locationAccuracy={log.location_accuracy ? Number(log.location_accuracy) : undefined}
+              locationTimestamp={log.location_timestamp}
               channels={log.channels}
             />
           </div>

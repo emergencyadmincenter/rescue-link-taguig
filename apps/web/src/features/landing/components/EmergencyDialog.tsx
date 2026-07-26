@@ -15,6 +15,49 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
+
+  const locationStateRef = useRef<{
+    latitude?: number;
+    longitude?: number;
+    locationAccuracy?: number;
+    locationTimestamp?: Date;
+    locationStatus: string;
+  }>({ locationStatus: "pending" });
+
+  useEffect(() => {
+    if (isOpen && "geolocation" in navigator) {
+      navigator.permissions
+        ?.query({ name: "geolocation" })
+        .then((res) => {
+          setPermissionStatus(res.state);
+        })
+        .catch(() => {});
+
+      locationStateRef.current = { locationStatus: "pending" };
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          locationStateRef.current = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            locationAccuracy: position.coords.accuracy,
+            locationTimestamp: new Date(position.timestamp),
+            locationStatus: "success",
+          };
+        },
+        (error) => {
+          let status = "unavailable";
+          if (error.code === error.PERMISSION_DENIED) status = "denied";
+          else if (error.code === error.TIMEOUT) status = "timeout";
+          locationStateRef.current = { locationStatus: status };
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+      );
+    } else if (isOpen) {
+      locationStateRef.current = { locationStatus: "services unavailable" };
+      setPermissionStatus("denied");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,48 +78,26 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
 
   const handleAction = async (method: "voice" | "chat") => {
     setIsSubmitting(true);
-    let latitude: number | undefined;
-    let longitude: number | undefined;
 
-    const createLogAndRedirect = async () => {
-      try {
-        const data = await logsApi.createEmergency({
-          communicationMethod: method,
-          latitude,
-          longitude,
-        });
+    try {
+      const data = await logsApi.createEmergency({
+        communicationMethod: method,
+        ...locationStateRef.current,
+      });
 
-        if (data && data.id) {
-          router.push(`/sos/${data.id}`);
-          onClose();
-        } else {
-          throw new Error("Invalid response from server");
-        }
-      } catch (error: any) {
-        console.error(error);
-        const errorMsg = error.message || "Failed to connect to emergency services. Please call 911 directly if possible.";
-        toast.error(errorMsg);
-        setIsSubmitting(false);
+      if (data && data.id) {
+        router.push(`/sos/${data.id}`);
+        onClose();
+      } else {
+        throw new Error("Invalid response from server");
       }
-    };
-
-    if ("geolocation" in navigator) {
-      // Unconditionally request position here so the prompt occurs before transitioning.
-      // This ensures the resident sees the prompt clearly on the landing page.
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          latitude = position.coords.latitude;
-          longitude = position.coords.longitude;
-          createLogAndRedirect();
-        },
-        (error) => {
-          console.warn("Geolocation error:", error);
-          createLogAndRedirect();
-        },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 },
-      );
-    } else {
-      createLogAndRedirect();
+    } catch (error: any) {
+      console.error(error);
+      const errorMsg =
+        error.message ||
+        "Failed to connect to emergency services. Please call 911 directly if possible.";
+      toast.error(errorMsg);
+      setIsSubmitting(false);
     }
   };
 
@@ -158,7 +179,13 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
             </button>
           </div>
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-col items-center gap-4">
+            {permissionStatus && permissionStatus !== "granted" && (
+              <p className="text-xs text-gray-400 text-center">
+                For the fastest emergency response, we recommend allowing
+                location access.
+              </p>
+            )}
             <button
               onClick={onClose}
               disabled={isSubmitting}

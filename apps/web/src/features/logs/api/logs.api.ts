@@ -28,7 +28,7 @@ export const logsApi = {
   getResources: (): Promise<Resource[]> =>
     apiClient.get('/logs/resources').then((res) => res.data.data),
 
-  createEmergency: async (data: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number }): Promise<{ id: string }> => {
+  createEmergency: async (data: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number; locationAccuracy?: number; locationTimestamp?: Date; locationStatus?: string }): Promise<{ id: string }> => {
     const { getDeviceIdentifiers } = await import('@/lib/device-identification');
     const identifiers = getDeviceIdentifiers();
     const payload = { ...data, ...identifiers };
@@ -40,4 +40,7 @@ export const logsApi = {
 
   getCallDetails: (callId: string): Promise<any> =>
     apiClient.get(`/calls/${callId}`).then((res) => res.data.data),
+
+  updateLocation: (callId: string, data: { latitude?: number; longitude?: number; locationAccuracy?: number; locationTimestamp?: Date; locationStatus?: string }): Promise<Log> =>
+    apiClient.post(`/calls/${callId}/location`, data).then((res) => res.data.data),
 };

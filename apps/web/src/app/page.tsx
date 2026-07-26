@@ -12,6 +12,7 @@ import { CTASection } from "@/features/landing/components/CTASection";
 import { LandingFooter } from "@/features/landing/components/LandingFooter";
 import { EmergencyDialog } from "@/features/landing/components/EmergencyDialog";
 import { EmergencyHotlinesSection } from "@/features/landing/components/EmergencyHotlinesSection";
+import { LocationBanner } from "@/features/landing/components/LocationBanner";
 
 export default function LandingPage() {
   const [isEmergencyDialogOpen, setIsEmergencyDialogOpen] = useState(false);
@@ -21,6 +22,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-primary/30 overflow-x-hidden w-full max-w-full">
+      <LocationBanner />
       <LandingHeader />
 
       <main>

@@ -624,4 +624,10 @@ export class CommunicationsService
       });
     }
   }
+
+  emitToRoom(room: string, event: string, data: any) {
+    if (this.server) {
+      this.server.to(room).emit(event, data);
+    }
+  }
 }

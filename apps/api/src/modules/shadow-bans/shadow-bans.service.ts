@@ -34,6 +34,9 @@ export class ShadowBansService {
         communication_method: payload.communicationMethod,
         resident_latitude: payload.latitude,
         resident_longitude: payload.longitude,
+        location_accuracy: payload.locationAccuracy,
+        location_timestamp: payload.locationTimestamp ? new Date(payload.locationTimestamp) : undefined,
+        location_status: payload.locationStatus,
         shadow_ban_reason: reason,
       },
     });
