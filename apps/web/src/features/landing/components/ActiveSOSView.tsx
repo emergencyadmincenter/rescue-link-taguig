@@ -11,6 +11,7 @@ import {
   FiCheck,
   FiPhone,
   FiRefreshCw,
+  FiMapPin,
 } from "react-icons/fi";
 import { useWebRTC } from "@/lib/webrtc";
 import { useLiveLocation } from "../hooks/useLiveLocation";
@@ -30,6 +31,7 @@ export default function ActiveSOSView({
   const [sessionEndReason, setSessionEndReason] = React.useState<
     "resident" | "coordinator" | "system" | null
   >(null);
+  const [isRetryingLocation, setIsRetryingLocation] = React.useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -113,6 +115,53 @@ export default function ActiveSOSView({
     setIsMuted(muted);
   };
 
+  const handleRetryLocation = () => {
+    setIsRetryingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { logsApi } = await import("@/features/logs/api/logs.api");
+          await logsApi.updateLocation(callId, {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            locationAccuracy: position.coords.accuracy,
+            locationTimestamp: new Date(position.timestamp),
+            locationStatus: "success",
+          });
+          import("react-hot-toast").then((m) =>
+            m.default.success("Location updated successfully."),
+          );
+        } catch (err) {
+          import("react-hot-toast").then((m) =>
+            m.default.error("Failed to update location."),
+          );
+        } finally {
+          setIsRetryingLocation(false);
+        }
+      },
+      async (error) => {
+        let status = "unavailable";
+        if (error.code === error.PERMISSION_DENIED) status = "denied";
+        else if (error.code === error.TIMEOUT) status = "timeout";
+
+        try {
+          const { logsApi } = await import("@/features/logs/api/logs.api");
+          await logsApi.updateLocation(callId, {
+            locationStatus: status,
+          });
+        } catch (err) {}
+
+        import("react-hot-toast").then((m) =>
+          m.default.error(
+            "Could not acquire location. Please check permissions.",
+          ),
+        );
+        setIsRetryingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+    );
+  };
+
   if (sessionEndReason) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 animate-in fade-in">
@@ -183,8 +232,20 @@ export default function ActiveSOSView({
             </p>
           </div>
         </div>
-        <div className="text-white/80 text-xs sm:text-sm font-mono bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
-          {callId.slice(0, 8)}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-white/80 text-xs sm:text-sm font-mono bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner">
+            {callId.slice(0, 8)}
+          </div>
+          <button
+            onClick={handleRetryLocation}
+            disabled={isRetryingLocation}
+            className="text-white/80 text-xs sm:text-sm bg-black/50 px-3 py-1.5 rounded-lg border border-white/5 shadow-inner flex items-center gap-1.5 hover:bg-white/10 transition-colors disabled:opacity-50"
+          >
+            <FiMapPin
+              className={`w-3.5 h-3.5 ${isRetryingLocation ? "animate-spin" : ""}`}
+            />
+            Retry Location
+          </button>
         </div>
       </div>
 
@@ -192,7 +253,7 @@ export default function ActiveSOSView({
       {isVideoEnabled && (
         <button
           onClick={switchCamera}
-          className="absolute top-24 right-4 sm:right-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-black/70 backdrop-blur-md border border-white/10 shadow-lg transition-transform active:scale-95"
+          className="absolute top-32 lg:top-42 right-4 sm:right-6 z-20 p-3 bg-black/50 rounded-full text-white hover:bg-black/70 backdrop-blur-md border border-white/10 shadow-lg transition-transform active:scale-95"
         >
           <FiRefreshCw className="w-5 h-5" />
         </button>

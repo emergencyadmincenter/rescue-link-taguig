@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
-import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare } from "react-icons/fi";
+import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare, FiMapPin } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { useLiveLocation } from "../hooks/useLiveLocation";
@@ -23,6 +23,7 @@ export default function ActiveSOSChatView({
   const [sessionEndReason, setSessionEndReason] = useState<
     "resident" | "coordinator" | "system" | null
   >(null);
+  const [isRetryingLocation, setIsRetryingLocation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useLiveLocation(socket, callId, !sessionEndReason);
@@ -93,6 +94,43 @@ export default function ActiveSOSChatView({
     setText("");
   };
 
+  const handleRetryLocation = () => {
+    setIsRetryingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await logsApi.updateLocation(callId, {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            locationAccuracy: position.coords.accuracy,
+            locationTimestamp: new Date(position.timestamp),
+            locationStatus: "success",
+          });
+          toast.success("Location updated successfully.");
+        } catch (err) {
+          toast.error("Failed to update location.");
+        } finally {
+          setIsRetryingLocation(false);
+        }
+      },
+      async (error) => {
+        let status = "unavailable";
+        if (error.code === error.PERMISSION_DENIED) status = "denied";
+        else if (error.code === error.TIMEOUT) status = "timeout";
+        
+        try {
+          await logsApi.updateLocation(callId, {
+            locationStatus: status,
+          });
+        } catch (err) {}
+        
+        toast.error("Could not acquire location. Please check permissions.");
+        setIsRetryingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  };
+
   if (sessionEndReason) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 animate-in fade-in">
@@ -136,13 +174,24 @@ export default function ActiveSOSChatView({
             </div>
           </div>
         </div>
-        <button
-          onClick={handleEndCall}
-          className="text-danger hover:text-danger-hover bg-danger/10 hover:bg-danger/20 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-          title="End Chat"
-        >
-          <FiX className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRetryLocation}
+            disabled={isRetryingLocation}
+            className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+            title="Retry Location"
+          >
+            <FiMapPin className={`w-3.5 h-3.5 ${isRetryingLocation ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Location</span>
+          </button>
+          <button
+            onClick={handleEndCall}
+            className="text-danger hover:text-danger-hover bg-danger/10 hover:bg-danger/20 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
+            title="End Chat"
+          >
+            <FiX className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50">

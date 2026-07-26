@@ -201,6 +201,10 @@ model Log {
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
 
+  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_timestamp DateTime?
+  location_status    String?
+
   incident_category_id String? @db.Uuid
   incident_category    IncidentCategory? @relation(fields: [incident_category_id], references: [id], onDelete: SetNull)
   weather_condition String?
@@ -291,6 +295,10 @@ model Call {
 
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
+
+  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_timestamp DateTime?
+  location_status    String?
 
   rejection_reason String?
 
@@ -413,6 +421,9 @@ model QuarantinedEmergencyRequest {
 
   resident_latitude    Decimal? @db.Decimal(10, 7)
   resident_longitude   Decimal? @db.Decimal(10, 7)
+  location_accuracy    Decimal? @db.Decimal(10, 2)
+  location_timestamp   DateTime?
+  location_status      String?
   communication_method String?
 
   shadow_ban_reason String?

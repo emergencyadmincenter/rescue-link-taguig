@@ -39,6 +39,9 @@ export class CommunicationsController {
       communicationMethod: 'voice' | 'chat';
       latitude?: number;
       longitude?: number;
+      locationAccuracy?: number;
+      locationTimestamp?: Date;
+      locationStatus?: string;
       device_uuid?: string;
       fingerprint_hash?: string;
     },
@@ -94,6 +97,9 @@ export class CommunicationsController {
         address: 'Unknown',
         latitude: dto.latitude,
         longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
         channels: [dto.communicationMethod],
         description: '',
       },
@@ -105,6 +111,9 @@ export class CommunicationsController {
         status: 'ringing',
         latitude: dto.latitude,
         longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
         log_id: log.id,
       },
     });
@@ -274,6 +283,97 @@ export class CommunicationsController {
     });
 
     await this.communicationsService.endCall(id);
+
+    return { success: true, data: log };
+  }
+
+  @Post(':id/location')
+  async updateLocation(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      latitude?: number;
+      longitude?: number;
+      locationAccuracy?: number;
+      locationTimestamp?: Date;
+      locationStatus?: string;
+    },
+    @Req() req: Request,
+  ) {
+    const isResident = req.cookies[`resident_call_${id}`] === 'true';
+    if (!isResident) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const call = await this.prisma.call.findUnique({ where: { id } });
+    if (!call || !call.log_id) throw new NotFoundException('Call not found');
+
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const isInside = this.locationValidationService.isWithinTaguig(
+        dto.latitude,
+        dto.longitude,
+      );
+
+      if (!isInside) {
+        throw new ForbiddenException(
+          'Your location is outside Taguig City limits.',
+        );
+      }
+    }
+
+    const log = await this.prisma.log.update({
+      where: { id: call.log_id },
+      data: {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
+      },
+    });
+
+    await this.prisma.call.update({
+      where: { id },
+      data: {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
+      },
+    });
+
+    // Notify coordinator via socket if we have coordinates
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      this.communicationsService.emitToRoom(`call_${id}`, 'location_updated', {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+      });
+
+      // Re-run fraud detection silently
+      const clientIp = this.fraudDetectionService.extractClientIp(req);
+      
+      // We fetch the most recent fraud assessment to get the device IDs if needed
+      const prevAssessment = await this.prisma.fraudAssessment.findFirst({
+        where: { call_id: id },
+        orderBy: { created_at: 'desc' },
+      });
+
+      try {
+        const assessment = await this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude);
+        await this.fraudDetectionService.saveFraudAssessment(
+          log.id,
+          call.id,
+          assessment,
+          dto.latitude,
+          dto.longitude,
+          prevAssessment?.device_uuid || undefined,
+          prevAssessment?.fingerprint_hash || undefined
+        );
+      } catch (err) {
+        console.warn('Fraud assessment failed during location update', err);
+      }
+    }
 
     return { success: true, data: log };
   }
