@@ -80,7 +80,7 @@ export function DashboardPageView() {
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/3"></div>
         <div className="relative z-10 flex flex-col gap-2">
           <h1 className="text-4xl md:text-5xl text-gray-900 tracking-tight font-bold font-outfit">
-            {isAdmin ? "Taguig Command Center Overview" : "Operational Readiness"}
+            {isAdmin ? "Command Center Overview" : "Operational Readiness"}
           </h1>
           <div className="divider-primary-half" />
           <p className="text-lg text-gray-500">
@@ -201,7 +201,7 @@ function AdminDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-8 relative z-10">
         {/* Left Column: Recent Active Incidents */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 lg:h-[500px] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 font-outfit mb-1">
@@ -264,7 +264,8 @@ function AdminDashboard({
                   No active emergencies in Taguig
                 </p>
                 <p className="text-sm text-gray-500">
-                  All reported incidents across barangays are currently resolved.
+                  All reported incidents across barangays are currently
+                  resolved.
                 </p>
               </div>
             )}

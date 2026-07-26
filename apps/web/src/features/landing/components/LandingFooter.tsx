@@ -11,7 +11,12 @@ export function LandingFooter() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
           <div className="lg:col-span-5 xl:col-span-6 pr-0 lg:pr-12">
             <div className="mb-8">
-              <a href="https://www.taguig.gov.ph/" target="_blank" rel="noopener noreferrer" className="w-max bg-[#efefef] rounded-full px-3 block">
+              <a
+                href="https://www.taguig.gov.ph/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-max bg-[#efefef] rounded-full px-3 block"
+              >
                 <div className="relative w-40 md:w-48 h-12 flex-shrink-0">
                   <Image
                     src="/images/logos/rlt-main-logo.png"
@@ -23,22 +28,15 @@ export function LandingFooter() {
               </a>
             </div>
             <p className="text-gray-400 text-base md:text-lg mb-8 leading-relaxed">
-              Taguig City's modern, reliable, and secure platform for emergency response
-              coordination. We connect Taguig residents with the Command Center when every
-              second counts.
-              <br/><br/>
-              📍 Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City<br/>
+              Taguig City's modern, reliable, and secure platform for emergency
+              response coordination.
+              <br />
+              <br />
+              📍 Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
+              <br />
               📍 Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
             </p>
             <div className="flex items-center gap-4">
-              <a
-                href="https://x.com/IloveTaguig1"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
-              >
-                <FiTwitter className="w-5 h-5" />
-              </a>
               <a
                 href="https://www.facebook.com/taguigcity"
                 target="_blank"
@@ -46,22 +44,6 @@ export function LandingFooter() {
                 className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
               >
                 <FiFacebook className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.instagram.com/taguigcity/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
-              >
-                <FiInstagram className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.youtube.com/@ILoveTaguigTV"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm hover:shadow-primary/20"
-              >
-                <FiYoutube className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -148,10 +130,13 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-base text-gray-500">
-          <p>© {currentYear} Rescue Link Taguig Command Center. All rights reserved.</p>
+          <p>
+            © {currentYear} Rescue Link Taguig Command Center. All rights
+            reserved.
+          </p>
           <p className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-            Taguig Emergency systems are online
+            RescueLink Taguig is online
           </p>
         </div>
       </div>

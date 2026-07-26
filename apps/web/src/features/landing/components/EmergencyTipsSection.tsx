@@ -35,7 +35,7 @@ const tips = [
 
 export function EmergencyTipsSection() {
   return (
-    <section className="py-24 bg-gray-900 text-white border-y border-gray-800 relative overflow-hidden">
+    <section className="py-16 md:py-18 lg:py-24 bg-gray-900 text-white border-y border-gray-800 relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-danger/5 rounded-full blur-[120px] pointer-events-none -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/4"></div>

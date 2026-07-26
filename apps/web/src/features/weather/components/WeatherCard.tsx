@@ -233,11 +233,9 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
         </div>
       </div>
 
-      {/* Risk Badge */}
       <div
         className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${config.bgColor} ${config.borderColor}`}
       >
-        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${config.dotColor}`} />
         <div className="min-w-0 flex-1">
           <span className={`body-small font-semibold ${config.textColor}`}>
             {config.label}
@@ -299,11 +297,10 @@ export function CompactWeatherCard({ weather, clusterColor }: WeatherCardProps &
         <h4 className="body-small font-semibold text-gray-900 truncate">
           {weather.name}
         </h4>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-3 mt-0.5">
           <span className="body-xsmall text-gray-500 font-medium">
             {weather.temperature}°C
           </span>
-          <span className="w-1 h-1 rounded-full bg-gray-300" />
           <span className={`body-xsmall font-medium ${config.textColor} truncate`}>
             {config.label} Risk
           </span>

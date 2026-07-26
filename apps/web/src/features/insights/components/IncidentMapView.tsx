@@ -76,15 +76,29 @@ function MapController({
 function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
   const map = useMap();
   useEffect(() => {
-    const ro = new ResizeObserver(() => map.invalidateSize());
+    if (!map || !map.getContainer()) return;
+    const ro = new ResizeObserver(() => {
+      try {
+        if (map.getContainer()) map.invalidateSize();
+      } catch (e) {
+        console.warn("Leaflet resize error:", e);
+      }
+    });
     ro.observe(map.getContainer());
     return () => ro.disconnect();
   }, [map]);
 
   // Extra invalidation pulses after fullscreen transition so tiles render correctly
   useEffect(() => {
-    const t1 = setTimeout(() => map.invalidateSize(), 150);
-    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    const invalidateSafe = () => {
+      try {
+        if (map && map.getContainer()) map.invalidateSize();
+      } catch (e) {
+        console.warn("Leaflet timeout resize error:", e);
+      }
+    };
+    const t1 = setTimeout(invalidateSafe, 150);
+    const t2 = setTimeout(invalidateSafe, 400);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [map, isFullScreen]);
 

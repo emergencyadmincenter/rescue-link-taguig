@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsNumber } from 'class-validator';
+import { IsOptional, IsEnum, IsNumber, IsString } from 'class-validator';
 import { CommunicationMethod } from '../../../generated/prisma/client';
 
 export class CreateEmergencyDto {
@@ -12,4 +12,12 @@ export class CreateEmergencyDto {
   @IsOptional()
   @IsNumber()
   longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  device_uuid?: string;
+
+  @IsOptional()
+  @IsString()
+  fingerprint_hash?: string;
 }

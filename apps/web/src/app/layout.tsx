@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { inter, outfit } from "@/lib/fonts";
 import { ToastProvider } from "@/providers/toast-provider";
+import { DeviceIdentificationProvider } from "@/providers/device-identification-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         {children}
         <ToastProvider />
+        <DeviceIdentificationProvider />
       </body>
     </html>
   );

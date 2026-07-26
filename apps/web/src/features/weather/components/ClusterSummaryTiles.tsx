@@ -100,11 +100,10 @@ export default function ClusterSummaryTiles({
             </div>
 
             {/* Stats */}
-            <div className="body-xsmall font-medium flex items-center flex-wrap gap-x-1.5 gap-y-0.5">
+            <div className="body-xsmall font-medium flex items-center flex-wrap gap-x-3 gap-y-1">
               {statItems.length > 0 ? (
-                statItems.map((item, index) => (
-                  <div key={item.key} className="flex items-center gap-1.5">
-                    {index > 0 && <span className="text-gray-300">·</span>}
+                statItems.map((item) => (
+                  <div key={item.key} className="flex items-center">
                     {item}
                   </div>
                 ))

@@ -90,7 +90,8 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
       }
     } catch (err: any) {
       console.error(err);
-      const errorMsg = err.message || "Failed to reconnect. Please try again or call 911.";
+      const errorMsg =
+        err.message || "Failed to reconnect. Please try again or call 911.";
       toast.error(errorMsg, {
         id: "reconnect-error",
       });
@@ -165,16 +166,12 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
             </div>
 
             <h1 className="title-medium text-gray-900 mb-2">
-              Connecting to Emergency Services...
+              Connecting to Emergency Service...
             </h1>
             <p className="body-medium text-gray-500 min-h-[48px] flex items-center justify-center">
               {statusMessage ||
                 "Please wait while we secure a connection with an available coordinator."}
             </p>
-
-            <div className="w-full bg-gray-100 rounded-full h-1.5 mt-8 overflow-hidden">
-              <div className="bg-danger h-full rounded-full w-full origin-left animate-[pulse_2s_ease-in-out_infinite]"></div>
-            </div>
           </>
         )}
       </div>

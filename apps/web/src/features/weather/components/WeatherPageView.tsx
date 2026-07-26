@@ -10,6 +10,7 @@ import {
   FiMap,
   FiX,
   FiChevronDown,
+  FiMapPin,
 } from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
 import WeatherCard from "./WeatherCard";
@@ -67,40 +68,69 @@ export default function WeatherPageView() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // --- Cluster Filter State (Single-select) ---
-  // Keeps list and map views in sync: selecting a cluster filter here
-  // filters the list view and also communicates the active cluster to the map.
   const [activeClusterFilter, setActiveClusterFilter] = useState<number | null>(
     null,
   );
 
-  // --- Cluster Dropdown Open State ---
-  const [clusterDropdownOpen, setClusterDropdownOpen] = useState(false);
-  const clusterDropdownRef = useRef<HTMLDivElement>(null);
+  // --- Search Autocomplete State ---
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return weatherData.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    );
+  }, [searchQuery, weatherData]);
 
-  // Debounced search
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchQuery(value);
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    searchTimerRef.current = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, 300);
-  }, []);
-
-  // Close cluster dropdown when clicking outside
+  // Close suggestions when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
-        clusterDropdownRef.current &&
-        !clusterDropdownRef.current.contains(event.target as Node)
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
       ) {
-        setClusterDropdownOpen(false);
+        setShowSuggestions(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        setShowSuggestions(true);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < searchSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < searchSuggestions.length) {
+        handleSuggestionSelect(searchSuggestions[highlightedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  const handleSuggestionSelect = useCallback((weather: BarangayWeather) => {
+    setSearchQuery(weather.name);
+    setSubmittedSearch(weather.name);
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
   }, []);
 
   // TODO: BACKEND - Replace with actual API call + SWR/React Query
@@ -157,7 +187,7 @@ export default function WeatherPageView() {
   // --- Filtering logic ---
   // Base data after search but before tab filter
   const searchFilteredData = weatherData.filter((item) =>
-    item.name.toLowerCase().includes(debouncedSearch.toLowerCase()),
+    item.name.toLowerCase().includes(submittedSearch.toLowerCase()),
   );
 
   const filteredData = searchFilteredData.filter((item) => {
@@ -301,126 +331,61 @@ export default function WeatherPageView() {
 
       {/* Toolbar */}
       <div className="space-y-4 shrink-0 mb-4">
-        {/* Search + Cluster Filter + View Toggle + Refresh Row */}
+        {/* Search + View Toggle + Refresh Row */}
         <div className="flex items-center gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
+          {/* Search Input Autocomplete */}
+          <div className="relative flex-1" ref={searchContainerRef}>
             <input
               type="text"
               placeholder="Search barangay..."
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+                setHighlightedIndex(-1);
+                if (e.target.value === "") {
+                  setSubmittedSearch("");
+                }
+              }}
+              onFocus={() => {
+                if (searchQuery.trim()) setShowSuggestions(true);
+              }}
+              onKeyDown={handleSearchKeyDown}
               className="w-full pl-5 pr-10 py-4 border border-gray-200 rounded-full body-small focus:outline-none focus:border-gray-300 focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-gray-700 placeholder:text-gray-400"
             />
             <FiSearch className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-[15px] h-[15px]" />
-          </div>
 
-          {/* Cluster Filter Single-Select Dropdown */}
-          <div className="relative shrink-0" ref={clusterDropdownRef}>
-            <button
-              onClick={() => setClusterDropdownOpen((prev) => !prev)}
-              className={`flex items-center gap-2 pl-3 pr-2.5 py-2.5 border rounded-lg body-xsmall font-medium bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 cursor-pointer ${
-                activeClusterFilter !== null
-                  ? "border-primary/40 text-primary"
-                  : "border-gray-200 text-gray-700"
-              }`}
-            >
-              <span>
-                {activeClusterFilter === null
-                  ? "All Clusters"
-                  : (CLUSTERS.find((c) => c.id === activeClusterFilter)
-                      ?.label ?? "Cluster")}
-              </span>
-              <FiChevronDown
-                className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                  clusterDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {/* Dropdown Panel */}
-            {clusterDropdownOpen && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
-                {CLUSTERS.map((c) => {
-                  const isSelected = activeClusterFilter === c.id;
-                  return (
+            {/* Suggestions Dropdown */}
+            {showSuggestions && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2 max-h-64 overflow-y-auto custom-scrollbar">
+                {searchSuggestions.length > 0 ? (
+                  searchSuggestions.map((suggestion, index) => (
                     <button
-                      key={c.id}
-                      onClick={() => {
-                        handleClusterSelect(c.id);
-                        setClusterDropdownOpen(false);
+                      key={suggestion.id}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevents input from losing focus if needed
+                        handleSuggestionSelect(suggestion);
                       }}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-150 ${
-                        isSelected
-                          ? "bg-primary/5 text-gray-900"
-                          : "text-gray-700 hover:bg-gray-50"
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors duration-150 ${
+                        index === highlightedIndex
+                          ? "bg-gray-100"
+                          : "hover:bg-gray-50"
                       }`}
                     >
-                      {/* Radio indicator */}
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150 ${
-                          isSelected ? "border-primary" : "border-gray-300"
-                        }`}
-                      >
-                        {isSelected && (
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                        )}
-                      </div>
-                      {/* Cluster dot + label */}
-                      <div
-                        className={`w-2.5 h-2.5 rounded-sm shrink-0 ${c.dotClass}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="body-xsmall font-medium">
-                          {c.label}
-                        </span>
-                        <span className="body-xsmall text-gray-400 ml-1">
-                          — {c.area}
-                        </span>
-                      </div>
+                      <FiMapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span className="body-small text-gray-700 font-medium truncate">
+                        {suggestion.name}
+                      </span>
                     </button>
-                  );
-                })}
-                {/* Clear Filter */}
-                {activeClusterFilter !== null && (
-                  <>
-                    <div className="border-t border-gray-100 my-1" />
-                    <button
-                      onClick={() => {
-                        handleClearClusterFilter();
-                        setClusterDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left body-xsmall font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-150"
-                    >
-                      Clear Filter
-                    </button>
-                  </>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-center text-gray-500 body-small">
+                    No matching barangays found.
+                  </div>
                 )}
               </div>
             )}
           </div>
-
-          {/* Active Cluster Filter Badge (single) */}
-          {activeClusterFilter !== null && (
-            <div className="flex items-center gap-1.5">
-              {(() => {
-                const cluster = CLUSTERS.find(
-                  (c) => c.id === activeClusterFilter,
-                );
-                if (!cluster) return null;
-                return (
-                  <button
-                    onClick={handleClearClusterFilter}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary body-xsmall font-medium hover:bg-primary/20 transition-all duration-200"
-                  >
-                    <div className={`w-2 h-2 rounded-sm ${cluster.dotClass}`} />
-                    {cluster.label}
-                    <FiX className="w-3 h-3" />
-                  </button>
-                );
-              })()}
-            </div>
-          )}
 
           {/* List / Map View Toggle */}
           <div className="inline-flex p-1 bg-gray-100 rounded-lg shrink-0">
@@ -570,8 +535,8 @@ export default function WeatherPageView() {
                     No barangays found
                   </p>
                   <p className="body-small text-gray-500 mt-1">
-                    {debouncedSearch
-                      ? `No results for "${debouncedSearch}". Try a different search term.`
+                    {submittedSearch
+                      ? `No results for "${submittedSearch}". Try a different search term.`
                       : "No barangays match the selected filter."}
                   </p>
                 </div>
@@ -596,13 +561,12 @@ export default function WeatherPageView() {
         {!loading && !error && viewMode === "map" && (
           <WeatherMapView
             weatherData={weatherData}
-            searchQuery={debouncedSearch}
+            searchQuery={submittedSearch}
             activeClusterFilter={activeClusterFilter}
             onClusterSelect={handleClusterSelect}
             onSearchClear={() => {
               setSearchQuery("");
-              setDebouncedSearch("");
-              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+              setSubmittedSearch("");
             }}
           />
         )}
