@@ -21,6 +21,7 @@ import {
   FiPlus,
   FiAlignLeft,
   FiAlertTriangle,
+  FiShare2,
 } from "react-icons/fi";
 import { Log, Resource } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
@@ -29,6 +30,7 @@ import StatusSelector from "./StatusSelector";
 import { toast } from "react-hot-toast";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import SelectorDialog, { SelectorOption } from "./SelectorDialog";
+import ShareLogDialog from "./ShareLogDialog";
 import { useAuth } from "@/providers/AuthProvider";
 import dynamic from "next/dynamic";
 
@@ -109,6 +111,8 @@ export default function LogDetailsPanel({
     isOpen: boolean;
     status: string;
   }>({ isOpen: false, status: "" });
+
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Channels
   const [selectedChannels, setSelectedChannels] = useState<SelectorOption[]>(
@@ -392,12 +396,28 @@ export default function LogDetailsPanel({
             </h2>
           </div>
         </div>
-        <StatusSelector
-          currentStatus={log.status}
-          onStatusChange={handleStatusChange}
-          disabled={isReadOnly}
-        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShareDialogOpen(true)}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors tooltip-trigger relative group"
+            title="Share Public Link"
+          >
+            <FiShare2 className="w-5 h-5" />
+          </button>
+          <StatusSelector
+            currentStatus={log.status}
+            onStatusChange={handleStatusChange}
+            disabled={isReadOnly}
+          />
+        </div>
       </div>
+
+      <ShareLogDialog
+        isOpen={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        logId={log.id}
+        initialToken={log.public_token}
+      />
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">

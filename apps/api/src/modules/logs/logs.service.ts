@@ -461,4 +461,68 @@ export class LogsService {
       orderBy: { name: 'asc' },
     });
   }
+
+  async generateShareLink(id: string) {
+    const log = await this.prisma.log.findUnique({ where: { id } });
+    if (!log) {
+      throw new NotFoundException(`Log with ID ${id} not found`);
+    }
+
+    if (log.public_token && log.public_token_expires_at && log.public_token_expires_at > new Date()) {
+      return { token: log.public_token };
+    }
+
+    const { randomUUID } = require('crypto');
+    const token = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await this.prisma.log.update({
+      where: { id },
+      data: {
+        public_token: token,
+        public_token_expires_at: expiresAt
+      }
+    });
+
+    return { token };
+  }
+
+  async getPublicLog(token: string) {
+    const log = await this.prisma.log.findUnique({
+      where: { public_token: token },
+      include: {
+        incident_category: true,
+        resource_assignments: {
+          include: {
+            resource: true,
+          },
+        },
+      }
+    });
+
+    if (!log || !log.public_token_expires_at || log.public_token_expires_at < new Date()) {
+      throw new NotFoundException('Invalid or expired public link');
+    }
+
+    // Return only public information
+    return {
+      reference_no: log.reference_no,
+      status: log.status,
+      source: log.source,
+      created_at: log.created_at,
+      caller_name: log.caller_name,
+      caller_contact: log.caller_contact,
+      description: log.description,
+      address: log.address,
+      barangay: log.barangay,
+      latitude: log.latitude,
+      longitude: log.longitude,
+      weather_condition: log.weather_condition,
+      incident_category: log.incident_category ? { name: log.incident_category.name } : null,
+      resolved_at: log.resolved_at,
+      channels: log.channels,
+      needs: log.resource_assignments?.map(a => a.resource.name) || [],
+    };
+  }
 }

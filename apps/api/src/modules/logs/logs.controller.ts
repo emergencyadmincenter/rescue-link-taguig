@@ -50,6 +50,12 @@ export class LogsController {
     return ApiResponse.success(result);
   }
 
+  @Get('public/:token')
+  async getPublicLog(@Param('token') token: string) {
+    const result = await this.logsService.getPublicLog(token);
+    return ApiResponse.success(result);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
@@ -66,6 +72,14 @@ export class LogsController {
     @CurrentUser() user: JwtPayload,
   ) {
     const result = await this.logsService.create(createLogDto, user.sub);
+    return ApiResponse.success(result);
+  }
+
+  @Post(':id/share')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async shareLog(@Param('id') id: string) {
+    const result = await this.logsService.generateShareLink(id);
     return ApiResponse.success(result);
   }
 

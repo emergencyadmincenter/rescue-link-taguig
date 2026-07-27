@@ -232,6 +232,9 @@ model Log {
 
   fraud_assessments FraudAssessment[]
 
+  public_token String? @unique
+  public_token_expires_at DateTime?
+
   @@index([status])
   @@index([assigned_coordinator_id])
   @@index([created_by_coordinator_id])
