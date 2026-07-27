@@ -172,29 +172,23 @@ function AdminDashboard({
           title="Active & Dispatched"
           value={statusCounts.active + statusCounts.dispatched}
           icon={<FiAlertTriangle className="w-6 h-6" />}
-          href="/logs?status=active"
-          className="border-danger/15 hover:border-danger/40 bg-gradient-to-br from-white to-danger/[0.02]"
+          className="border-danger/15 bg-gradient-to-br from-white to-danger/[0.02]"
         />
         <MetricCard
           title="Resolved Today"
           value={statusCounts.resolved}
           icon={<FiCheckCircle className="w-6 h-6" />}
-          href="/logs?status=resolved"
-          className="hover:border-success/30"
         />
         <MetricCard
           title="Total System Logs"
           value={statusCounts.total}
           icon={<FiActivity className="w-6 h-6" />}
-          href="/logs"
-          className="hover:border-primary/30"
         />
         <MetricCard
           title="Taguig System Resources"
           value={resources.length}
           icon={<FiTruck className="w-6 h-6" />}
-          href="/personnel"
-          className="border-warning/20 hover:border-warning/50 bg-gradient-to-br from-white to-warning/[0.02]"
+          className="border-warning/20 bg-gradient-to-br from-white to-warning/[0.02]"
         />
       </div>
 
@@ -337,29 +331,22 @@ function CoordinatorDashboard({
           title="My Active Assignments"
           value={assignedLogs.length}
           icon={<FiShield className="w-6 h-6" />}
-          href="/logs?assigned=me&status=active"
-          className="border-primary/15 hover:border-primary/40 bg-gradient-to-br from-white to-primary/[0.02]"
+          className="border-primary/15 bg-gradient-to-br from-white to-primary/[0.02]"
         />
         <MetricCard
           title="My Handled Emergencies"
           value={statusCounts.my_logs}
           icon={<FiCheckCircle className="w-6 h-6" />}
-          href="/logs?assigned=me"
-          className="hover:border-primary/30"
         />
         <MetricCard
           title="System-wide Active"
           value={statusCounts.active}
           icon={<FiAlertTriangle className="w-6 h-6" />}
-          href="/logs?status=active"
-          className="hover:border-danger/30"
         />
         <MetricCard
           title="Total System Logs"
           value={statusCounts.total}
           icon={<FiActivity className="w-6 h-6" />}
-          href="/logs"
-          className="hover:border-primary/30"
         />
       </div>
 

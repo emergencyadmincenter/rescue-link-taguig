@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FiArrowLeft, FiPhoneCall, FiMessageSquare } from "react-icons/fi";
+import { FiArrowLeft, FiPhoneCall, FiMessageSquare, FiAlignLeft } from "react-icons/fi";
 import { useIncomingCall } from "@/providers/IncomingCallProvider";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { Log, Resource, Call } from "@/features/logs/types/logs.types";
@@ -131,27 +131,37 @@ export default function CallSessionPage() {
           </div>
         </div>
 
-        <div className="flex bg-background p-1.5 rounded-xl border border-background-subtle">
-          <button
-            onClick={() => setActiveTab("details")}
-            className={`px-6 py-1.5 rounded-lg body-small font-semibold transition-all ${
-              activeTab === "details"
-                ? "bg-white text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
-                : "text-foreground/50 hover:text-foreground hover:bg-white/50"
-            }`}
+        <div className="flex items-center gap-4">
+          <a
+            href={`/logs/${log.id}`}
+            className="flex items-center gap-2 text-primary hover:text-primary-hover font-medium body-small px-4 py-2 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors"
           >
-            Communication
-          </button>
-          <button
-            onClick={() => setActiveTab("location")}
-            className={`px-6 py-1.5 rounded-lg body-small font-semibold transition-all ${
-              activeTab === "location"
-                ? "bg-white text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
-                : "text-foreground/50 hover:text-foreground hover:bg-white/50"
-            }`}
-          >
-            Location Map
-          </button>
+            <FiAlignLeft className="w-4 h-4" />
+            View Emergency Log
+          </a>
+          
+          <div className="flex bg-background p-1.5 rounded-xl border border-background-subtle">
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`px-6 py-1.5 rounded-lg body-small font-semibold transition-all ${
+                activeTab === "details"
+                  ? "bg-white text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+                  : "text-foreground/50 hover:text-foreground hover:bg-white/50"
+              }`}
+            >
+              Communication
+            </button>
+            <button
+              onClick={() => setActiveTab("location")}
+              className={`px-6 py-1.5 rounded-lg body-small font-semibold transition-all ${
+                activeTab === "location"
+                  ? "bg-white text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+                  : "text-foreground/50 hover:text-foreground hover:bg-white/50"
+              }`}
+            >
+              Location Map
+            </button>
+          </div>
         </div>
       </div>
 

@@ -87,6 +87,32 @@ export class LogsService {
       if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
     }
 
+    const activeBans = await this.prisma.shadowBan.findMany({
+      where: {
+        active: true,
+        OR: [
+          { expires_at: null },
+          { expires_at: { gt: new Date() } }
+        ]
+      }
+    });
+
+    const bannedDeviceUuids = new Set(activeBans.map((b) => b.device_uuid).filter(Boolean));
+    const bannedHashes = new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean));
+    const bannedIps = new Set(activeBans.map((b) => b.client_ip).filter(Boolean));
+
+    if (query.is_shadow_banned === 'true') {
+      where.fraud_assessments = {
+        some: {
+          OR: [
+            { device_uuid: { in: Array.from(bannedDeviceUuids) as string[] } },
+            { fingerprint_hash: { in: Array.from(bannedHashes) as string[] } },
+            { client_ip: { in: Array.from(bannedIps) as string[] } },
+          ]
+        }
+      };
+    }
+
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
@@ -116,8 +142,18 @@ export class LogsService {
       this.prisma.log.count({ where }),
     ]);
 
+    const enrichedData = data.map(log => {
+      const isShadowBanned = log.fraud_assessments?.some(
+        (fa) =>
+          (fa.device_uuid && bannedDeviceUuids.has(fa.device_uuid)) ||
+          (fa.fingerprint_hash && bannedHashes.has(fa.fingerprint_hash)) ||
+          (fa.client_ip && bannedIps.has(fa.client_ip))
+      );
+      return { ...log, is_shadow_banned: !!isShadowBanned };
+    });
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -152,7 +188,56 @@ export class LogsService {
       throw new NotFoundException(`Log with ID ${id} not found`);
     }
 
-    return log;
+    const activeBans = await this.prisma.shadowBan.findMany({
+      where: {
+        active: true,
+        OR: [
+          { expires_at: null },
+          { expires_at: { gt: new Date() } }
+        ]
+      }
+    });
+
+    const bannedDeviceUuids = new Set(activeBans.map((b) => b.device_uuid).filter(Boolean));
+    const bannedHashes = new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean));
+    const bannedIps = new Set(activeBans.map((b) => b.client_ip).filter(Boolean));
+
+    const isShadowBanned = log.fraud_assessments?.some(
+      (fa) =>
+        (fa.device_uuid && bannedDeviceUuids.has(fa.device_uuid)) ||
+        (fa.fingerprint_hash && bannedHashes.has(fa.fingerprint_hash)) ||
+        (fa.client_ip && bannedIps.has(fa.client_ip))
+    );
+
+    let shadowBanDetails: any = null;
+    if (isShadowBanned) {
+      // Find the specific active ban that caused this to be true
+      const matchingBan = activeBans.find(b => 
+        log.fraud_assessments?.some(fa => 
+          (fa.device_uuid && fa.device_uuid === b.device_uuid) ||
+          (fa.fingerprint_hash && fa.fingerprint_hash === b.fingerprint_hash) ||
+          (fa.client_ip && fa.client_ip === b.client_ip)
+        )
+      );
+      
+      if (matchingBan) {
+        let coordinator: { id: string; name: string } | null = null;
+        if (matchingBan.created_by_id) {
+           coordinator = await this.prisma.user.findUnique({
+             where: { id: matchingBan.created_by_id },
+             select: { id: true, name: true }
+           });
+        }
+        shadowBanDetails = {
+          reason: matchingBan.reason,
+          created_at: matchingBan.created_at,
+          expires_at: matchingBan.expires_at,
+          coordinator
+        };
+      }
+    }
+
+    return { ...log, is_shadow_banned: !!isShadowBanned, shadow_ban_details: shadowBanDetails };
   }
 
   async create(dto: CreateLogDto, userId: string) {

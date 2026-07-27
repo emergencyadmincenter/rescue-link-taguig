@@ -8,7 +8,7 @@ import {
   FiUser,
   FiAlertTriangle,
 } from "react-icons/fi";
-import { Call, Message } from "../types/logs.types";
+import { Call, Message, Log } from "../types/logs.types";
 import { Socket } from "socket.io-client";
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
@@ -16,12 +16,14 @@ import toast from "react-hot-toast";
 interface ChatViewProps {
   messages: Message[];
   logId: string;
+  log?: Log;
   socket?: Socket;
   call?: Call | null;
 }
 
 export default function ChatView({
   messages: initialMessages,
+  log,
   logId,
   socket,
   call,
@@ -109,8 +111,13 @@ export default function ChatView({
             />
           </div>
           <div className="flex flex-col">
-            <p className="body-medium font-bold text-foreground leading-tight">
+            <p className="body-medium font-bold text-foreground leading-tight flex items-center gap-2">
               Resident
+              {log?.is_shadow_banned && (
+                <span className="bg-danger text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm">
+                  Shadow Banned
+                </span>
+              )}
             </p>
             {!isEnded ? (
               <p className="body-xsmall text-success flex items-center gap-1">

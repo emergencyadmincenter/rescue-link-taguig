@@ -23,13 +23,13 @@ export function MetricCard({
 }: MetricCardProps) {
   const CardContent = (
     <div
-      className={`bg-background rounded-xl p-lg border border-gray-100 shadow-sm hover:shadow-md hover:border-primary-subtle transition-all duration-300 relative overflow-hidden group ${className}`}
+      className={`bg-background rounded-xl p-lg border border-gray-100 shadow-sm relative overflow-hidden ${className}`}
     >
       <div className="flex justify-between items-start mb-md">
         <h3 className="text-gray-500 font-medium body-small uppercase tracking-wider">
           {title}
         </h3>
-        <div className="p-xs bg-background-subtle rounded-md text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+        <div className="p-xs bg-background-subtle rounded-md text-primary">
           {icon}
         </div>
       </div>
