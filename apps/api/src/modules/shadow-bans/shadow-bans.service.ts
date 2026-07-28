@@ -15,6 +15,21 @@ export class ShadowBansService {
 
     if (orConditions.length === 0) return null;
 
+    const now = new Date();
+
+    // Naturally expire any bans matching these identifiers that have expired
+    await this.prisma.shadowBan.updateMany({
+      where: {
+        active: true,
+        OR: orConditions,
+        expires_at: { lte: now },
+      },
+      data: {
+        active: false,
+        unban_reason: 'Automatically expired',
+      },
+    });
+
     return this.prisma.shadowBan.findFirst({
       where: {
         active: true,
@@ -42,7 +57,7 @@ export class ShadowBansService {
     });
   }
 
-  async toggleShadowBan(callId: string, action: 'ban' | 'unban', reason: string, coordinatorId: string) {
+  async toggleShadowBan(callId: string, action: 'ban' | 'unban', reason: string, coordinatorId: string, expires_at?: Date) {
     const call = await this.prisma.call.findUnique({
       where: { id: callId },
       include: { 
@@ -79,6 +94,7 @@ export class ShadowBansService {
           reason,
           created_by_id: coordinatorId,
           active: true,
+          expires_at,
         },
       });
     } else {
@@ -117,6 +133,6 @@ export class ShadowBansService {
       fraudAssessment.fingerprint_hash || undefined,
       fraudAssessment.client_ip
     );
-    return !!ban;
+    return ban;
   }
 }

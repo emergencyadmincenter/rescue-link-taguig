@@ -21,6 +21,7 @@ import {
   FiPlus,
   FiAlignLeft,
   FiAlertTriangle,
+  FiShare2,
 } from "react-icons/fi";
 import { Log, Resource } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
@@ -29,6 +30,7 @@ import StatusSelector from "./StatusSelector";
 import { toast } from "react-hot-toast";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import SelectorDialog, { SelectorOption } from "./SelectorDialog";
+import ShareLogDialog from "./ShareLogDialog";
 import { useAuth } from "@/providers/AuthProvider";
 import dynamic from "next/dynamic";
 
@@ -109,6 +111,8 @@ export default function LogDetailsPanel({
     isOpen: boolean;
     status: string;
   }>({ isOpen: false, status: "" });
+
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   // Channels
   const [selectedChannels, setSelectedChannels] = useState<SelectorOption[]>(
@@ -392,15 +396,66 @@ export default function LogDetailsPanel({
             </h2>
           </div>
         </div>
-        <StatusSelector
-          currentStatus={log.status}
-          onStatusChange={handleStatusChange}
-          disabled={isReadOnly}
-        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShareDialogOpen(true)}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors tooltip-trigger relative group"
+            title="Share Public Link"
+          >
+            <FiShare2 className="w-5 h-5" />
+          </button>
+          <StatusSelector
+            currentStatus={log.status}
+            onStatusChange={handleStatusChange}
+            disabled={isReadOnly}
+          />
+        </div>
       </div>
+
+      <ShareLogDialog
+        isOpen={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        logId={log.id}
+        initialToken={log.public_token}
+        onTokenGenerated={(token) => {
+          onUpdate({ ...log, public_token: token });
+        }}
+      />
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
+        {log.is_shadow_banned && log.shadow_ban_details && (
+          <div className="mb-6 p-4 rounded-xl bg-danger/10 border border-danger/20 flex flex-col gap-2 text-danger shadow-sm">
+            <div className="flex items-start gap-3">
+              <FiShield className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-bold text-sm">Shadow Banned Request</h3>
+                <p className="text-xs mt-0.5 opacity-90">
+                  This request is associated with a device or IP address that is currently shadow-banned.
+                </p>
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-white/50 p-3 rounded-lg border border-danger/10">
+                  <div>
+                    <span className="font-semibold block opacity-70 mb-1">Reason</span>
+                    {log.shadow_ban_details.reason}
+                  </div>
+                  <div>
+                    <span className="font-semibold block opacity-70 mb-1">Status</span>
+                    {log.shadow_ban_details.expires_at ? (
+                       <span>Expires on {new Date(log.shadow_ban_details.expires_at).toLocaleString()}</span>
+                    ) : (
+                       <span>Permanent</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="font-semibold block opacity-70 mb-1">Applied By</span>
+                    {log.shadow_ban_details.coordinator?.name || "Unknown"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {isReadOnly && (
           <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-3 text-warning-hover shadow-sm">
             <FiAlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />

@@ -85,6 +85,7 @@ interface InteractiveLocationMapProps {
   latitude: number;
   longitude: number;
   channels?: string[];
+  isPublic?: boolean;
 }
 
 const getRelevantFacilityTypes = (channels?: string[]): FacilityType[] => {
@@ -491,6 +492,7 @@ export default function InteractiveLocationMap({
   latitude,
   longitude,
   channels,
+  isPublic = false,
 }: InteractiveLocationMapProps) {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [selectedFacility, setSelectedFacility] = useState<Facility | null>(
@@ -546,6 +548,7 @@ export default function InteractiveLocationMap({
   };
 
   useEffect(() => {
+    if (isPublic) return;
     let isMounted = true;
     fetchRealFacilities(latitude, longitude, channels).then((found) => {
       if (isMounted) setFacilities(found);
@@ -553,7 +556,7 @@ export default function InteractiveLocationMap({
     return () => {
       isMounted = false;
     };
-  }, [latitude, longitude, channels]);
+  }, [latitude, longitude, channels, isPublic]);
 
   // Check if Street View is available without requiring an API key
   useEffect(() => {
@@ -693,7 +696,7 @@ export default function InteractiveLocationMap({
       </div>
 
       {/* Quick Actions (Nearby Facilities) */}
-      {!isStreetViewActive && (
+      {!isStreetViewActive && !isPublic && (
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 shrink-0 flex items-center gap-3 overflow-x-auto custom-scrollbar z-10">
           <span className="body-xsmall font-semibold text-gray-500 whitespace-nowrap uppercase tracking-wide mr-2">
             Nearby Services:

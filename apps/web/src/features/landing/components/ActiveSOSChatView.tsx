@@ -2,10 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
-import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare, FiMapPin } from "react-icons/fi";
+import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare, FiMapPin, FiLoader } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { logsApi } from "@/features/logs/api/logs.api";
+import { storageApi } from "@/lib/storage.api";
 import { useLiveLocation } from "../hooks/useLiveLocation";
+import { PrivateImage } from "@/components/shared/PrivateImage";
+import { FullImageViewer } from "@/components/shared/FullImageViewer";
 
 interface ActiveSOSChatViewProps {
   callId: string;
@@ -24,6 +27,10 @@ export default function ActiveSOSChatView({
     "resident" | "coordinator" | "system" | null
   >(null);
   const [isRetryingLocation, setIsRetryingLocation] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [viewingImageKey, setViewingImageKey] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useLiveLocation(socket, callId, !sessionEndReason);
@@ -84,14 +91,77 @@ export default function ActiveSOSChatView({
     setSessionEndReason("resident");
   };
 
-  const handleSend = () => {
-    if (!text.trim() || !socket || !callId) return;
-    socket.emit("send_chat_message", {
-      callId,
-      type: "text",
-      text,
-    });
-    setText("");
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const validImages = files.filter((file) => file.type.startsWith("image/"));
+      const invalidImages = files.filter((file) => !file.type.startsWith("image/"));
+
+      if (invalidImages.length > 0) {
+        toast.error("Only image files are allowed.");
+      }
+
+      if (selectedImages.length + validImages.length > 4) {
+        toast.error("You can only attach up to 4 images per message.");
+        return;
+      }
+
+      const oversizedImages = validImages.filter((file) => file.size > 5 * 1024 * 1024);
+      if (oversizedImages.length > 0) {
+        toast.error("Each image must be less than 5MB.");
+        return;
+      }
+
+      setSelectedImages((prev) => [...prev, ...validImages]);
+    }
+    // Clear input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSend = async () => {
+    if ((!text.trim() && selectedImages.length === 0) || !socket || !callId || isUploading) return;
+    
+    const currentText = text.trim();
+    const currentImages = [...selectedImages];
+    
+    setIsUploading(true);
+    const toastId = toast.loading("Sending message...");
+
+    try {
+      const imageKeys: string[] = [];
+      if (currentImages.length > 0) {
+        const uploadPromises = currentImages.map((file) =>
+          storageApi.uploadPrivateFile(file)
+        );
+        const results = await Promise.all(uploadPromises);
+        imageKeys.push(...results.map((r) => r.key));
+      }
+
+      socket.emit("send_chat_message", {
+        callId,
+        type: imageKeys.length > 0 ? "image" : "text",
+        text: currentText,
+        imageKeys: imageKeys.length > 0 ? imageKeys : undefined,
+      }, (response: any) => {
+        if (response && response.success === false) {
+          toast.error(`Message failed: ${response.error}`, { id: toastId });
+        } else {
+          toast.success("Sent", { id: toastId, duration: 1000 });
+          setText("");
+          setSelectedImages([]);
+        }
+      });
+    } catch (error) {
+      toast.error("Failed to upload images. Please try again.", { id: toastId });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleRetryLocation = () => {
@@ -130,6 +200,7 @@ export default function ActiveSOSChatView({
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
   };
+
 
   if (sessionEndReason) {
     return (
@@ -217,14 +288,42 @@ export default function ActiveSOSChatView({
                   key={msg.id || idx}
                   className={`flex flex-col ${isResident ? "items-end" : "items-start"} animate-in fade-in slide-in-from-bottom-2 w-full`}
                 >
-                  <div
-                    className={`min-w-0 break-words whitespace-pre-wrap px-4 py-3 text-sm shadow-sm max-w-[85%] sm:max-w-[80%] ${
-                      isResident
-                        ? "bg-primary text-white rounded-2xl rounded-tr-sm"
-                        : "bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm"
-                    }`}
-                  >
-                    {msg.text}
+                  <div className="flex flex-col gap-2 w-full max-w-full">
+                    {msg.image_keys && msg.image_keys.length > 0 && (
+                      <div
+                        className={`grid gap-2 w-fit ${
+                          isResident ? "ml-auto" : "mr-auto"
+                        } ${
+                          msg.image_keys.length === 1
+                            ? "grid-cols-1"
+                            : "grid-cols-2"
+                        }`}
+                      >
+                        {msg.image_keys.map((key: string) => (
+                          <div
+                            key={key}
+                            className="relative aspect-square w-32 h-32 overflow-hidden rounded-xl cursor-pointer shadow-sm border border-gray-100"
+                            onClick={() => setViewingImageKey(key)}
+                          >
+                            <PrivateImage
+                              s3Key={key}
+                              className="w-full h-full object-cover transition-transform hover:scale-105"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {msg.text && (
+                      <div
+                        className={`min-w-0 break-words whitespace-pre-wrap px-4 py-3 text-sm shadow-sm max-w-[85%] sm:max-w-[80%] w-fit ${
+                          isResident
+                            ? "bg-primary text-white rounded-2xl rounded-tr-sm ml-auto"
+                            : "bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-tl-sm mr-auto"
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                    )}
                   </div>
                   <span className="text-[10px] text-gray-400 mt-1 px-1">
                     {new Date(msg.created_at || Date.now()).toLocaleTimeString(
@@ -240,10 +339,26 @@ export default function ActiveSOSChatView({
         )}
       </div>
 
-      <div className="p-4 bg-white border-t border-gray-200 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
-        <div className="flex items-end gap-2 mx-auto">
+      <div className="p-4 bg-white border-t border-gray-200 shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] flex flex-col gap-2">
+        {selectedImages.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+            {selectedImages.map((file, idx) => (
+              <div key={idx} className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden border border-gray-200">
+                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => handleRemoveImage(idx)}
+                  className="absolute top-1 right-1 p-0.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
+                >
+                  <FiX className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex items-end gap-2 mx-auto w-full">
           <textarea
             value={text}
+            disabled={isUploading}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -252,7 +367,7 @@ export default function ActiveSOSChatView({
               }
             }}
             placeholder="Type your message here..."
-            className="flex-1 bg-gray-100 text-gray-900 rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:bg-gray-50 border border-transparent focus:border-primary/30 transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar"
+            className="flex-1 bg-gray-100 text-gray-900 rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400 focus:bg-gray-50 border border-transparent focus:border-primary/30 transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar disabled:opacity-50"
             rows={1}
             ref={(el) => {
               if (el) {
@@ -261,23 +376,40 @@ export default function ActiveSOSChatView({
               }
             }}
           />
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            multiple
+            accept="image/*"
+            onChange={handleImageSelect}
+          />
           <button
-            onClick={() =>
-              toast.error("Image upload is currently unavailable.")
-            }
+            onClick={() => fileInputRef.current?.click()}
             className="p-3 text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 rounded-xl mb-1"
           >
             <FiImage className="w-5 h-5" />
           </button>
           <button
             onClick={handleSend}
-            disabled={!text.trim()}
+            disabled={(!text.trim() && selectedImages.length === 0) || isUploading}
             className="p-3 bg-primary text-white hover:bg-primary-hover transition-colors rounded-xl disabled:opacity-50 shadow-sm mb-1"
           >
-            <FiSend className="w-5 h-5" />
+            {isUploading ? (
+              <FiLoader className="w-5 h-5 animate-spin" />
+            ) : (
+              <FiSend className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
+
+      {viewingImageKey && (
+        <FullImageViewer
+          s3Key={viewingImageKey}
+          onClose={() => setViewingImageKey(null)}
+        />
+      )}
     </div>
   );
 }
