@@ -201,42 +201,6 @@ export default function ActiveSOSChatView({
     );
   };
 
-  const handleRetryLocation = () => {
-    setIsRetryingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          await logsApi.updateLocation(callId, {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            locationAccuracy: position.coords.accuracy,
-            locationTimestamp: new Date(position.timestamp),
-            locationStatus: "success",
-          });
-          toast.success("Location updated successfully.");
-        } catch (err) {
-          toast.error("Failed to update location.");
-        } finally {
-          setIsRetryingLocation(false);
-        }
-      },
-      async (error) => {
-        let status = "unavailable";
-        if (error.code === error.PERMISSION_DENIED) status = "denied";
-        else if (error.code === error.TIMEOUT) status = "timeout";
-        
-        try {
-          await logsApi.updateLocation(callId, {
-            locationStatus: status,
-          });
-        } catch (err) {}
-        
-        toast.error("Could not acquire location. Please check permissions.");
-        setIsRetryingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-  };
 
   if (sessionEndReason) {
     return (
