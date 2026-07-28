@@ -87,6 +87,10 @@ model User {
 
   status UserStatus
 
+  avatar_url   String?
+  phone_number String?
+  address      String?
+
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
   removed_at DateTime?

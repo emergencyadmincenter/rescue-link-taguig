@@ -75,8 +75,35 @@ export class AuthService {
         name: user.name,
         email: user.email,
         status: user.status,
+        avatar_url: user.avatar_url,
         roles,
       },
+    };
+  }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        user_roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      status: user.status,
+      avatar_url: user.avatar_url,
+      roles: user.user_roles.map((ur) => ur.role.name),
     };
   }
 }

@@ -17,6 +17,8 @@ import { WeatherModule } from './modules/weather/weather.module';
 import { HealthModule } from './health/health.module';
 import { InsightsModule } from './modules/insights/insights.module';
 import { ShadowBansModule } from './modules/shadow-bans/shadow-bans.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { ShadowBansModule } from './modules/shadow-bans/shadow-bans.module';
     HealthModule,
     InsightsModule,
     ShadowBansModule,
+    StorageModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [
