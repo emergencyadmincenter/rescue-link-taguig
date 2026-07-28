@@ -233,6 +233,7 @@ export class CommunicationsGateway
       type: 'text' | 'image' | 'file';
       text?: string;
       attachmentUrl?: string;
+      imageKeys?: string[];
     },
   ) {
     this.logger.log(
@@ -282,6 +283,7 @@ export class CommunicationsGateway
       data.type,
       data.text,
       data.attachmentUrl,
+      data.imageKeys,
     );
   }
 

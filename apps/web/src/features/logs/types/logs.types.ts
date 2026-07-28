@@ -69,6 +69,7 @@ export interface Message {
   type: MessageType;
   text: string | null;
   attachment_url: string | null;
+  image_keys?: string[];
   created_at: string;
 }
 
@@ -103,6 +104,14 @@ export interface Log {
   resource_assignments: LogResourceAssignment[];
   fraud_assessments?: FraudAssessment[];
   _count?: { messages: number };
+  is_shadow_banned?: boolean;
+  shadow_ban_details?: {
+    reason: string;
+    created_at: string;
+    expires_at: string | null;
+    coordinator: User | null;
+  } | null;
+  public_token?: string | null;
 }
 
 export interface LogsQueryParams {
@@ -112,6 +121,7 @@ export interface LogsQueryParams {
   assigned_coordinator_id?: string;
   date_from?: string;
   date_to?: string;
+  is_shadow_banned?: string;
   page?: number;
   limit?: number;
   sort_by?: string;

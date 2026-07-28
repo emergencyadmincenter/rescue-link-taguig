@@ -8,6 +8,7 @@ import { STATUS_CONFIG, SOURCE_CONFIG } from '../constants/logs.constants';
 interface FilterState {
   status?: LogStatus;
   source?: LogSource;
+  is_shadow_banned?: string;
 }
 
 interface FilterDialogProps {
@@ -95,6 +96,23 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Shadow Ban Filter */}
+          <div className="mb-2">
+            <p className="body-small font-semibold text-gray-900 mb-3">Security</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setFilters((p) => ({ ...p, is_shadow_banned: p.is_shadow_banned === 'true' ? undefined : 'true' }))}
+                className={`px-3 py-1.5 rounded-md border text-sm font-medium transition-all ${
+                  filters.is_shadow_banned === 'true'
+                    ? 'border-danger text-danger bg-danger/5 border-2'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                Shadow Banned Logs
+              </button>
             </div>
           </div>
         </div>

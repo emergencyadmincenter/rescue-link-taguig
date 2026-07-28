@@ -265,7 +265,7 @@ export default function IncidentFormPanel({
                     onFocus={(e) => e.target.select()}
                     disabled={isReadOnly}
                     placeholder="e.g. 123 Quezon St..."
-                    rows={2}
+                    rows={5}
                     className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 disabled:opacity-70"
                   />
                 </div>

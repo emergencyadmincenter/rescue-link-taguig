@@ -46,7 +46,17 @@ export default function LogCard({
       }`}
     >
       <div className="flex items-start justify-between mb-2">
-        <StatusBadge status={log.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={log.status} />
+          {log.is_shadow_banned && (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-danger/10 text-danger border border-danger/20"
+              title="This request is associated with a shadow-banned resident"
+            >
+              Shadow Banned
+            </span>
+          )}
+        </div>
         <span className="body-xsmall text-gray-400 shrink-0 ml-2 pt-0.5">
           {formatTimeAgo(log.created_at)}
         </span>

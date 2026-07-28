@@ -588,6 +588,7 @@ export class CommunicationsService
     type: 'text' | 'image' | 'file',
     text?: string,
     attachmentUrl?: string,
+    imageKeys?: string[],
   ) {
     const message = await this.prisma.message.create({
       data: {
@@ -597,6 +598,7 @@ export class CommunicationsService
         type,
         text,
         attachment_url: attachmentUrl,
+        image_keys: imageKeys ? imageKeys.filter(Boolean) : undefined,
       },
     });
 

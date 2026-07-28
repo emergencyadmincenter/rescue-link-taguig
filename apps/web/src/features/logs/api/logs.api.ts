@@ -43,4 +43,10 @@ export const logsApi = {
 
   updateLocation: (callId: string, data: { latitude?: number; longitude?: number; locationAccuracy?: number; locationTimestamp?: Date; locationStatus?: string }): Promise<Log> =>
     apiClient.post(`/calls/${callId}/location`, data).then((res) => res.data.data),
+
+  generateShareLink: (id: string): Promise<{ token: string }> =>
+    apiClient.post(`/logs/${id}/share`).then((res) => res.data.data),
+
+  getPublicLog: (token: string): Promise<any> =>
+    apiClient.get(`/logs/public/${token}`).then((res) => res.data.data),
 };

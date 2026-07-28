@@ -63,4 +63,8 @@ export class QueryLogsDto {
   @IsOptional()
   @IsString()
   sort_order?: 'asc' | 'desc' = 'desc';
+
+  @IsOptional()
+  @IsString()
+  is_shadow_banned?: string;
 }

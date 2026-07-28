@@ -4,9 +4,12 @@ import Link from "next/link";
 import { FiBell } from "react-icons/fi";
 import { UserProfileMenu } from "@/components/shared/user-profile-menu";
 import { Sidebar } from "@/components/layout/sidebar";
+import { FloatingInternalChat } from "@/features/internal-messaging/FloatingInternalChat";
+import { InternalMessagingProvider } from "@/providers/InternalMessagingProvider";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
+    <InternalMessagingProvider>
         <div className="h-screen bg-background-subtle font-inter text-foreground flex flex-col overflow-hidden">
         {/* ===== Top Navbar ===== */}
         <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-50 relative shrink-0">
@@ -39,6 +42,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {/* ===== Main Content Area ===== */}
           <main className="px-5 py-5 flex-1 overflow-y-auto">{children}</main>
         </div>
+        
+        <FloatingInternalChat />
       </div>
+    </InternalMessagingProvider>
   );
 }
