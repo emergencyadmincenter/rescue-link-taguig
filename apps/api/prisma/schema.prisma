@@ -342,6 +342,8 @@ model Message {
 
   attachment_url String?
 
+  image_keys String[]
+
   created_at DateTime @default(now())
 
   @@index([log_id])

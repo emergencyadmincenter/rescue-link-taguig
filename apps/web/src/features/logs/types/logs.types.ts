@@ -69,6 +69,7 @@ export interface Message {
   type: MessageType;
   text: string | null;
   attachment_url: string | null;
+  image_keys?: string[];
   created_at: string;
 }
 
@@ -110,6 +111,7 @@ export interface Log {
     expires_at: string | null;
     coordinator: User | null;
   } | null;
+  public_token?: string | null;
 }
 
 export interface LogsQueryParams {

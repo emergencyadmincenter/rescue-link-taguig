@@ -7,11 +7,16 @@ import {
   FiXCircle,
   FiUser,
   FiAlertTriangle,
+  FiX,
+  FiLoader
 } from "react-icons/fi";
 import { Call, Message, Log } from "../types/logs.types";
 import { Socket } from "socket.io-client";
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { storageApi } from "@/lib/storage.api";
+import { PrivateImage } from "@/components/shared/PrivateImage";
+import { FullImageViewer } from "@/components/shared/FullImageViewer";
 
 interface ChatViewProps {
   messages: Message[];
@@ -30,6 +35,10 @@ export default function ChatView({
 }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [text, setText] = useState("");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [viewingImageKey, setViewingImageKey] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,24 +73,81 @@ export default function ChatView({
     };
   }, [socket, logId]);
 
-  const handleSend = () => {
-    if (!text.trim() || !socket || !call?.id) return;
-    const currentText = text;
-    setText("");
-    socket.emit(
-      "send_chat_message",
-      {
-        callId: call.id,
-        type: "text",
-        text: currentText,
-      },
-      (response: any) => {
-        if (response && response.success === false) {
-          toast.error(`Message failed: ${response.error}`);
-          setText(currentText);
-        }
-      },
-    );
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const validImages = files.filter((file) => file.type.startsWith("image/"));
+      const invalidImages = files.filter((file) => !file.type.startsWith("image/"));
+
+      if (invalidImages.length > 0) {
+        toast.error("Only image files are allowed.");
+      }
+
+      if (selectedImages.length + validImages.length > 4) {
+        toast.error("You can only attach up to 4 images per message.");
+        return;
+      }
+
+      const oversizedImages = validImages.filter((file) => file.size > 5 * 1024 * 1024);
+      if (oversizedImages.length > 0) {
+        toast.error("Each image must be less than 5MB.");
+        return;
+      }
+
+      setSelectedImages((prev) => [...prev, ...validImages]);
+    }
+    // Clear input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSend = async () => {
+    if ((!text.trim() && selectedImages.length === 0) || !socket || !call?.id || isUploading) return;
+    
+    const currentText = text.trim();
+    const currentImages = [...selectedImages];
+    
+    setIsUploading(true);
+    const toastId = toast.loading("Sending message...");
+
+    try {
+      const imageKeys: string[] = [];
+      if (currentImages.length > 0) {
+        const uploadPromises = currentImages.map((file) =>
+          storageApi.uploadPrivateFile(file)
+        );
+        const results = await Promise.all(uploadPromises);
+        imageKeys.push(...results.map((r) => r.key));
+      }
+
+      socket.emit(
+        "send_chat_message",
+        {
+          callId: call.id,
+          type: imageKeys.length > 0 ? "image" : "text",
+          text: currentText,
+          imageKeys: imageKeys.length > 0 ? imageKeys : undefined,
+        },
+        (response: any) => {
+          if (response && response.success === false) {
+            toast.error(`Message failed: ${response.error}`, { id: toastId });
+          } else {
+            toast.success("Sent", { id: toastId, duration: 1000 });
+            setText("");
+            setSelectedImages([]);
+          }
+        },
+      );
+    } catch (error) {
+      toast.error("Failed to upload images. Please try again.", { id: toastId });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleEndChat = () => {
@@ -153,20 +219,48 @@ export default function ChatView({
                   key={msg.id}
                   className={`flex flex-col ${isCoordinator ? "items-end" : "items-start"} w-full`}
                 >
-                  <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[80%]">
+                  <div className="flex items-end gap-2 max-w-[85%] sm:max-w-[80%] min-w-0">
                     {!isCoordinator && (
                       <div className="w-6 h-6 rounded-full bg-danger/10 flex items-center justify-center shrink-0 mb-1">
                         <FiUser className="w-3 h-3 text-danger" />
                       </div>
                     )}
-                    <div
-                      className={`min-w-0 px-4 py-3 body-small shadow-sm break-words whitespace-pre-wrap max-w-full ${
-                        isCoordinator
-                          ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
-                          : "bg-background-subtle text-foreground rounded-2xl rounded-tl-sm"
-                      }`}
-                    >
-                      {msg.text}
+                    <div className="flex flex-col gap-2 w-full max-w-full min-w-0">
+                      {msg.image_keys && msg.image_keys.length > 0 && (
+                        <div
+                          className={`grid gap-2 w-fit ${
+                            isCoordinator ? "ml-auto" : "mr-auto"
+                          } ${
+                            msg.image_keys.length === 1
+                              ? "grid-cols-1"
+                              : "grid-cols-2"
+                          }`}
+                        >
+                          {msg.image_keys.map((key) => (
+                            <div
+                              key={key}
+                              className="relative aspect-square w-32 h-32 overflow-hidden rounded-xl cursor-pointer shadow-sm border border-background-subtle shrink-0"
+                              onClick={() => setViewingImageKey(key)}
+                            >
+                              <PrivateImage
+                                s3Key={key}
+                                className="w-full h-full object-cover transition-transform hover:scale-105"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {msg.text && (
+                        <div
+                          className={`min-w-0 px-4 py-3 body-small shadow-sm break-words whitespace-pre-wrap max-w-full w-fit ${
+                            isCoordinator
+                              ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm ml-auto"
+                              : "bg-background-subtle text-foreground rounded-2xl rounded-tl-sm mr-auto"
+                          }`}
+                        >
+                          {msg.text}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <span className="text-[10px] text-foreground/40 mt-1 px-1">
@@ -196,10 +290,26 @@ export default function ChatView({
 
       {/* Message input */}
       {!isEnded && (
-        <div className="px-lg py-sm border-t border-background-subtle shrink-0 bg-white">
-          <div className="flex items-end gap-2 mx-auto">
+        <div className="px-lg py-sm border-t border-background-subtle shrink-0 bg-white flex flex-col gap-2">
+          {selectedImages.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+              {selectedImages.map((file, idx) => (
+                <div key={idx} className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden border border-background-subtle">
+                  <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => handleRemoveImage(idx)}
+                    className="absolute top-1 right-1 p-0.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
+                  >
+                    <FiX className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-2 mx-auto w-full">
             <textarea
               value={text}
+              disabled={isUploading}
               onChange={(e) => {
                 if (e.target.value.length <= 1000) {
                   setText(e.target.value);
@@ -213,7 +323,7 @@ export default function ChatView({
                 }
               }}
               placeholder="Type a message... (Shift+Enter for new line)"
-              className="flex-1 px-md py-sm rounded-lg bg-background-subtle/50 border border-transparent focus:border-primary/30 focus:bg-white text-foreground body-small outline-none transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar"
+              className="flex-1 px-md py-sm rounded-lg bg-background-subtle/50 border border-transparent focus:border-primary/30 focus:bg-white text-foreground body-small outline-none transition-colors resize-none min-h-[44px] max-h-32 custom-scrollbar disabled:opacity-50"
               rows={1}
               ref={(el) => {
                 if (el) {
@@ -222,23 +332,40 @@ export default function ChatView({
                 }
               }}
             />
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              multiple
+              accept="image/*"
+              onChange={handleImageSelect}
+            />
             <button
-              onClick={() =>
-                toast.error("Image upload is currently unavailable.")
-              }
+              onClick={() => fileInputRef.current?.click()}
               className="p-2 text-foreground/40 hover:text-foreground transition-colors mb-1"
             >
               <FiImage className="w-5 h-5" />
             </button>
             <button
               onClick={handleSend}
-              disabled={!text.trim()}
+              disabled={(!text.trim() && selectedImages.length === 0) || isUploading}
               className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50 mb-1"
             >
-              <FiSend className="w-5 h-5" />
+              {isUploading ? (
+                <FiLoader className="w-5 h-5 animate-spin" />
+              ) : (
+                <FiSend className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
+      )}
+
+      {viewingImageKey && (
+        <FullImageViewer
+          s3Key={viewingImageKey}
+          onClose={() => setViewingImageKey(null)}
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
-import { Injectable, InternalServerErrorException, BadRequestException } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { Injectable, InternalServerErrorException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { extname } from 'path';
 import * as crypto from 'crypto';
 
@@ -7,10 +8,12 @@ import * as crypto from 'crypto';
 export class StorageService {
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
+  private readonly privateBucketName: string;
   private readonly region: string;
 
   constructor() {
     this.bucketName = process.env.AWS_S3_BUCKET_NAME || '';
+    this.privateBucketName = process.env.AWS_S3_PRIVATE_BUCKET_NAME || '';
     this.region = process.env.AWS_REGION || 'ap-southeast-1';
     
     this.s3Client = new S3Client({
@@ -52,6 +55,72 @@ export class StorageService {
     } catch (error) {
       console.error('Failed to upload file to S3', error);
       throw new InternalServerErrorException('Failed to upload file to storage');
+    }
+  }
+
+  /**
+   * Uploads a file to the private Amazon S3 Bucket
+   * @param file The multer file object
+   * @param folder Optional folder path inside the bucket (e.g., 'private-chat')
+   * @param customFilename Optional custom filename
+   * @returns The permanent S3 object key
+   */
+  async uploadPrivateFile(file: Express.Multer.File, folder: string = 'private-general', customFilename?: string): Promise<string> {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    if (!this.privateBucketName) {
+      throw new InternalServerErrorException('Private S3 bucket is not configured');
+    }
+
+    const extension = extname(file.originalname);
+    const filename = customFilename ? `${customFilename}${extension}` : `${crypto.randomUUID()}${extension}`;
+    const key = `${folder}/${filename}`;
+
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.privateBucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      });
+
+      await this.s3Client.send(command);
+
+      return key; // Only return the key, never the URL
+    } catch (error) {
+      console.error('Failed to upload private file to S3', error);
+      throw new InternalServerErrorException('Failed to upload private file to storage');
+    }
+  }
+
+  /**
+   * Generates a short-lived presigned URL for a private S3 object
+   * @param key The S3 object key
+   * @param expiresIn Expiration time in seconds (default 900s / 15m)
+   * @returns The presigned URL string
+   */
+  async getPresignedUrl(key: string, expiresIn: number = 900): Promise<string> {
+    if (!key) {
+      throw new BadRequestException('Object key is required');
+    }
+
+    if (!this.privateBucketName) {
+      throw new InternalServerErrorException('Private S3 bucket is not configured');
+    }
+
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.privateBucketName,
+        Key: key,
+      });
+
+      const url = await getSignedUrl(this.s3Client, command, { expiresIn });
+      return url;
+    } catch (error) {
+      console.error('Failed to generate presigned URL', error);
+      throw new InternalServerErrorException('Failed to generate access URL');
     }
   }
 }
