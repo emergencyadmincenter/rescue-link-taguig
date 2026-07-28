@@ -417,6 +417,9 @@ export default function LogDetailsPanel({
         onClose={() => setShareDialogOpen(false)}
         logId={log.id}
         initialToken={log.public_token}
+        onTokenGenerated={(token) => {
+          onUpdate({ ...log, public_token: token });
+        }}
       />
 
       {/* Body */}

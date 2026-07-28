@@ -102,6 +102,10 @@ model User {
   created_logs  Log[]  @relation("CreatedByCoordinator")
   calls         Call[]
   shadow_bans   ShadowBan[]
+  
+  created_group_chats       InternalConversation[] @relation("GroupChatCreator")
+  internal_conversations    InternalConversationParticipant[] @relation("InternalConversationParticipant")
+  sent_internal_messages    InternalMessage[] @relation("InternalMessageSender")
 
   @@map("users")
 }
@@ -447,3 +451,59 @@ model QuarantinedEmergencyRequest {
   @@map("quarantined_emergency_requests")
 }
 
+model InternalConversation {
+  id String @id @default(uuid()) @db.Uuid
+  
+  is_group Boolean @default(false)
+  title    String?
+  
+  created_by_id String? @db.Uuid
+  created_by    User?   @relation("GroupChatCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
+  participants InternalConversationParticipant[]
+  messages     InternalMessage[]
+  
+  @@map("internal_conversations")
+}
+
+model InternalConversationParticipant {
+  conversation_id String @db.Uuid
+  user_id         String @db.Uuid
+  
+  conversation InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  user         User                 @relation("InternalConversationParticipant", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  joined_at    DateTime @default(now())
+  last_read_at DateTime @default(now())
+  is_muted     Boolean  @default(false)
+  
+  @@id([conversation_id, user_id])
+  @@index([user_id])
+  @@map("internal_conversation_participants")
+}
+
+model InternalMessage {
+  id String @id @default(uuid()) @db.Uuid
+  
+  conversation_id String @db.Uuid
+  conversation    InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  
+  sender_id String? @db.Uuid
+  sender    User?   @relation("InternalMessageSender", fields: [sender_id], references: [id], onDelete: SetNull)
+  
+  text       String?
+  image_keys String[]
+  
+  reply_to_id String?          @db.Uuid
+  reply_to    InternalMessage? @relation("MessageReplies", fields: [reply_to_id], references: [id], onDelete: SetNull)
+  replies     InternalMessage[] @relation("MessageReplies")
+  
+  created_at DateTime @default(now())
+  
+  @@index([conversation_id])
+  @@index([created_at])
+  @@map("internal_messages")
+}

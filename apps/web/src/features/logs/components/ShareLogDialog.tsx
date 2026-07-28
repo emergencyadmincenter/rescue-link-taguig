@@ -10,6 +10,7 @@ interface ShareLogDialogProps {
   onClose: () => void;
   logId: string;
   initialToken?: string | null;
+  onTokenGenerated?: (token: string) => void;
 }
 
 export default function ShareLogDialog({
@@ -17,6 +18,7 @@ export default function ShareLogDialog({
   onClose,
   logId,
   initialToken,
+  onTokenGenerated,
 }: ShareLogDialogProps) {
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState<string | null>(initialToken || null);
@@ -36,6 +38,9 @@ export default function ShareLogDialog({
       setLoading(true);
       const res = await logsApi.generateShareLink(logId);
       setToken(res.token);
+      if (onTokenGenerated) {
+        onTokenGenerated(res.token);
+      }
     } catch (error) {
       toast.error("Failed to generate share link");
       console.error(error);
