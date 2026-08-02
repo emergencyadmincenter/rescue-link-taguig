@@ -22,6 +22,10 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
     isIOS: false,
     isAndroid: false,
   });
+  const [locationResolved, setLocationResolved] = useState(false);
+  const [autoStartMethod, setAutoStartMethod] = useState<
+    "voice" | "chat" | null
+  >(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -43,6 +47,22 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
   }>({ locationStatus: "pending" });
 
   useEffect(() => {
+    if (isOpen && typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const method = urlParams.get("start_emergency") as
+        "voice" | "chat" | null;
+      if (method === "voice" || method === "chat") {
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
+        setAutoStartMethod(method);
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen && "geolocation" in navigator) {
       navigator.permissions
         ?.query({ name: "geolocation" })
@@ -52,6 +72,8 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
         .catch(() => {});
 
       locationStateRef.current = { locationStatus: "pending" };
+      setLocationResolved(false);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
           locationStateRef.current = {
@@ -61,18 +83,21 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
             locationTimestamp: new Date(position.timestamp),
             locationStatus: "success",
           };
+          setLocationResolved(true);
         },
         (error) => {
           let status = "unavailable";
           if (error.code === error.PERMISSION_DENIED) status = "denied";
           else if (error.code === error.TIMEOUT) status = "timeout";
           locationStateRef.current = { locationStatus: status };
+          setLocationResolved(true);
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
       );
     } else if (isOpen) {
       locationStateRef.current = { locationStatus: "services unavailable" };
       setPermissionStatus("denied");
+      setLocationResolved(true);
     }
   }, [isOpen]);
 
@@ -90,6 +115,14 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose, isSubmitting]);
+
+  useEffect(() => {
+    if (autoStartMethod && locationResolved) {
+      handleAction(autoStartMethod);
+      setAutoStartMethod(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartMethod, locationResolved]);
 
   if (!isOpen) return null;
 
@@ -132,31 +165,17 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
     setShowMessengerModal(false);
 
     try {
-      const data = await logsApi.createEmergency({
-        communicationMethod: "voice",
-        ...locationStateRef.current,
-      });
+      const host = window.location.host;
+      const intentUrl = `intent://${host}/?start_emergency=voice#Intent;scheme=https;end;`;
+      window.location.href = intentUrl;
 
-      if (data && data.id) {
-        const host = window.location.host;
-        const path = `/sos/${data.id}`;
-        const intentUrl = `intent://${host}${path}#Intent;scheme=https;end;`;
-        window.location.href = intentUrl;
-
-        // Fallback if intent fails
-        setTimeout(() => {
-          router.push(path);
-          onClose();
-        }, 1000);
-      } else {
-        throw new Error("Invalid response from server");
-      }
+      // Fallback if intent fails
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 1000);
     } catch (error: any) {
       console.error(error);
-      const errorMsg =
-        error.message ||
-        "Failed to connect to emergency services. Please call 911 directly if possible.";
-      toast.error(errorMsg);
+      toast.error("Failed to redirect to the system browser.");
       setIsSubmitting(false);
     }
   };
