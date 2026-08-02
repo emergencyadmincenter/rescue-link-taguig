@@ -129,13 +129,18 @@ export default function ActiveSOSChatView({
     
     const currentText = text.trim();
     const currentImages = [...selectedImages];
+    const hasImages = currentImages.length > 0;
     
     setIsUploading(true);
-    const toastId = toast.loading("Sending message...");
+    let toastId: string | undefined;
+
+    if (hasImages) {
+      toastId = toast.loading("Sending message...");
+    }
 
     try {
       const imageKeys: string[] = [];
-      if (currentImages.length > 0) {
+      if (hasImages) {
         const uploadPromises = currentImages.map((file) =>
           storageApi.uploadPrivateFile(file)
         );
@@ -152,7 +157,9 @@ export default function ActiveSOSChatView({
         if (response && response.success === false) {
           toast.error(`Message failed: ${response.error}`, { id: toastId });
         } else {
-          toast.success("Sent", { id: toastId, duration: 1000 });
+          if (hasImages) {
+            toast.success("Sent", { id: toastId, duration: 1000 });
+          }
           setText("");
           setSelectedImages([]);
         }
@@ -218,8 +225,14 @@ export default function ActiveSOSChatView({
                 : "You have ended the emergency session."}
           </p>
           <button
-            onClick={() => (window.location.href = "/")}
+            onClick={() => (window.location.href = `/resident/log/${callId}`)}
             className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-hover transition-colors mb-3"
+          >
+            View Emergency Log
+          </button>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors"
           >
             Go Back Home
           </button>

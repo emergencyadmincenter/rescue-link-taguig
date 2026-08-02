@@ -111,13 +111,18 @@ export default function ChatView({
     
     const currentText = text.trim();
     const currentImages = [...selectedImages];
+    const hasImages = currentImages.length > 0;
     
     setIsUploading(true);
-    const toastId = toast.loading("Sending message...");
+    let toastId: string | undefined;
+
+    if (hasImages) {
+      toastId = toast.loading("Sending message...");
+    }
 
     try {
       const imageKeys: string[] = [];
-      if (currentImages.length > 0) {
+      if (hasImages) {
         const uploadPromises = currentImages.map((file) =>
           storageApi.uploadPrivateFile(file)
         );
@@ -137,7 +142,9 @@ export default function ChatView({
           if (response && response.success === false) {
             toast.error(`Message failed: ${response.error}`, { id: toastId });
           } else {
-            toast.success("Sent", { id: toastId, duration: 1000 });
+            if (hasImages) {
+              toast.success("Sent", { id: toastId, duration: 1000 });
+            }
             setText("");
             setSelectedImages([]);
           }

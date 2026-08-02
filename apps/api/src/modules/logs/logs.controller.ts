@@ -8,8 +8,12 @@ import {
   Query,
   UseGuards,
   UsePipes,
+  Req,
+  UnauthorizedException,
   ValidationPipe,
+  NotFoundException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { LogsService } from './logs.service';
 import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
@@ -53,6 +57,32 @@ export class LogsController {
   @Get('public/:token')
   async getPublicLog(@Param('token') token: string) {
     const result = await this.logsService.getPublicLog(token);
+    return ApiResponse.success(result);
+  }
+
+  @Get('resident/my-logs')
+  async getResidentMyLogs(@Req() req: Request) {
+    const callIds: string[] = [];
+    if (req.cookies) {
+      for (const [key, value] of Object.entries(req.cookies)) {
+        if (key.startsWith('resident_call_') && value === 'true') {
+          callIds.push(key.replace('resident_call_', ''));
+        }
+      }
+    }
+    
+    const result = await this.logsService.getResidentMyLogs(callIds);
+    return ApiResponse.success(result);
+  }
+
+  @Get('resident/call/:callId')
+  async getResidentLogByCallId(@Param('callId') callId: string, @Req() req: Request) {
+    const isResident = req.cookies[`resident_call_${callId}`] === 'true';
+    if (!isResident) {
+      throw new NotFoundException('Log not found');
+    }
+    
+    const result = await this.logsService.getResidentLogByCallId(callId);
     return ApiResponse.success(result);
   }
 

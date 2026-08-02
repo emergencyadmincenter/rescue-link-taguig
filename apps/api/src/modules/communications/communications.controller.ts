@@ -79,13 +79,16 @@ export class CommunicationsController {
         sameSite: isProduction ? 'none' : 'lax',
         domain: cookieDomain,
         path: '/',
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
       });
 
       return { success: true, data: { id: fakeId } };
     }
 
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     const log = await this.prisma.log.create({
       data: {
@@ -102,6 +105,7 @@ export class CommunicationsController {
         location_status: dto.locationStatus,
         channels: [dto.communicationMethod],
         description: '',
+        resident_visible_until: expiresAt,
       },
     });
 
@@ -152,7 +156,7 @@ export class CommunicationsController {
       sameSite: isProduction ? 'none' : 'lax',
       domain: cookieDomain,
       path: '/',
-      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });
 
     return { success: true, data: { id: call.id } };
@@ -240,6 +244,9 @@ export class CommunicationsController {
 
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
 
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
     const log = await this.prisma.log.create({
       data: {
         reference_no,
@@ -255,6 +262,7 @@ export class CommunicationsController {
         latitude: call.latitude,
         longitude: call.longitude,
         channels: [call.communication_method],
+        resident_visible_until: expiresAt,
       },
     });
 
