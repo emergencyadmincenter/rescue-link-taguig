@@ -30,7 +30,7 @@ export function FullImageViewer({ s3Key, onClose }: FullImageViewerProps) {
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
+        className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors z-50"
       >
         <FiX className="w-6 h-6" />
       </button>
