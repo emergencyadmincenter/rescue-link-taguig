@@ -178,8 +178,14 @@ export default function ActiveSOSView({
                 : "You have ended the emergency session."}
           </p>
           <button
-            onClick={() => (window.location.href = "/")}
+            onClick={() => (window.location.href = `/resident/log/${callId}`)}
             className="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary-hover transition-colors mb-3"
+          >
+            View Emergency Log
+          </button>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="w-full py-3 bg-gray-100 text-gray-600 rounded-xl font-medium hover:bg-gray-200 transition-colors"
           >
             Go Back Home
           </button>

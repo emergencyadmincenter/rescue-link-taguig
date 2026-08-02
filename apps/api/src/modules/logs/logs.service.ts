@@ -525,4 +525,86 @@ export class LogsService {
       needs: log.resource_assignments?.map(a => a.resource.name) || [],
     };
   }
+
+  async getResidentLogByCallId(callId: string) {
+    const call = await this.prisma.call.findUnique({
+      where: { id: callId },
+      include: {
+        log: {
+          include: {
+            incident_category: true,
+            resource_assignments: {
+              include: {
+                resource: true,
+              },
+            },
+          }
+        }
+      }
+    });
+
+    if (!call || !call.log) {
+      throw new NotFoundException('Log not found');
+    }
+
+    const log = call.log;
+
+    if (!log.resident_visible_until || log.resident_visible_until < new Date()) {
+      throw new NotFoundException('Invalid or expired resident link');
+    }
+
+    // Return only public information (same as getPublicLog)
+    return {
+      reference_no: log.reference_no,
+      status: log.status,
+      source: log.source,
+      created_at: log.created_at,
+      caller_name: log.caller_name,
+      caller_contact: log.caller_contact,
+      description: log.description,
+      address: log.address,
+      barangay: log.barangay,
+      latitude: log.latitude,
+      longitude: log.longitude,
+      weather_condition: log.weather_condition,
+      incident_category: log.incident_category ? { name: log.incident_category.name } : null,
+      resolved_at: log.resolved_at,
+      channels: log.channels,
+      needs: log.resource_assignments?.map(a => a.resource.name) || [],
+    };
+  }
+
+  async getResidentMyLogs(callIds: string[]) {
+    if (!callIds || callIds.length === 0) return [];
+
+    const logs = await this.prisma.log.findMany({
+      where: {
+        calls: {
+          some: { id: { in: callIds } }
+        },
+        resident_visible_until: {
+          gt: new Date()
+        }
+      },
+      include: {
+        incident_category: { select: { name: true } },
+        calls: { 
+          where: { id: { in: callIds } },
+          select: { id: true } 
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    return logs.map((log: any) => ({
+      callId: log.calls[0]?.id,
+      reference_no: log.reference_no,
+      status: log.status,
+      created_at: log.created_at,
+      resolved_at: log.resolved_at,
+      category: log.incident_category?.name || 'Uncategorized'
+    }));
+  }
 }
