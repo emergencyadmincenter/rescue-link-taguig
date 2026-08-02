@@ -194,6 +194,13 @@ export function useWebRTC(
     if (localStreamRef.current || isAcquiringMedia.current) return;
     isAcquiringMedia.current = true;
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error(
+          "Your current browser does not support audio calls. Please open this link in your system browser (Chrome/Safari) to use voice features.",
+          { id: "media-unsupported", duration: 8000 }
+        );
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: false,
@@ -263,6 +270,13 @@ export function useWebRTC(
       return false;
     } else {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          toast.error(
+            "Your current browser does not support video calls. Please open this link in your system browser (Chrome/Safari) to use video features.",
+            { id: "media-unsupported", duration: 8000 }
+          );
+          return false;
+        }
         const videoStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode },
         });
@@ -297,6 +311,13 @@ export function useWebRTC(
     setFacingMode(newFacingMode);
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error(
+          "Your current browser does not support video calls. Please open this link in your system browser (Chrome/Safari) to use video features.",
+          { id: "media-unsupported", duration: 8000 }
+        );
+        return;
+      }
       const videoStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: newFacingMode },
       });
