@@ -16,6 +16,23 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
+  const [showMessengerModal, setShowMessengerModal] = useState(false);
+  const [browserInfo, setBrowserInfo] = useState({
+    isMessenger: false,
+    isIOS: false,
+    isAndroid: false,
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const ua = navigator.userAgent;
+      setBrowserInfo({
+        isMessenger: /FBAN|FBAV|Instagram|FB_IAB|FB4A|IG_CPA|IG_CBA/i.test(ua),
+        isIOS: /iPhone|iPad|iPod/i.test(ua),
+        isAndroid: /Android/i.test(ua),
+      });
+    }
+  }, []);
 
   const locationStateRef = useRef<{
     latitude?: number;
@@ -77,6 +94,11 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
   if (!isOpen) return null;
 
   const handleAction = async (method: "voice" | "chat") => {
+    if (method === "voice" && browserInfo.isMessenger && browserInfo.isAndroid) {
+      setShowMessengerModal(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -88,6 +110,40 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
       if (data && data.id) {
         router.push(`/sos/${data.id}`);
         onClose();
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMsg =
+        error.message ||
+        "Failed to connect to emergency services. Please call 911 directly if possible.";
+      toast.error(errorMsg);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAndroidProceed = async () => {
+    setIsSubmitting(true);
+    setShowMessengerModal(false);
+
+    try {
+      const data = await logsApi.createEmergency({
+        communicationMethod: "voice",
+        ...locationStateRef.current,
+      });
+
+      if (data && data.id) {
+        const host = window.location.host;
+        const path = `/sos/${data.id}`;
+        const intentUrl = `intent://${host}${path}#Intent;scheme=https;end;`;
+        window.location.href = intentUrl;
+        
+        // Fallback if intent fails
+        setTimeout(() => {
+          router.push(path);
+          onClose();
+        }, 1000);
       } else {
         throw new Error("Invalid response from server");
       }
@@ -164,20 +220,78 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
 
             <button
               onClick={() => handleAction("voice")}
-              disabled={isSubmitting}
-              className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl hover:border-danger hover:bg-danger/[0.02] hover:shadow-lg transition-all duration-300 group"
+              disabled={isSubmitting || (browserInfo.isMessenger && browserInfo.isIOS)}
+              className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl transition-all duration-300 group ${
+                browserInfo.isMessenger && browserInfo.isIOS
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:border-danger hover:bg-danger/[0.02] hover:shadow-lg"
+              }`}
             >
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-danger/10 group-hover:scale-105 transition-all duration-300 mb-5 shadow-sm">
-                <FiPhoneCall className="w-7 h-7 text-gray-400 group-hover:text-danger transition-colors" />
+              <div
+                className={`w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 shadow-sm transition-all duration-300 ${
+                  browserInfo.isMessenger && browserInfo.isIOS
+                    ? ""
+                    : "group-hover:bg-danger/10 group-hover:scale-105"
+                }`}
+              >
+                <FiPhoneCall
+                  className={`w-7 h-7 text-gray-400 transition-colors ${
+                    browserInfo.isMessenger && browserInfo.isIOS
+                      ? ""
+                      : "group-hover:text-danger"
+                  }`}
+                />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-danger transition-colors mb-2">
+              <h3
+                className={`text-lg font-bold text-gray-900 mb-2 transition-colors ${
+                  browserInfo.isMessenger && browserInfo.isIOS
+                    ? ""
+                    : "group-hover:text-danger"
+                }`}
+              >
                 Voice Call
               </h3>
               <p className="text-sm text-gray-500 text-center leading-relaxed">
                 Speak directly with a coordinator
               </p>
+              
+              {browserInfo.isMessenger && browserInfo.isIOS && (
+                <div className="mt-4 bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-200 leading-tight">
+                  Voice calls are unavailable in Messenger's browser. To use voice communication, tap the three dots (...) or share icon in your Messenger toolbar and select 'Open in Safari'.
+                </div>
+              )}
             </button>
           </div>
+
+          {showMessengerModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-white/20 animate-in zoom-in-95">
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    Browser Restriction
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-6">
+                    It seems like your current browser (Messenger) does not support camera and microphone permissions required for voice calls. Would you like to open this link in your default system browser (Chrome) to proceed with the voice call?
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <button
+                      onClick={() => setShowMessengerModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleAndroidProceed}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+                    >
+                      {isSubmitting ? "Opening..." : "Proceed"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 flex flex-col items-center gap-4">
             {permissionStatus && permissionStatus !== "granted" && (
