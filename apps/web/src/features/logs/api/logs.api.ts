@@ -49,4 +49,10 @@ export const logsApi = {
 
   getPublicLog: (token: string): Promise<any> =>
     apiClient.get(`/logs/public/${token}`).then((res) => res.data.data),
+    
+  getResidentLogByCallId: (callId: string): Promise<any> =>
+    apiClient.get(`/logs/resident/call/${callId}`).then((res) => res.data.data),
+    
+  getResidentMyLogs: (): Promise<any> =>
+    apiClient.get('/logs/resident/my-logs').then((res) => res.data.data),
 };

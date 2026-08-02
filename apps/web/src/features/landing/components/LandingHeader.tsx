@@ -68,6 +68,12 @@ export function LandingHeader() {
               FAQ
             </button>
             <Link
+              href="/resident/logs"
+              className="body-small font-medium text-primary hover:text-primary-hover transition-colors"
+            >
+              My Logs
+            </Link>
+            <Link
               href="/sign-in"
               className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-full body-small font-semibold transition-all shadow-sm hover:shadow-md"
             >
@@ -111,6 +117,12 @@ export function LandingHeader() {
             >
               FAQ
             </button>
+            <Link
+              href="/resident/logs"
+              className="text-left font-medium text-primary py-2 border-b border-gray-50"
+            >
+              My Emergency Logs
+            </Link>
             <Link
               href="/sign-in"
               className="w-full text-center px-5 py-3 bg-gray-900 text-white rounded-lg font-semibold"

@@ -86,7 +86,8 @@ export class ProfileService {
     }
 
     try {
-      const avatarUrl = await this.storageService.uploadFile(file, 'avatars', userId);
+      const baseAvatarUrl = await this.storageService.uploadFile(file, 'avatars', userId);
+      const avatarUrl = `${baseAvatarUrl}?v=${Date.now()}`;
 
       // Persist to user
       await this.prisma.user.update({

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, notFound } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import { logsApi } from "@/features/logs/api/logs.api";
 import SharedLogView from "@/features/logs/components/SharedLogView";
 
-export default function PublicLogPage() {
-  const { token } = useParams<{ token: string }>();
+export default function ResidentLogPage() {
+  const { callId } = useParams<{ callId: string }>();
+  const router = useRouter();
   const [log, setLog] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -14,7 +15,7 @@ export default function PublicLogPage() {
   useEffect(() => {
     async function fetchLog() {
       try {
-        const data = await logsApi.getPublicLog(token);
+        const data = await logsApi.getResidentLogByCallId(callId);
         setLog(data);
       } catch (err) {
         console.error(err);
@@ -23,8 +24,8 @@ export default function PublicLogPage() {
         setLoading(false);
       }
     }
-    if (token) fetchLog();
-  }, [token]);
+    if (callId) fetchLog();
+  }, [callId]);
 
   if (loading) {
     return (
@@ -41,5 +42,12 @@ export default function PublicLogPage() {
     notFound();
   }
 
-  return <SharedLogView log={log} />;
+  return (
+    <SharedLogView
+      log={log}
+      titleBadge="Your Emergency Log"
+      footerText="This is your personal emergency record. Sensitive internal data has been redacted."
+      onBack={() => router.push("/resident/logs")}
+    />
+  );
 }
