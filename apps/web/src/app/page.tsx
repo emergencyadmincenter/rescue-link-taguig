@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LandingHeader } from "@/features/landing/components/LandingHeader";
 import { HeroSection } from "@/features/landing/components/HeroSection";
 import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
@@ -19,6 +19,15 @@ export default function LandingPage() {
 
   const openEmergencyDialog = () => setIsEmergencyDialogOpen(true);
   const closeEmergencyDialog = () => setIsEmergencyDialogOpen(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("start_emergency")) {
+        openEmergencyDialog();
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-primary/30 overflow-x-hidden w-full max-w-full">
