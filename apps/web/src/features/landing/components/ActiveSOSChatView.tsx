@@ -2,7 +2,15 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Socket } from "socket.io-client";
-import { FiX, FiCheck, FiSend, FiImage, FiMessageSquare, FiMapPin, FiLoader } from "react-icons/fi";
+import {
+  FiX,
+  FiCheck,
+  FiSend,
+  FiImage,
+  FiMessageSquare,
+  FiMapPin,
+  FiLoader,
+} from "react-icons/fi";
 import toast from "react-hot-toast";
 import { logsApi } from "@/features/logs/api/logs.api";
 import { storageApi } from "@/lib/storage.api";
@@ -94,8 +102,12 @@ export default function ActiveSOSChatView({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const validImages = files.filter((file) => file.type.startsWith("image/"));
-      const invalidImages = files.filter((file) => !file.type.startsWith("image/"));
+      const validImages = files.filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      const invalidImages = files.filter(
+        (file) => !file.type.startsWith("image/"),
+      );
 
       if (invalidImages.length > 0) {
         toast.error("Only image files are allowed.");
@@ -106,7 +118,9 @@ export default function ActiveSOSChatView({
         return;
       }
 
-      const oversizedImages = validImages.filter((file) => file.size > 5 * 1024 * 1024);
+      const oversizedImages = validImages.filter(
+        (file) => file.size > 5 * 1024 * 1024,
+      );
       if (oversizedImages.length > 0) {
         toast.error("Each image must be less than 5MB.");
         return;
@@ -125,12 +139,18 @@ export default function ActiveSOSChatView({
   };
 
   const handleSend = async () => {
-    if ((!text.trim() && selectedImages.length === 0) || !socket || !callId || isUploading) return;
-    
+    if (
+      (!text.trim() && selectedImages.length === 0) ||
+      !socket ||
+      !callId ||
+      isUploading
+    )
+      return;
+
     const currentText = text.trim();
     const currentImages = [...selectedImages];
     const hasImages = currentImages.length > 0;
-    
+
     setIsUploading(true);
     let toastId: string | undefined;
 
@@ -142,30 +162,36 @@ export default function ActiveSOSChatView({
       const imageKeys: string[] = [];
       if (hasImages) {
         const uploadPromises = currentImages.map((file) =>
-          storageApi.uploadPrivateFile(file)
+          storageApi.uploadPrivateFile(file),
         );
         const results = await Promise.all(uploadPromises);
         imageKeys.push(...results.map((r) => r.key));
       }
 
-      socket.emit("send_chat_message", {
-        callId,
-        type: imageKeys.length > 0 ? "image" : "text",
-        text: currentText,
-        imageKeys: imageKeys.length > 0 ? imageKeys : undefined,
-      }, (response: any) => {
-        if (response && response.success === false) {
-          toast.error(`Message failed: ${response.error}`, { id: toastId });
-        } else {
-          if (hasImages) {
-            toast.success("Sent", { id: toastId, duration: 1000 });
+      socket.emit(
+        "send_chat_message",
+        {
+          callId,
+          type: imageKeys.length > 0 ? "image" : "text",
+          text: currentText,
+          imageKeys: imageKeys.length > 0 ? imageKeys : undefined,
+        },
+        (response: any) => {
+          if (response && response.success === false) {
+            toast.error(`Message failed: ${response.error}`, { id: toastId });
+          } else {
+            if (hasImages) {
+              toast.success("Sent", { id: toastId, duration: 1000 });
+            }
+            setText("");
+            setSelectedImages([]);
           }
-          setText("");
-          setSelectedImages([]);
-        }
-      });
+        },
+      );
     } catch (error) {
-      toast.error("Failed to upload images. Please try again.", { id: toastId });
+      toast.error("Failed to upload images. Please try again.", {
+        id: toastId,
+      });
     } finally {
       setIsUploading(false);
     }
@@ -194,25 +220,24 @@ export default function ActiveSOSChatView({
         let status = "unavailable";
         if (error.code === error.PERMISSION_DENIED) status = "denied";
         else if (error.code === error.TIMEOUT) status = "timeout";
-        
+
         try {
           await logsApi.updateLocation(callId, {
             locationStatus: status,
           });
         } catch (err) {}
-        
+
         toast.error("Could not acquire location. Please check permissions.");
         setIsRetryingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
   };
-
 
   if (sessionEndReason) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 animate-in fade-in">
-        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-10 max-w-[70vw] md:max-w-[50vw] w-full flex flex-col items-center text-center">
+        <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-10 max-w-[95vw] md:max-w-[50vw] w-full flex flex-col items-center text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
             <FiCheck className="w-10 h-10 text-gray-500" />
           </div>
@@ -265,7 +290,9 @@ export default function ActiveSOSChatView({
             className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
             title="Retry Location"
           >
-            <FiMapPin className={`w-3.5 h-3.5 ${isRetryingLocation ? "animate-spin" : ""}`} />
+            <FiMapPin
+              className={`w-3.5 h-3.5 ${isRetryingLocation ? "animate-spin" : ""}`}
+            />
             <span className="hidden sm:inline">Location</span>
           </button>
           <button
@@ -356,8 +383,15 @@ export default function ActiveSOSChatView({
         {selectedImages.length > 0 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
             {selectedImages.map((file, idx) => (
-              <div key={idx} className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden border border-gray-200">
-                <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+              <div
+                key={idx}
+                className="relative w-16 h-16 shrink-0 rounded-md overflow-hidden border border-gray-200"
+              >
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="preview"
+                  className="w-full h-full object-cover"
+                />
                 <button
                   onClick={() => handleRemoveImage(idx)}
                   className="absolute top-1 right-1 p-0.5 bg-black/50 hover:bg-black/80 rounded-full text-white transition-colors"
@@ -405,7 +439,9 @@ export default function ActiveSOSChatView({
           </button>
           <button
             onClick={handleSend}
-            disabled={(!text.trim() && selectedImages.length === 0) || isUploading}
+            disabled={
+              (!text.trim() && selectedImages.length === 0) || isUploading
+            }
             className="p-3 bg-primary text-white hover:bg-primary-hover transition-colors rounded-xl disabled:opacity-50 shadow-sm mb-1"
           >
             {isUploading ? (
