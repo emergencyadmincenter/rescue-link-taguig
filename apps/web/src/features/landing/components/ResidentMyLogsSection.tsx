@@ -39,8 +39,10 @@ export function ResidentMyLogsSection({
   if (loading) {
     if (!standalone) return null;
     return (
-      <div className="w-full flex items-center justify-center p-12">
-        <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="h-full flex flex-col justify-center items-center">
+        <div className="w-full flex items-center justify-center p-12">
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
       </div>
     );
   }
@@ -48,14 +50,16 @@ export function ResidentMyLogsSection({
   if (logs.length === 0) {
     if (!standalone) return null;
     return (
-      <div className="w-full text-center py-24 text-gray-500">
-        <FiActivity className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">
-          No emergency logs found
-        </h3>
-        <p className="mt-2">
-          You don't have any recent emergency logs available.
-        </p>
+      <div className="h-full flex flex-col justify-center items-center">
+        <div className="w-full text-center py-12 px-2 text-gray-500">
+          <FiActivity className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">
+            No emergency logs found
+          </h3>
+          <p className="mt-2">
+            You don't have any recent emergency logs available.
+          </p>
+        </div>
       </div>
     );
   }
@@ -82,8 +86,8 @@ export function ResidentMyLogsSection({
     <section
       className={
         standalone
-          ? "p-8 w-full h-full"
-          : "py-8 bg-gray-50 border-y border-gray-100"
+          ? "p-4 lg:p-8 w-full h-full"
+          : "p-4 lg:py-8 bg-gray-50 border-y border-gray-100"
       }
     >
       <div
