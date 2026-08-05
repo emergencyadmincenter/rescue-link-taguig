@@ -234,6 +234,7 @@ export default function ActiveSOSChatView({
     );
   };
 
+
   if (sessionEndReason) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 animate-in fade-in">
