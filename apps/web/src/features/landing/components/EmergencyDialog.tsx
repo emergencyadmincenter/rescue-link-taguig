@@ -190,7 +190,7 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
           aria-modal="true"
           aria-labelledby="emergency-dialog-title"
         >
-          <div className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-white px-8 pt-10 pb-6 border-b border-gray-100/50">
+          <div className="relative overflow-hidden bg-gradient-to-br from-red-50 via-white to-white px-8 pt-10 pb-4 lg:pb-6 border-b border-gray-100/50">
             <div className="absolute top-0 right-0 w-64 h-64 bg-danger/5 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/3"></div>
             <div className="flex justify-between items-start mb-2 relative z-10">
               <div className="flex items-center gap-3">
@@ -215,24 +215,24 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
               </button>
             </div>
 
-            <p className="text-base text-gray-500 relative z-10 pl-7">
+            <p className="text-sm lg:text-base text-gray-500 relative z-10 pl-7">
               {isSubmitting
                 ? "Connecting to emergency services..."
                 : "How would you like to communicate with an emergency coordinator?"}
             </p>
           </div>
 
-          <div className="px-8 py-8 bg-white/50 backdrop-blur-sm">
+          <div className="px-12 lg:px-8 py-4 bg-white/50 backdrop-blur-sm">
             <div
               className={`grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 ${isSubmitting ? "opacity-50 pointer-events-none" : ""}`}
             >
               <button
                 onClick={() => handleAction("chat")}
                 disabled={isSubmitting}
-                className="flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl hover:border-primary hover:bg-primary/[0.02] hover:shadow-lg transition-all duration-300 group"
+                className="flex flex-col items-center justify-center p-4 lg:p-8 bg-white border-2 border-gray-100 rounded-2xl hover:border-primary hover:bg-primary/[0.02] hover:shadow-lg transition-all duration-300 group"
               >
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-primary/10 group-hover:scale-105 transition-all duration-300 mb-5 shadow-sm">
-                  <FiMessageSquare className="w-7 h-7 text-gray-400 group-hover:text-primary transition-colors" />
+                <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gray-50 rounded-full flex items-center justify-center group-hover:bg-primary/10 group-hover:scale-105 transition-all duration-300 mb-3 lg:mb-5 shadow-sm">
+                  <FiMessageSquare className="w-4 h-4 lg:w-7 lg:h-7 text-gray-400 group-hover:text-primary transition-colors" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors mb-2">
                   Live Chat
@@ -247,21 +247,21 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
                 disabled={
                   isSubmitting || (browserInfo.isMessenger && browserInfo.isIOS)
                 }
-                className={`flex flex-col items-center justify-center p-8 bg-white border-2 border-gray-100 rounded-2xl transition-all duration-300 group ${
+                className={`flex flex-col items-center justify-center p-4 lg:p-8 bg-white border-2 border-gray-100 rounded-2xl transition-all duration-300 group ${
                   browserInfo.isMessenger && browserInfo.isIOS
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:border-danger hover:bg-danger/[0.02] hover:shadow-lg"
                 }`}
               >
                 <div
-                  className={`w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5 shadow-sm transition-all duration-300 ${
+                  className={`w-12 h-12 lg:w-16 lg:h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3 lg:mb-5 shadow-sm transition-all duration-300 ${
                     browserInfo.isMessenger && browserInfo.isIOS
                       ? ""
                       : "group-hover:bg-danger/10 group-hover:scale-105"
                   }`}
                 >
                   <FiPhoneCall
-                    className={`w-7 h-7 text-gray-400 transition-colors ${
+                    className={`w-4 h-4 lg:w-7 lg:h-7 text-gray-400 transition-colors ${
                       browserInfo.isMessenger && browserInfo.isIOS
                         ? ""
                         : "group-hover:text-danger"
@@ -291,7 +291,7 @@ export function EmergencyDialog({ isOpen, onClose }: EmergencyDialogProps) {
               </button>
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-4">
+            <div className="mt-6 lg:mt-8 flex flex-col items-center gap-4">
               {permissionStatus && permissionStatus !== "granted" && (
                 <p className="text-xs text-gray-400 text-center">
                   For the fastest emergency response, we recommend allowing

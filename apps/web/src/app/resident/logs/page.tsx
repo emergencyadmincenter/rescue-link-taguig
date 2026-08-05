@@ -12,10 +12,10 @@ export default function ResidentLogsPage() {
       <LocationBanner />
       <LandingHeader />
 
-      <main className="flex-1 flex flex-col items-center pt-32 pb-12 px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 flex flex-col items-center pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-7xl">
           <div className="mb-6 flex">
-            <Link 
+            <Link
               href="/"
               className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm hover:shadow-md"
             >
@@ -23,8 +23,8 @@ export default function ResidentLogsPage() {
               Back to Home
             </Link>
           </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden min-h-[500px]">
-             <ResidentMyLogsSection standalone={true} />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-auto h-[500px]">
+            <ResidentMyLogsSection standalone={true} />
           </div>
         </div>
       </main>
