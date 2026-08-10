@@ -63,8 +63,11 @@ export function Sidebar() {
   const { user } = useAuth();
   const { conversations } = useInternalMessaging();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
-  
-  const totalUnread = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
+  const totalUnread = conversations.reduce(
+    (sum, c) => sum + (c.unreadCount || 0),
+    0,
+  );
 
   // Check if a nav item is active (either directly or via a child route)
   const isItemActive = (href: string) => {
@@ -132,7 +135,9 @@ export function Sidebar() {
             item={item}
             isCollapsed={isCollapsed}
             isActive={isItemActive(item.href)}
-            unreadCount={item.href === "/internal-messaging" ? totalUnread : undefined}
+            unreadCount={
+              item.href === "/internal-messaging" ? totalUnread : undefined
+            }
           />
         ))}
       </nav>
@@ -188,14 +193,12 @@ function SidebarItem({
               {item.label}
             </span>
           )}
-          
           {!isCollapsed && unreadCount !== undefined && unreadCount > 0 && (
             <span className="bg-danger text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-auto">
               {unreadCount}
             </span>
           )}
         </div>
-        
         {isCollapsed && unreadCount !== undefined && unreadCount > 0 && (
           <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-danger rounded-full border-2 border-white" />
         )}
