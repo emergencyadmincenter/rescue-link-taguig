@@ -25,12 +25,25 @@ export class ShadowBansController {
   @Post('call/:callId/toggle')
   async toggleShadowBan(
     @Param('callId') callId: string,
-    @Body() dto: { action: 'ban' | 'unban'; reason: string; durationMs?: number | null },
+    @Body()
+    dto: {
+      action: 'ban' | 'unban';
+      reason: string;
+      durationMs?: number | null;
+    },
     @Req() req: Request,
   ) {
     const userId = (req as any).user?.sub;
-    const expiresAt = dto.durationMs ? new Date(Date.now() + dto.durationMs) : undefined;
-    await this.shadowBansService.toggleShadowBan(callId, dto.action, dto.reason, userId, expiresAt);
+    const expiresAt = dto.durationMs
+      ? new Date(Date.now() + dto.durationMs)
+      : undefined;
+    await this.shadowBansService.toggleShadowBan(
+      callId,
+      dto.action,
+      dto.reason,
+      userId,
+      expiresAt,
+    );
     return { success: true };
   }
 }

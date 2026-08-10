@@ -54,7 +54,8 @@ export function ShadowBanAction({
     setIsSubmitting(true);
     try {
       const action = isBanned ? "unban" : "ban";
-      const durationMs = duration === "permanent" ? null : parseInt(duration, 10);
+      const durationMs =
+        duration === "permanent" ? null : parseInt(duration, 10);
       await shadowBansApi.toggleBan(callId, action, reason, durationMs);
 
       toast.success(

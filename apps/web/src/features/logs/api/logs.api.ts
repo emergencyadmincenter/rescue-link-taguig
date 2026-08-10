@@ -1,4 +1,4 @@
-import apiClient from '@/lib/api-client';
+import apiClient from "@/lib/api-client";
 import {
   Log,
   LogsQueryParams,
@@ -7,52 +7,75 @@ import {
   CreateLogPayload,
   UpdateLogPayload,
   Resource,
-} from '../types/logs.types';
+} from "../types/logs.types";
 
 export const logsApi = {
   getLogs: (params?: LogsQueryParams): Promise<PaginatedResponse<Log>> =>
-    apiClient.get('/logs', { params }).then((res) => res.data.data),
+    apiClient.get("/logs", { params }).then((res) => res.data.data),
 
   getLog: (id: string): Promise<Log> =>
     apiClient.get(`/logs/${id}`).then((res) => res.data.data),
 
   createLog: (data: CreateLogPayload): Promise<Log> =>
-    apiClient.post('/logs', data).then((res) => res.data.data),
+    apiClient.post("/logs", data).then((res) => res.data.data),
 
   updateLog: (id: string, data: UpdateLogPayload): Promise<Log> =>
     apiClient.patch(`/logs/${id}`, data).then((res) => res.data.data),
 
   getStatusCounts: (): Promise<StatusCounts> =>
-    apiClient.get('/logs/status-counts').then((res) => res.data.data),
+    apiClient.get("/logs/status-counts").then((res) => res.data.data),
 
   getResources: (): Promise<Resource[]> =>
-    apiClient.get('/logs/resources').then((res) => res.data.data),
+    apiClient.get("/logs/resources").then((res) => res.data.data),
 
-  createEmergency: async (data: { communicationMethod: 'voice' | 'chat'; latitude?: number; longitude?: number; locationAccuracy?: number; locationTimestamp?: Date; locationStatus?: string }): Promise<{ id: string }> => {
-    const { getDeviceIdentifiers } = await import('@/lib/device-identification');
+  createEmergency: async (data: {
+    communicationMethod: "voice" | "chat";
+    latitude?: number;
+    longitude?: number;
+    locationAccuracy?: number;
+    locationTimestamp?: Date;
+    locationStatus?: string;
+  }): Promise<{ id: string }> => {
+    const { getDeviceIdentifiers } =
+      await import("@/lib/device-identification");
     const identifiers = getDeviceIdentifiers();
     const payload = { ...data, ...identifiers };
-    return apiClient.post('/calls/emergency', payload).then((res) => res.data.data);
+    return apiClient
+      .post("/calls/emergency", payload)
+      .then((res) => res.data.data);
   },
 
   finalizeCall: (callId: string, data: CreateLogPayload): Promise<Log> =>
-    apiClient.post(`/calls/${callId}/finalize`, data).then((res) => res.data.data),
+    apiClient
+      .post(`/calls/${callId}/finalize`, data)
+      .then((res) => res.data.data),
 
   getCallDetails: (callId: string): Promise<any> =>
     apiClient.get(`/calls/${callId}`).then((res) => res.data.data),
 
-  updateLocation: (callId: string, data: { latitude?: number; longitude?: number; locationAccuracy?: number; locationTimestamp?: Date; locationStatus?: string }): Promise<Log> =>
-    apiClient.post(`/calls/${callId}/location`, data).then((res) => res.data.data),
+  updateLocation: (
+    callId: string,
+    data: {
+      latitude?: number;
+      longitude?: number;
+      locationAccuracy?: number;
+      locationTimestamp?: Date;
+      locationStatus?: string;
+    },
+  ): Promise<Log> =>
+    apiClient
+      .post(`/calls/${callId}/location`, data)
+      .then((res) => res.data.data),
 
   generateShareLink: (id: string): Promise<{ token: string }> =>
     apiClient.post(`/logs/${id}/share`).then((res) => res.data.data),
 
   getPublicLog: (token: string): Promise<any> =>
     apiClient.get(`/logs/public/${token}`).then((res) => res.data.data),
-    
+
   getResidentLogByCallId: (callId: string): Promise<any> =>
     apiClient.get(`/logs/resident/call/${callId}`).then((res) => res.data.data),
-    
+
   getResidentMyLogs: (): Promise<any> =>
-    apiClient.get('/logs/resident/my-logs').then((res) => res.data.data),
+    apiClient.get("/logs/resident/my-logs").then((res) => res.data.data),
 };

@@ -108,7 +108,7 @@ export function EmergencyHotlinesSection() {
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
-                      <h4 className="title-small text-gray-900">
+                      <h4 className="title-small lg:title-large text-gray-900">
                         {hotline.name}
                       </h4>
                       {hotline.is247 && (

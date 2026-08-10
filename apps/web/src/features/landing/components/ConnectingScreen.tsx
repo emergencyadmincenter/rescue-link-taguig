@@ -20,11 +20,14 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    logsApi.getCallDetails(callId).then((data) => {
-      if (data?.log) {
-        setLocationStatus(data.log.location_status);
-      }
-    }).catch(() => {});
+    logsApi
+      .getCallDetails(callId)
+      .then((data) => {
+        if (data?.log) {
+          setLocationStatus(data.log.location_status);
+        }
+      })
+      .catch(() => {});
   }, [callId]);
 
   useEffect(() => {
@@ -185,7 +188,8 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
               {locationStatus && locationStatus !== "success" && (
                 <p className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm animate-in fade-in slide-in-from-bottom-2">
                   <FiAlertCircle className="inline-block w-3.5 h-3.5 mr-1.5 -mt-0.5 text-gray-500" />
-                  The coordinator will ask for your location directly once connected.
+                  The coordinator will ask for your location directly once
+                  connected.
                 </p>
               )}
             </div>
