@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
+import { BarangayResolverService } from '../../common/services/barangay-resolver.service';
 
 export interface CoordinatorPresence {
   userId: string;
@@ -37,7 +38,10 @@ export class CommunicationsService
   private coordinatorAssignments = new Map<string, number>();
   private pendingTimeouts = new Set<NodeJS.Timeout>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly barangayResolverService: BarangayResolverService,
+  ) {}
 
   async onModuleInit() {
     this.logger.log(
@@ -620,9 +624,17 @@ export class CommunicationsService
     });
 
     if (call.log_id) {
+      // Resolve barangay from GPS coordinates and persist alongside lat/lng.
+      const barangay = this.barangayResolverService.resolveBarangay(latitude, longitude);
       await this.prisma.log.update({
         where: { id: call.log_id },
-        data: { latitude, longitude },
+        data: {
+          latitude,
+          longitude,
+          // Always overwrite barangay with latest resolved value so the
+          // map polygon shading and barangay filter stay accurate.
+          ...(barangay !== null && { barangay }),
+        },
       });
     }
   }

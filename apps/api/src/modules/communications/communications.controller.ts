@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { LocationValidationService } from '../../common/services/location-validation.service';
 import { FraudDetectionService } from '../../common/services/fraud-detection.service';
+import { BarangayResolverService } from '../../common/services/barangay-resolver.service';
 
 @Controller('calls')
 export class CommunicationsController {
@@ -30,6 +31,7 @@ export class CommunicationsController {
     private readonly locationValidationService: LocationValidationService,
     private readonly fraudDetectionService: FraudDetectionService,
     private readonly shadowBansService: ShadowBansService,
+    private readonly barangayResolverService: BarangayResolverService,
   ) {}
 
   @Post('emergency')
@@ -146,6 +148,17 @@ export class CommunicationsController {
       dto.communicationMethod,
       log.id,
     );
+
+    // Auto-populate barangay from caller GPS coordinates (fire-and-forget).
+    // This runs after routing is started so it never delays the emergency response.
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      if (barangay) {
+        this.prisma.log
+          .update({ where: { id: log.id }, data: { barangay } })
+          .catch((err) => console.error('Failed to set barangay on log:', err));
+      }
+    }
 
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
@@ -339,6 +352,16 @@ export class CommunicationsController {
         location_status: dto.locationStatus,
       },
     });
+
+    // Auto-populate barangay from updated GPS coordinates if not already set.
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      if (barangay) {
+        this.prisma.log
+          .update({ where: { id: call.log_id }, data: { barangay } })
+          .catch((err) => console.error('Failed to update barangay on location update:', err));
+      }
+    }
 
     await this.prisma.call.update({
       where: { id },
