@@ -56,7 +56,7 @@ class PanelErrorBoundary extends Component<
             <FiAlertTriangle className="w-6 h-6 text-danger" />
           </div>
           <h3 className="title-small text-gray-900 mb-1">Panel Error</h3>
-          <p className="body-xsmall text-gray-500 max-w-sm mb-4">
+          <p className="body-xsmall text-gray-500 mb-4">
             An unexpected error occurred while rendering this component.
           </p>
           <button
