@@ -149,9 +149,8 @@ export class CommunicationsController {
       log.id,
     );
 
-    // Auto-populate barangay from caller GPS coordinates (fire-and-forget).
-    // This runs after routing is started so it never delays the emergency response.
-    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+    // Auto-populate barangay from caller GPS coordinates.
+    // The DB update is fire-and-forget; note that barangay resolution itself runs in-process.
       const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
       if (barangay) {
         this.prisma.log
