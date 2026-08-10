@@ -631,7 +631,7 @@ export class CommunicationsService
         data: {
           latitude,
           longitude,
-          // Always overwrite barangay with latest resolved value so the
+          // Update barangay when it can be resolved from the latest coordinates so the
           // map polygon shading and barangay filter stay accurate.
           ...(barangay !== null && { barangay }),
         },
