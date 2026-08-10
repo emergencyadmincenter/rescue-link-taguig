@@ -68,13 +68,17 @@ export class InsightsService {
 
     return logs.map(l => ({
       ...l,
+      // Prisma returns Decimal fields as Decimal objects which JSON-serialize as strings.
+      // Convert explicitly to JS numbers so Leaflet receives the correct numeric type.
+      latitude: l.latitude !== null ? Number(l.latitude) : null,
+      longitude: l.longitude !== null ? Number(l.longitude) : null,
       incident_type: l.incident_category?.name || null,
-      incident_category: undefined
+      incident_category: undefined,
     }));
   }
 
   async getResponseTimesByBarangay(filters: InsightsFilters = {}) {
-    const conditions: string[] = ["status = 'resolved'", "barangay IS NOT NULL"];
+    const conditions: string[] = ["1=1"];
 
     if (filters.dateFrom) conditions.push(`created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`);
     if (filters.dateTo) conditions.push(`created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`);
@@ -85,18 +89,20 @@ export class InsightsService {
 
     const result = await this.prisma.$queryRawUnsafe(`
       SELECT
-        barangay,
-        AVG(EXTRACT(EPOCH FROM (COALESCE(resolved_at, created_at) - created_at))) as avg_response_time_seconds,
-        COUNT(*) as total_resolved
+        COALESCE(NULLIF(barangay, ''), 'Unknown') as barangay,
+        AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) as avg_response_time_seconds,
+        COUNT(*) as total_cases,
+        COUNT(resolved_at) as total_resolved
       FROM logs
       WHERE ${whereClause}
-      GROUP BY barangay
-      ORDER BY avg_response_time_seconds DESC
+      GROUP BY COALESCE(NULLIF(barangay, ''), 'Unknown')
+      ORDER BY total_cases DESC, avg_response_time_seconds ASC
     `);
 
     return (result as any[]).map(row => ({
       barangay: row.barangay,
-      avg_response_time_seconds: Number(row.avg_response_time_seconds),
+      avg_response_time_seconds: row.avg_response_time_seconds ? Number(row.avg_response_time_seconds) : null,
+      total_cases: Number(row.total_cases),
       total_resolved: Number(row.total_resolved)
     }));
   }

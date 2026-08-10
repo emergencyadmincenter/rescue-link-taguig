@@ -14,7 +14,8 @@ export interface InsightsIncident {
 
 export interface InsightsResponseTime {
   barangay: string;
-  avg_response_time_seconds: number;
+  avg_response_time_seconds: number | null;
+  total_cases: number;
   total_resolved: number;
 }
 
