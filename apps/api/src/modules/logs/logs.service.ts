@@ -87,6 +87,32 @@ export class LogsService {
       if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
     }
 
+    const activeBans = await this.prisma.shadowBan.findMany({
+      where: {
+        active: true,
+        OR: [
+          { expires_at: null },
+          { expires_at: { gt: new Date() } }
+        ]
+      }
+    });
+
+    const bannedDeviceUuids = new Set(activeBans.map((b) => b.device_uuid).filter(Boolean));
+    const bannedHashes = new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean));
+    const bannedIps = new Set(activeBans.map((b) => b.client_ip).filter(Boolean));
+
+    if (query.is_shadow_banned === 'true') {
+      where.fraud_assessments = {
+        some: {
+          OR: [
+            { device_uuid: { in: Array.from(bannedDeviceUuids) as string[] } },
+            { fingerprint_hash: { in: Array.from(bannedHashes) as string[] } },
+            { client_ip: { in: Array.from(bannedIps) as string[] } },
+          ]
+        }
+      };
+    }
+
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
@@ -116,8 +142,18 @@ export class LogsService {
       this.prisma.log.count({ where }),
     ]);
 
+    const enrichedData = data.map(log => {
+      const isShadowBanned = log.fraud_assessments?.some(
+        (fa) =>
+          (fa.device_uuid && bannedDeviceUuids.has(fa.device_uuid)) ||
+          (fa.fingerprint_hash && bannedHashes.has(fa.fingerprint_hash)) ||
+          (fa.client_ip && bannedIps.has(fa.client_ip))
+      );
+      return { ...log, is_shadow_banned: !!isShadowBanned };
+    });
+
     return {
-      data,
+      data: enrichedData,
       meta: {
         total,
         page,
@@ -152,7 +188,56 @@ export class LogsService {
       throw new NotFoundException(`Log with ID ${id} not found`);
     }
 
-    return log;
+    const activeBans = await this.prisma.shadowBan.findMany({
+      where: {
+        active: true,
+        OR: [
+          { expires_at: null },
+          { expires_at: { gt: new Date() } }
+        ]
+      }
+    });
+
+    const bannedDeviceUuids = new Set(activeBans.map((b) => b.device_uuid).filter(Boolean));
+    const bannedHashes = new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean));
+    const bannedIps = new Set(activeBans.map((b) => b.client_ip).filter(Boolean));
+
+    const isShadowBanned = log.fraud_assessments?.some(
+      (fa) =>
+        (fa.device_uuid && bannedDeviceUuids.has(fa.device_uuid)) ||
+        (fa.fingerprint_hash && bannedHashes.has(fa.fingerprint_hash)) ||
+        (fa.client_ip && bannedIps.has(fa.client_ip))
+    );
+
+    let shadowBanDetails: any = null;
+    if (isShadowBanned) {
+      // Find the specific active ban that caused this to be true
+      const matchingBan = activeBans.find(b => 
+        log.fraud_assessments?.some(fa => 
+          (fa.device_uuid && fa.device_uuid === b.device_uuid) ||
+          (fa.fingerprint_hash && fa.fingerprint_hash === b.fingerprint_hash) ||
+          (fa.client_ip && fa.client_ip === b.client_ip)
+        )
+      );
+      
+      if (matchingBan) {
+        let coordinator: { id: string; name: string } | null = null;
+        if (matchingBan.created_by_id) {
+           coordinator = await this.prisma.user.findUnique({
+             where: { id: matchingBan.created_by_id },
+             select: { id: true, name: true }
+           });
+        }
+        shadowBanDetails = {
+          reason: matchingBan.reason,
+          created_at: matchingBan.created_at,
+          expires_at: matchingBan.expires_at,
+          coordinator
+        };
+      }
+    }
+
+    return { ...log, is_shadow_banned: !!isShadowBanned, shadow_ban_details: shadowBanDetails };
   }
 
   async create(dto: CreateLogDto, userId: string) {
@@ -375,5 +460,151 @@ export class LogsService {
     return this.prisma.resource.findMany({
       orderBy: { name: 'asc' },
     });
+  }
+
+  async generateShareLink(id: string) {
+    const log = await this.prisma.log.findUnique({ where: { id } });
+    if (!log) {
+      throw new NotFoundException(`Log with ID ${id} not found`);
+    }
+
+    if (log.public_token && log.public_token_expires_at && log.public_token_expires_at > new Date()) {
+      return { token: log.public_token };
+    }
+
+    const { randomUUID } = require('crypto');
+    const token = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    await this.prisma.log.update({
+      where: { id },
+      data: {
+        public_token: token,
+        public_token_expires_at: expiresAt
+      }
+    });
+
+    return { token };
+  }
+
+  async getPublicLog(token: string) {
+    const log = await this.prisma.log.findUnique({
+      where: { public_token: token },
+      include: {
+        incident_category: true,
+        resource_assignments: {
+          include: {
+            resource: true,
+          },
+        },
+      }
+    });
+
+    if (!log || !log.public_token_expires_at || log.public_token_expires_at < new Date()) {
+      throw new NotFoundException('Invalid or expired public link');
+    }
+
+    // Return only public information
+    return {
+      reference_no: log.reference_no,
+      status: log.status,
+      source: log.source,
+      created_at: log.created_at,
+      caller_name: log.caller_name,
+      caller_contact: log.caller_contact,
+      description: log.description,
+      address: log.address,
+      barangay: log.barangay,
+      latitude: log.latitude,
+      longitude: log.longitude,
+      weather_condition: log.weather_condition,
+      incident_category: log.incident_category ? { name: log.incident_category.name } : null,
+      resolved_at: log.resolved_at,
+      channels: log.channels,
+      needs: log.resource_assignments?.map(a => a.resource.name) || [],
+    };
+  }
+
+  async getResidentLogByCallId(callId: string) {
+    const call = await this.prisma.call.findUnique({
+      where: { id: callId },
+      include: {
+        log: {
+          include: {
+            incident_category: true,
+            resource_assignments: {
+              include: {
+                resource: true,
+              },
+            },
+          }
+        }
+      }
+    });
+
+    if (!call || !call.log) {
+      throw new NotFoundException('Log not found');
+    }
+
+    const log = call.log;
+
+    if (!log.resident_visible_until || log.resident_visible_until < new Date()) {
+      throw new NotFoundException('Invalid or expired resident link');
+    }
+
+    // Return only public information (same as getPublicLog)
+    return {
+      reference_no: log.reference_no,
+      status: log.status,
+      source: log.source,
+      created_at: log.created_at,
+      caller_name: log.caller_name,
+      caller_contact: log.caller_contact,
+      description: log.description,
+      address: log.address,
+      barangay: log.barangay,
+      latitude: log.latitude,
+      longitude: log.longitude,
+      weather_condition: log.weather_condition,
+      incident_category: log.incident_category ? { name: log.incident_category.name } : null,
+      resolved_at: log.resolved_at,
+      channels: log.channels,
+      needs: log.resource_assignments?.map(a => a.resource.name) || [],
+    };
+  }
+
+  async getResidentMyLogs(callIds: string[]) {
+    if (!callIds || callIds.length === 0) return [];
+
+    const logs = await this.prisma.log.findMany({
+      where: {
+        calls: {
+          some: { id: { in: callIds } }
+        },
+        resident_visible_until: {
+          gt: new Date()
+        }
+      },
+      include: {
+        incident_category: { select: { name: true } },
+        calls: { 
+          where: { id: { in: callIds } },
+          select: { id: true } 
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+
+    return logs.map((log: any) => ({
+      callId: log.calls[0]?.id,
+      reference_no: log.reference_no,
+      status: log.status,
+      created_at: log.created_at,
+      resolved_at: log.resolved_at,
+      category: log.incident_category?.name || 'Uncategorized'
+    }));
   }
 }

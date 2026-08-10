@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LandingHeader } from "@/features/landing/components/LandingHeader";
 import { HeroSection } from "@/features/landing/components/HeroSection";
 import { FeaturesSection } from "@/features/landing/components/FeaturesSection";
@@ -12,6 +12,7 @@ import { CTASection } from "@/features/landing/components/CTASection";
 import { LandingFooter } from "@/features/landing/components/LandingFooter";
 import { EmergencyDialog } from "@/features/landing/components/EmergencyDialog";
 import { EmergencyHotlinesSection } from "@/features/landing/components/EmergencyHotlinesSection";
+import { LocationBanner } from "@/features/landing/components/LocationBanner";
 
 export default function LandingPage() {
   const [isEmergencyDialogOpen, setIsEmergencyDialogOpen] = useState(false);
@@ -19,8 +20,18 @@ export default function LandingPage() {
   const openEmergencyDialog = () => setIsEmergencyDialogOpen(true);
   const closeEmergencyDialog = () => setIsEmergencyDialogOpen(false);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("start_emergency")) {
+        openEmergencyDialog();
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-primary/30 overflow-x-hidden w-full max-w-full">
+      <LocationBanner />
       <LandingHeader />
 
       <main>

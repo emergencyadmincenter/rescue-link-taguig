@@ -35,24 +35,6 @@ export const useLiveLocation = (
     let isTracking = true;
 
     const startTracking = () => {
-      // Send an immediate single position to ensure the coordinator gets the absolute latest
-      // right when the session starts (in case they moved while connecting)
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          if (!isTracking) return;
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          lastLocationRef.current = { lat, lng };
-          socket.emit("update_location", {
-            callId,
-            latitude: lat,
-            longitude: lng,
-          });
-        },
-        (err) => console.warn("Initial live location error:", err),
-        { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
-      );
-
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
           if (!isTracking) return;
@@ -98,6 +80,24 @@ export const useLiveLocation = (
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 },
       );
     };
+
+    // Send an immediate single position to ensure the coordinator gets the absolute latest
+    // right when the session starts (in case they moved while connecting)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (!isTracking) return;
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        lastLocationRef.current = { lat, lng };
+        socket.emit("update_location", {
+          callId,
+          latitude: lat,
+          longitude: lng,
+        });
+      },
+      (err) => console.warn("Initial live location error:", err),
+      { enableHighAccuracy: true, maximumAge: 60000, timeout: 15000 },
+    );
 
     startTracking();
 

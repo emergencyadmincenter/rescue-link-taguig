@@ -25,6 +25,7 @@ export default function CommunicationPanel({
     return (
       <ChatView
         messages={log.messages || []}
+        log={log}
         logId={log.id}
         socket={socket || undefined}
         call={latestCall}
@@ -39,6 +40,7 @@ export default function CommunicationPanel({
     return (
       <VoiceCallView
         call={latestCall}
+        log={log}
         logId={log.id}
         socket={socket || undefined}
       />

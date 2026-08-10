@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import { LocationValidationService } from '../../common/services/location-validation.service';
 import { FraudDetectionService } from '../../common/services/fraud-detection.service';
+import { BarangayResolverService } from '../../common/services/barangay-resolver.service';
 
 @Controller('calls')
 export class CommunicationsController {
@@ -30,6 +31,7 @@ export class CommunicationsController {
     private readonly locationValidationService: LocationValidationService,
     private readonly fraudDetectionService: FraudDetectionService,
     private readonly shadowBansService: ShadowBansService,
+    private readonly barangayResolverService: BarangayResolverService,
   ) {}
 
   @Post('emergency')
@@ -39,6 +41,9 @@ export class CommunicationsController {
       communicationMethod: 'voice' | 'chat';
       latitude?: number;
       longitude?: number;
+      locationAccuracy?: number;
+      locationTimestamp?: Date;
+      locationStatus?: string;
       device_uuid?: string;
       fingerprint_hash?: string;
     },
@@ -76,13 +81,16 @@ export class CommunicationsController {
         sameSite: isProduction ? 'none' : 'lax',
         domain: cookieDomain,
         path: '/',
-        maxAge: 1000 * 60 * 60 * 24,
+        maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
       });
 
       return { success: true, data: { id: fakeId } };
     }
 
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     const log = await this.prisma.log.create({
       data: {
@@ -94,8 +102,12 @@ export class CommunicationsController {
         address: 'Unknown',
         latitude: dto.latitude,
         longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
         channels: [dto.communicationMethod],
         description: '',
+        resident_visible_until: expiresAt,
       },
     });
 
@@ -105,6 +117,9 @@ export class CommunicationsController {
         status: 'ringing',
         latitude: dto.latitude,
         longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
         log_id: log.id,
       },
     });
@@ -134,6 +149,16 @@ export class CommunicationsController {
       log.id,
     );
 
+    // Auto-populate barangay from caller GPS coordinates.
+    // The DB update is fire-and-forget; note that barangay resolution itself runs in-process.
+      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      if (barangay) {
+        this.prisma.log
+          .update({ where: { id: log.id }, data: { barangay } })
+          .catch((err) => console.error('Failed to set barangay on log:', err));
+      }
+    }
+
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
@@ -143,7 +168,7 @@ export class CommunicationsController {
       sameSite: isProduction ? 'none' : 'lax',
       domain: cookieDomain,
       path: '/',
-      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     });
 
     return { success: true, data: { id: call.id } };
@@ -231,6 +256,9 @@ export class CommunicationsController {
 
     const reference_no = `REQ-${Math.floor(10000 + Math.random() * 90000)}`;
 
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
     const log = await this.prisma.log.create({
       data: {
         reference_no,
@@ -246,6 +274,7 @@ export class CommunicationsController {
         latitude: call.latitude,
         longitude: call.longitude,
         channels: [call.communication_method],
+        resident_visible_until: expiresAt,
       },
     });
 
@@ -274,6 +303,107 @@ export class CommunicationsController {
     });
 
     await this.communicationsService.endCall(id);
+
+    return { success: true, data: log };
+  }
+
+  @Post(':id/location')
+  async updateLocation(
+    @Param('id') id: string,
+    @Body()
+    dto: {
+      latitude?: number;
+      longitude?: number;
+      locationAccuracy?: number;
+      locationTimestamp?: Date;
+      locationStatus?: string;
+    },
+    @Req() req: Request,
+  ) {
+    const isResident = req.cookies[`resident_call_${id}`] === 'true';
+    if (!isResident) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    const call = await this.prisma.call.findUnique({ where: { id } });
+    if (!call || !call.log_id) throw new NotFoundException('Call not found');
+
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const isInside = this.locationValidationService.isWithinTaguig(
+        dto.latitude,
+        dto.longitude,
+      );
+
+      if (!isInside) {
+        throw new ForbiddenException(
+          'Your location is outside Taguig City limits.',
+        );
+      }
+    }
+
+    const log = await this.prisma.log.update({
+      where: { id: call.log_id },
+      data: {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
+      },
+    });
+
+    // Auto-populate barangay from updated GPS coordinates if not already set.
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      if (barangay) {
+        this.prisma.log
+          .update({ where: { id: call.log_id }, data: { barangay } })
+          .catch((err) => console.error('Failed to update barangay on location update:', err));
+      }
+    }
+
+    await this.prisma.call.update({
+      where: { id },
+      data: {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+        location_accuracy: dto.locationAccuracy,
+        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_status: dto.locationStatus,
+      },
+    });
+
+    // Notify coordinator via socket if we have coordinates
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      this.communicationsService.emitToRoom(`call_${id}`, 'location_updated', {
+        latitude: dto.latitude,
+        longitude: dto.longitude,
+      });
+
+      // Re-run fraud detection silently
+      const clientIp = this.fraudDetectionService.extractClientIp(req);
+      
+      // We fetch the most recent fraud assessment to get the device IDs if needed
+      const prevAssessment = await this.prisma.fraudAssessment.findFirst({
+        where: { call_id: id },
+        orderBy: { created_at: 'desc' },
+      });
+
+      try {
+        const assessment = await this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude);
+        await this.fraudDetectionService.saveFraudAssessment(
+          log.id,
+          call.id,
+          assessment,
+          dto.latitude,
+          dto.longitude,
+          prevAssessment?.device_uuid || undefined,
+          prevAssessment?.fingerprint_hash || undefined
+        );
+      } catch (err) {
+        console.warn('Fraud assessment failed during location update', err);
+      }
+    }
 
     return { success: true, data: log };
   }

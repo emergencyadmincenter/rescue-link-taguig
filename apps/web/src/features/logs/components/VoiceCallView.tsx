@@ -10,7 +10,7 @@ import {
   FiUser,
   FiAlertTriangle,
 } from "react-icons/fi";
-import { Call } from "../types/logs.types";
+import { Call, Log } from "../types/logs.types";
 import { CALL_STATUS_CONFIG } from "../constants/logs.constants";
 import { Socket } from "socket.io-client";
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -21,6 +21,7 @@ import { useIncomingCall } from "@/providers/IncomingCallProvider";
 interface VoiceCallViewProps {
   call: Call | null;
   logId: string;
+  log?: Log;
   socket?: Socket;
 }
 
@@ -40,6 +41,7 @@ function formatDuration(
 export default function VoiceCallView({
   call,
   logId,
+  log,
   socket,
 }: VoiceCallViewProps) {
   const sourceLabel =
@@ -169,7 +171,14 @@ export default function VoiceCallView({
               </div>
             </div>
 
-            <p className="title-small font-bold text-foreground">Resident</p>
+            <p className="title-small font-bold text-foreground flex items-center gap-2">
+              Resident
+              {log?.is_shadow_banned && (
+                <span className="bg-danger text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm">
+                  Shadow Banned
+                </span>
+              )}
+            </p>
 
             {(isEnded || isMissed) && (
               <p
@@ -235,8 +244,13 @@ export default function VoiceCallView({
                 <FiUser className="w-6 h-6 text-success" />
               </div>
               <div className="flex flex-col">
-                <p className="body-medium font-bold text-foreground">
-                  Resident
+                <p className="body-medium font-bold text-foreground leading-tight flex items-center justify-center gap-2">
+                {prefix} {sourceLabel}
+                {log?.is_shadow_banned && (
+                  <span className="bg-danger text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-sm">
+                    Shadow Banned
+                  </span>
+                )}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />

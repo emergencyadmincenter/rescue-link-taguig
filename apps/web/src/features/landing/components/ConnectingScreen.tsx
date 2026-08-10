@@ -17,6 +17,18 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
     "Connecting to Command Center...",
   );
   const [activeCallData, setActiveCallData] = useState<any>(null);
+  const [locationStatus, setLocationStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    logsApi
+      .getCallDetails(callId)
+      .then((data) => {
+        if (data?.log) {
+          setLocationStatus(data.log.location_status);
+        }
+      })
+      .catch(() => {});
+  }, [callId]);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -168,10 +180,19 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
             <h1 className="title-medium text-gray-900 mb-2">
               Connecting to Emergency Service...
             </h1>
-            <p className="body-medium text-gray-500 min-h-[48px] flex items-center justify-center">
-              {statusMessage ||
-                "Please wait while we secure a connection with an available coordinator."}
-            </p>
+            <div className="min-h-[48px] flex flex-col items-center justify-center gap-2">
+              <p className="body-medium text-gray-500 text-center">
+                {statusMessage ||
+                  "Please wait while we secure a connection with an available coordinator."}
+              </p>
+              {locationStatus && locationStatus !== "success" && (
+                <p className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                  <FiAlertCircle className="inline-block w-3.5 h-3.5 mr-1.5 -mt-0.5 text-gray-500" />
+                  The coordinator will ask for your location directly once
+                  connected.
+                </p>
+              )}
+            </div>
           </>
         )}
       </div>

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiFileText, FiBarChart2 } from "react-icons/fi";
+import { FiFileText, FiBarChart2, FiMessageSquare } from "react-icons/fi";
 import { HiOutlineViewGrid, HiOutlineUserGroup } from "react-icons/hi";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import { useAuth } from "@/providers/AuthProvider";
 import { signOut } from "@/features/auth/api/auth.api";
 import { FiLogOut } from "react-icons/fi";
+import { useInternalMessaging } from "@/providers/InternalMessagingProvider";
 
 type NavItem = {
   label: string;
@@ -43,6 +44,12 @@ const NAVIGATION: NavItem[] = [
     roles: ["admin"], // Only Admin
   },
   {
+    label: "Messaging",
+    href: "/internal-messaging",
+    icon: FiMessageSquare,
+    roles: ["admin", "coordinator"],
+  },
+  {
     label: "Insights",
     href: "/insights",
     icon: FiBarChart2,
@@ -54,7 +61,13 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname() || "";
   const { user } = useAuth();
+  const { conversations } = useInternalMessaging();
   const toggleSidebar = () => setIsCollapsed((prev) => !prev);
+
+  const totalUnread = conversations.reduce(
+    (sum, c) => sum + (c.unreadCount || 0),
+    0,
+  );
 
   // Check if a nav item is active (either directly or via a child route)
   const isItemActive = (href: string) => {
@@ -122,6 +135,9 @@ export function Sidebar() {
             item={item}
             isCollapsed={isCollapsed}
             isActive={isItemActive(item.href)}
+            unreadCount={
+              item.href === "/internal-messaging" ? totalUnread : undefined
+            }
           />
         ))}
       </nav>
@@ -146,10 +162,12 @@ function SidebarItem({
   item,
   isCollapsed,
   isActive,
+  unreadCount,
 }: {
   item: NavItem;
   isCollapsed: boolean;
   isActive: boolean;
+  unreadCount?: number;
 }) {
   const Icon = item.icon;
 
@@ -170,12 +188,22 @@ function SidebarItem({
           />
           {!isCollapsed && (
             <span
-              className={`body-medium truncate font-medium transition-colors duration-200 ${isActive ? "text-primary" : ""}`}
+              className={`body-medium truncate font-medium transition-colors duration-200 flex-1 ${isActive ? "text-primary" : ""}`}
             >
               {item.label}
             </span>
           )}
+
+          {!isCollapsed && unreadCount !== undefined && unreadCount > 0 && (
+            <span className="bg-danger text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-auto">
+              {unreadCount}
+            </span>
+          )}
         </div>
+
+        {isCollapsed && unreadCount !== undefined && unreadCount > 0 && (
+          <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-danger rounded-full border-2 border-white" />
+        )}
       </Link>
     </div>
   );

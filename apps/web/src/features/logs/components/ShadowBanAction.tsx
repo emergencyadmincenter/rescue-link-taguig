@@ -21,6 +21,7 @@ export function ShadowBanAction({
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reason, setReason] = useState("");
+  const [duration, setDuration] = useState<string>("permanent");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Requirement: Administrators must not be able to shadow ban or remove a shadow ban.
@@ -53,7 +54,9 @@ export function ShadowBanAction({
     setIsSubmitting(true);
     try {
       const action = isBanned ? "unban" : "ban";
-      await shadowBansApi.toggleBan(callId, action, reason);
+      const durationMs =
+        duration === "permanent" ? null : parseInt(duration, 10);
+      await shadowBansApi.toggleBan(callId, action, reason, durationMs);
 
       toast.success(
         isBanned
@@ -63,6 +66,7 @@ export function ShadowBanAction({
       setIsBanned(!isBanned);
       setDialogOpen(false);
       setReason("");
+      setDuration("permanent");
     } catch (error: any) {
       const msg =
         error.response?.data?.message || "Failed to update shadow ban status.";
@@ -118,24 +122,50 @@ export function ShadowBanAction({
         }}
         disabled={isSubmitting || (!isBanned && !reason.trim())}
       >
-        <div className="mt-4">
-          <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
-            {isBanned
-              ? "Reason for removal (Optional)"
-              : "Reason for shadow ban (Required)"}
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={
-              isBanned
-                ? "Why is this ban being lifted?"
-                : "Describe why this resident is being banned (e.g. repeated prank calls)..."
-            }
-            rows={3}
-            className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed"
-            required={!isBanned}
-          />
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+              {isBanned
+                ? "Reason for removal (Optional)"
+                : "Reason for shadow ban (Required)"}
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={
+                isBanned
+                  ? "Why is this ban being lifted?"
+                  : "Describe why this resident is being banned (e.g. repeated prank calls)..."
+              }
+              rows={3}
+              className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed"
+              required={!isBanned}
+            />
+          </div>
+
+          {!isBanned && (
+            <div>
+              <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+                Ban Duration
+              </label>
+              <select
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 cursor-pointer"
+              >
+                <option value="300000">5 minutes</option>
+                <option value="900000">15 minutes</option>
+                <option value="1800000">30 minutes</option>
+                <option value="3600000">1 hour</option>
+                <option value="21600000">6 hours</option>
+                <option value="43200000">12 hours</option>
+                <option value="86400000">24 hours</option>
+                <option value="604800000">7 days</option>
+                <option value="2592000000">30 days</option>
+                <option value="permanent">Permanent</option>
+              </select>
+            </div>
+          )}
         </div>
       </ConfirmationDialog>
     </>

@@ -132,9 +132,17 @@ export default function LogsPageView() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={(filters) =>
-          updateParams({ status: filters.status, source: filters.source })
+          updateParams({ 
+            status: filters.status, 
+            source: filters.source,
+            is_shadow_banned: filters.is_shadow_banned 
+          })
         }
-        initialFilters={{ status: params.status, source: params.source }}
+        initialFilters={{ 
+          status: params.status, 
+          source: params.source,
+          is_shadow_banned: params.is_shadow_banned 
+        }}
       />
 
       <DateRangeDialog

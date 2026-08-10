@@ -87,6 +87,10 @@ model User {
 
   status UserStatus
 
+  avatar_url   String?
+  phone_number String?
+  address      String?
+
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
   removed_at DateTime?
@@ -98,6 +102,10 @@ model User {
   created_logs  Log[]  @relation("CreatedByCoordinator")
   calls         Call[]
   shadow_bans   ShadowBan[]
+  
+  created_group_chats       InternalConversation[] @relation("GroupChatCreator")
+  internal_conversations    InternalConversationParticipant[] @relation("InternalConversationParticipant")
+  sent_internal_messages    InternalMessage[] @relation("InternalMessageSender")
 
   @@map("users")
 }
@@ -201,6 +209,10 @@ model Log {
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
 
+  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_timestamp DateTime?
+  location_status    String?
+
   incident_category_id String? @db.Uuid
   incident_category    IncidentCategory? @relation(fields: [incident_category_id], references: [id], onDelete: SetNull)
   weather_condition String?
@@ -227,6 +239,9 @@ model Log {
   resource_assignments LogResourceAssignment[]
 
   fraud_assessments FraudAssessment[]
+
+  public_token String? @unique
+  public_token_expires_at DateTime?
 
   @@index([status])
   @@index([assigned_coordinator_id])
@@ -292,6 +307,10 @@ model Call {
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
 
+  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_timestamp DateTime?
+  location_status    String?
+
   rejection_reason String?
 
   started_at DateTime @default(now())
@@ -326,6 +345,8 @@ model Message {
   text String?
 
   attachment_url String?
+
+  image_keys String[]
 
   created_at DateTime @default(now())
 
@@ -392,6 +413,8 @@ model ShadowBan {
   created_by_id String? @db.Uuid
   created_by    User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
 
+  expires_at DateTime?
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -413,6 +436,9 @@ model QuarantinedEmergencyRequest {
 
   resident_latitude    Decimal? @db.Decimal(10, 7)
   resident_longitude   Decimal? @db.Decimal(10, 7)
+  location_accuracy    Decimal? @db.Decimal(10, 2)
+  location_timestamp   DateTime?
+  location_status      String?
   communication_method String?
 
   shadow_ban_reason String?
@@ -425,3 +451,59 @@ model QuarantinedEmergencyRequest {
   @@map("quarantined_emergency_requests")
 }
 
+model InternalConversation {
+  id String @id @default(uuid()) @db.Uuid
+  
+  is_group Boolean @default(false)
+  title    String?
+  
+  created_by_id String? @db.Uuid
+  created_by    User?   @relation("GroupChatCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  
+  participants InternalConversationParticipant[]
+  messages     InternalMessage[]
+  
+  @@map("internal_conversations")
+}
+
+model InternalConversationParticipant {
+  conversation_id String @db.Uuid
+  user_id         String @db.Uuid
+  
+  conversation InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  user         User                 @relation("InternalConversationParticipant", fields: [user_id], references: [id], onDelete: Cascade)
+  
+  joined_at    DateTime @default(now())
+  last_read_at DateTime @default(now())
+  is_muted     Boolean  @default(false)
+  
+  @@id([conversation_id, user_id])
+  @@index([user_id])
+  @@map("internal_conversation_participants")
+}
+
+model InternalMessage {
+  id String @id @default(uuid()) @db.Uuid
+  
+  conversation_id String @db.Uuid
+  conversation    InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  
+  sender_id String? @db.Uuid
+  sender    User?   @relation("InternalMessageSender", fields: [sender_id], references: [id], onDelete: SetNull)
+  
+  text       String?
+  image_keys String[]
+  
+  reply_to_id String?          @db.Uuid
+  reply_to    InternalMessage? @relation("MessageReplies", fields: [reply_to_id], references: [id], onDelete: SetNull)
+  replies     InternalMessage[] @relation("MessageReplies")
+  
+  created_at DateTime @default(now())
+  
+  @@index([conversation_id])
+  @@index([created_at])
+  @@map("internal_messages")
+}

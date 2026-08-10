@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
+import { BarangayResolverService } from '../../common/services/barangay-resolver.service';
 
 export interface CoordinatorPresence {
   userId: string;
@@ -37,7 +38,10 @@ export class CommunicationsService
   private coordinatorAssignments = new Map<string, number>();
   private pendingTimeouts = new Set<NodeJS.Timeout>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly barangayResolverService: BarangayResolverService,
+  ) {}
 
   async onModuleInit() {
     this.logger.log(
@@ -588,6 +592,7 @@ export class CommunicationsService
     type: 'text' | 'image' | 'file',
     text?: string,
     attachmentUrl?: string,
+    imageKeys?: string[],
   ) {
     const message = await this.prisma.message.create({
       data: {
@@ -597,6 +602,7 @@ export class CommunicationsService
         type,
         text,
         attachment_url: attachmentUrl,
+        image_keys: imageKeys ? imageKeys.filter(Boolean) : undefined,
       },
     });
 
@@ -618,10 +624,24 @@ export class CommunicationsService
     });
 
     if (call.log_id) {
+      // Resolve barangay from GPS coordinates and persist alongside lat/lng.
+      const barangay = this.barangayResolverService.resolveBarangay(latitude, longitude);
       await this.prisma.log.update({
         where: { id: call.log_id },
-        data: { latitude, longitude },
+        data: {
+          latitude,
+          longitude,
+          // Update barangay when it can be resolved from the latest coordinates so the
+          // map polygon shading and barangay filter stay accurate.
+          ...(barangay !== null && { barangay }),
+        },
       });
+    }
+  }
+
+  emitToRoom(room: string, event: string, data: any) {
+    if (this.server) {
+      this.server.to(room).emit(event, data);
     }
   }
 }

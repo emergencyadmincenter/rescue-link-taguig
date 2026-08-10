@@ -22,8 +22,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@CurrentUser() user: any) {
-    const userData = { ...user, id: user.sub };
+  async getMe(@CurrentUser() user: any) {
+    const userData = await this.authService.getMe(user.sub);
     return ApiResponse.success({ user: userData });
   }
 
