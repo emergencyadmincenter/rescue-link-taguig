@@ -151,6 +151,7 @@ export class CommunicationsController {
 
     // Auto-populate barangay from caller GPS coordinates.
     // The DB update is fire-and-forget; note that barangay resolution itself runs in-process.
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
       const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
       if (barangay) {
         this.prisma.log
