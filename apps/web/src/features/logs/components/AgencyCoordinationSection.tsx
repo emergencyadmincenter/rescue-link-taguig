@@ -1,14 +1,25 @@
 import React, { useEffect } from "react";
-import { FiShield, FiCheck, FiClock, FiPlus, FiPhoneForwarded } from "react-icons/fi";
+import {
+  FiShield,
+  FiCheck,
+  FiClock,
+  FiPlus,
+  FiPhoneForwarded,
+} from "react-icons/fi";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
 
 interface AgencyCoordinationSectionProps {
   logId: string;
   isReadOnly: boolean;
+  updateTrigger?: string;
 }
 
-export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinationSectionProps) {
+export function AgencyCoordinationSection({
+  logId,
+  isReadOnly,
+  updateTrigger,
+}: AgencyCoordinationSectionProps) {
   const [recommended, setRecommended] = React.useState<any[]>([]);
   const [coordinations, setCoordinations] = React.useState<any[]>([]);
   const [allAgencies, setAllAgencies] = React.useState<any[]>([]);
@@ -17,7 +28,7 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
 
   useEffect(() => {
     fetchData();
-  }, [logId]);
+  }, [logId, updateTrigger]);
 
   const fetchData = async () => {
     try {
@@ -48,7 +59,9 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
   };
 
   if (isLoading) {
-    return <div className="p-4 text-xs opacity-50">Loading coordination data...</div>;
+    return (
+      <div className="p-4 text-xs opacity-50">Loading coordination data...</div>
+    );
   }
 
   const involvedAgencyIds = new Set([
@@ -57,7 +70,9 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
   ]);
 
   const involvedList = allAgencies.filter((a) => involvedAgencyIds.has(a.id));
-  const unassignedAgencies = allAgencies.filter((a) => !involvedAgencyIds.has(a.id));
+  const unassignedAgencies = allAgencies.filter(
+    (a) => !involvedAgencyIds.has(a.id),
+  );
 
   return (
     <div className="space-y-4">
@@ -100,31 +115,39 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
 
       <div className="space-y-2">
         {involvedList.length === 0 ? (
-          <p className="body-small text-foreground/40 italic">No agencies recommended or coordinated yet.</p>
+          <p className="body-small text-foreground/40 italic">
+            No agencies recommended or coordinated yet.
+          </p>
         ) : (
           involvedList.map((agency) => {
             const isRecommended = recommended.some((r) => r.id === agency.id);
-            const coordRecord = coordinations.find((c) => c.agency_id === agency.id);
+            const coordRecord = coordinations.find(
+              (c) => c.agency_id === agency.id,
+            );
             const status = coordRecord?.status || "pending";
-            
+
             return (
-              <div key={agency.id} className="p-3 bg-background-subtle/30 border border-background-subtle rounded-lg flex flex-col gap-2 relative">
+              <div
+                key={agency.id}
+                className="p-3 bg-background-subtle/30 border border-background-subtle rounded-lg flex flex-col gap-2 relative"
+              >
                 {isRecommended && (
                   <span className="absolute -top-2 -left-2 bg-info text-info-foreground text-[9px] uppercase font-bold px-1.5 py-0.5 rounded shadow-sm">
                     Recommended
                   </span>
                 )}
-                
+
                 <div className="flex justify-between items-start pt-1">
                   <div>
                     <h4 className="text-sm font-medium">{agency.name}</h4>
                     {agency.contact_info && (
                       <p className="text-[11px] text-foreground/60 mt-0.5 flex items-center gap-1">
-                        <FiPhoneForwarded className="w-3 h-3" /> {agency.contact_info}
+                        <FiPhoneForwarded className="w-3 h-3" />{" "}
+                        {agency.contact_info}
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {status === "pending" && (
                       <span className="px-2 py-1 bg-warning/10 text-warning text-[10px] font-bold uppercase rounded flex items-center gap-1">
@@ -169,10 +192,11 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
                     </button>
                   </div>
                 )}
-                
+
                 {coordRecord?.updated_at && (
                   <p className="text-[10px] text-foreground/40 text-right w-full mt-1">
-                    Last updated by {coordRecord.created_by?.name || 'System'} at {new Date(coordRecord.updated_at).toLocaleString()}
+                    Last updated by {coordRecord.created_by?.name || "System"}{" "}
+                    at {new Date(coordRecord.updated_at).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -183,4 +207,3 @@ export function AgencyCoordinationSection({ logId, isReadOnly }: AgencyCoordinat
     </div>
   );
 }
-

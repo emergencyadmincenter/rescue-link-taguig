@@ -17,4 +17,3 @@ export class AgenciesController {
     return ApiResponse.success(data);
   }
 }
-

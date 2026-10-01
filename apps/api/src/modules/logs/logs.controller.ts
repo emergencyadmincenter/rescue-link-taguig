@@ -31,6 +31,11 @@ import { ApiResponse } from '../../common/dto/api-response.dto';
 export class LogsController {
   constructor(private readonly logsService: LogsService) {}
 
+  @Get('test-route')
+  testRoute() {
+    return { success: true, message: 'hot-reload works' };
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')

@@ -901,7 +901,11 @@ export default function LogDetailsPanel({
           <hr className="border-background-subtle/50" />
 
           <section className="mb-4 pt-2">
-            <AgencyCoordinationSection logId={log.id} isReadOnly={isReadOnly} />
+            <AgencyCoordinationSection
+              logId={log.id}
+              isReadOnly={isReadOnly}
+              updateTrigger={selectedNeeds.map((n) => n.id).join(",")}
+            />
           </section>
 
           <hr className="border-background-subtle/50" />

@@ -15,4 +15,3 @@ export class UpdateCoordinationDto {
   @IsOptional()
   remarks?: string;
 }
-

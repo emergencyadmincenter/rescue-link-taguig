@@ -794,6 +794,9 @@ export class LogsService {
             },
           },
         },
+        resource_assignments: {
+          include: { resource: true },
+        },
         logAgencyCoordinations: {
           include: {
             agency: true,
@@ -809,13 +812,60 @@ export class LogsService {
       throw new NotFoundException('Log not found');
     }
 
-    const recommendedAgencies =
-      log.incident_category?.agencies
-        .map((a: any) => a.agency)
-        .filter((a: any) => a.is_active) || [];
+    const activeAgencies = await this.prisma.agency.findMany({
+      where: { is_active: true },
+    });
+    const recommendedMap = new Map<string, any>();
+
+    // Map from incident category
+    log.incident_category?.agencies?.forEach((a: any) => {
+      if (a.agency.is_active) recommendedMap.set(a.agency.id, a.agency);
+    });
+
+    // Map from requested needs (resources)
+    log.resource_assignments?.forEach((ra: any) => {
+      const resName = ra.resource.name.toLowerCase();
+      const recommendTypes = new Set<string>();
+
+      if (
+        resName.includes('medical') ||
+        resName.includes('ambulance') ||
+        resName.includes('first aid') ||
+        resName.includes('injury')
+      ) {
+        recommendTypes.add('medical');
+      }
+      if (resName.includes('rescue')) {
+        recommendTypes.add('medical');
+        recommendTypes.add('drrmo');
+      }
+      if (resName.includes('fire')) {
+        recommendTypes.add('fire');
+      }
+      if (
+        resName.includes('police') ||
+        resName.includes('security') ||
+        resName.includes('crime')
+      ) {
+        recommendTypes.add('police');
+      }
+      if (
+        resName.includes('food') ||
+        resName.includes('water') ||
+        resName.includes('relief')
+      ) {
+        recommendTypes.add('drrmo');
+      }
+
+      activeAgencies.forEach((agency) => {
+        if (recommendTypes.has(agency.type)) {
+          recommendedMap.set(agency.id, agency);
+        }
+      });
+    });
 
     return {
-      recommendedAgencies,
+      recommendedAgencies: Array.from(recommendedMap.values()),
       coordinations: log.logAgencyCoordinations,
     };
   }
