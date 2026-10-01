@@ -208,6 +208,25 @@ export class WeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
   /**
+   * GET /api/weather/history?hours=24
+   *
+   * Returns actual hourly observations available from Open-Meteo for the
+   * Taguig observation area. This is intentionally bounded to recent history;
+   * the current provider integration does not persist a local time series.
+   */
+  @Get('history')
+  async getWeatherHistory(@Query('hours') hours?: string) {
+    const parsedHours = hours === undefined ? 24 : Number.parseInt(hours, 10);
+
+    if (!Number.isInteger(parsedHours) || parsedHours < 1 || parsedHours > 24) {
+      throw new BadRequestException('hours must be an integer from 1 to 24');
+    }
+
+    const data = await this.weatherService.getHistoricalWeather(parsedHours);
+    return { data };
+  }
+
+  /**
    * GET /api/weather
    *
    * Returns live weather data for all Taguig barangays.

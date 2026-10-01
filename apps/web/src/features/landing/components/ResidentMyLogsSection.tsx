@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { FiClock, FiFileText, FiArrowRight, FiActivity } from "react-icons/fi";
 import { logsApi } from "@/features/logs/api/logs.api";
+import { STATUS_CONFIG } from "@/features/logs/constants/logs.constants";
+import { LogStatus } from "@/features/logs/types/logs.types";
 import Link from "next/link";
 
 interface ResidentLogSummary {
@@ -67,19 +69,32 @@ export function ResidentMyLogsSection({
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "active":
-      case "ringing":
         return "bg-danger/10 text-danger border-danger/20";
       case "dispatched":
-        return "bg-warning/50 text-warning-foreground border-warning/20";
+        return "bg-warning/10 text-warning border-warning/20";
       case "resolved":
-      case "ended":
         return "bg-success/10 text-success border-success/20";
       case "cancelled":
+        return "bg-foreground/5 text-foreground/50 border-foreground/10";
+      case "ringing":
+        return "bg-danger/10 text-danger border-danger/20";
+      case "ended":
+        return "bg-success/10 text-success border-success/20";
       case "dropped":
         return "bg-gray-100 text-gray-600 border-gray-200";
       default:
         return "bg-gray-50 text-gray-500 border-gray-200";
     }
+  };
+
+  const getStatusDotClass = (status: string) => {
+    const config = STATUS_CONFIG[status as LogStatus];
+    return config?.dotClass ?? "bg-gray-400";
+  };
+
+  const getStatusLabel = (status: string) => {
+    const config = STATUS_CONFIG[status as LogStatus];
+    return config?.label ?? status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -115,9 +130,13 @@ export function ResidentMyLogsSection({
                   {log.reference_no}
                 </span>
                 <span
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(log.status)}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(log.status)}`}
                 >
-                  {log.status}
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotClass(log.status)}`}
+                    aria-hidden="true"
+                  />
+                  {getStatusLabel(log.status)}
                 </span>
               </div>
 

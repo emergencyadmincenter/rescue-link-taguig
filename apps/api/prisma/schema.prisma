@@ -8,6 +8,20 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AgencyType {
+  fire
+  medical
+  police
+  drrmo
+  other
+}
+
+enum CoordinationStatus {
+  pending
+  contacted
+  completed
+}
+
 enum UserStatus {
   pending_activation
   active
@@ -77,6 +91,22 @@ enum FraudRiskClassification {
   high_fraud_risk
 }
 
+enum ShadowBanViolationCategory {
+  fake_rescue_call
+  spam
+  fraudulent_activity
+  abusive_malicious_use
+  impersonation_identity_misuse
+  coordinated_system_abuse
+  other
+}
+
+enum ShadowBanSeverity {
+  low
+  high
+  critical
+}
+
 model User {
   id String @id @default(uuid()) @db.Uuid
 
@@ -98,14 +128,18 @@ model User {
   tokens     UserToken[]
   user_roles UserRole[]
 
-  assigned_logs Log[]  @relation("AssignedCoordinator")
-  created_logs  Log[]  @relation("CreatedByCoordinator")
-  calls         Call[]
-  shadow_bans   ShadowBan[]
-  
-  created_group_chats       InternalConversation[] @relation("GroupChatCreator")
-  internal_conversations    InternalConversationParticipant[] @relation("InternalConversationParticipant")
-  sent_internal_messages    InternalMessage[] @relation("InternalMessageSender")
+  assigned_logs        Log[]              @relation("AssignedCoordinator")
+  created_logs         Log[]              @relation("CreatedByCoordinator")
+  calls                Call[]
+  log_status_history   LogStatusHistory[]
+  shadow_bans          ShadowBan[]
+  unbanned_shadow_bans ShadowBan[]        @relation("ShadowBanUnbannedBy")
+
+  created_group_chats    InternalConversation[]            @relation("GroupChatCreator")
+  internal_conversations InternalConversationParticipant[] @relation("InternalConversationParticipant")
+  sent_internal_messages InternalMessage[]                 @relation("InternalMessageSender")
+
+  log_agency_coordinations LogAgencyCoordination[]
 
   @@map("users")
 }
@@ -203,19 +237,19 @@ model Log {
   caller_name    String?
   caller_contact String?
 
-  address String?
+  address  String?
   barangay String?
 
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
 
-  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_accuracy  Decimal?  @db.Decimal(10, 2)
   location_timestamp DateTime?
   location_status    String?
 
-  incident_category_id String? @db.Uuid
+  incident_category_id String?           @db.Uuid
   incident_category    IncidentCategory? @relation(fields: [incident_category_id], references: [id], onDelete: SetNull)
-  weather_condition String?
+  weather_condition    String?
 
   description String?
 
@@ -239,9 +273,11 @@ model Log {
   resource_assignments LogResourceAssignment[]
 
   fraud_assessments FraudAssessment[]
+  status_history    LogStatusHistory[]
 
-  public_token String? @unique
+  public_token            String?                 @unique
   public_token_expires_at DateTime?
+  logAgencyCoordinations  LogAgencyCoordination[]
 
   @@index([status])
   @@index([assigned_coordinator_id])
@@ -251,12 +287,33 @@ model Log {
   @@map("logs")
 }
 
+model LogStatusHistory {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String @db.Uuid
+  log    Log    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  previous_status LogStatus?
+  new_status      LogStatus
+
+  changed_by_id String? @db.Uuid
+  changed_by    User?   @relation(fields: [changed_by_id], references: [id], onDelete: SetNull)
+
+  remarks    String?
+  changed_at DateTime @default(now())
+
+  @@index([log_id, changed_at])
+  @@index([changed_by_id])
+  @@map("log_status_history")
+}
+
 model IncidentCategory {
   id         String   @id @default(uuid()) @db.Uuid
   name       String   @unique
   created_at DateTime @default(now())
 
-  logs       Log[]
+  logs     Log[]
+  agencies AgencyIncidentCategory[]
 
   @@map("incident_categories")
 }
@@ -307,7 +364,7 @@ model Call {
   latitude  Decimal? @db.Decimal(10, 7)
   longitude Decimal? @db.Decimal(10, 7)
 
-  location_accuracy  Decimal? @db.Decimal(10, 2)
+  location_accuracy  Decimal?  @db.Decimal(10, 2)
   location_timestamp DateTime?
   location_status    String?
 
@@ -405,13 +462,19 @@ model ShadowBan {
   client_ip        String?
   caller_contact   String?
 
-  reason       String
-  unban_reason String?
+  reason             String
+  violation_category ShadowBanViolationCategory @default(other)
+  severity           ShadowBanSeverity          @default(low)
+  details            String?
+  unban_reason       String?
+  unbanned_at        DateTime?
 
   active Boolean @default(true)
 
-  created_by_id String? @db.Uuid
-  created_by    User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+  created_by_id  String? @db.Uuid
+  created_by     User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+  unbanned_by_id String? @db.Uuid
+  unbanned_by    User?   @relation("ShadowBanUnbannedBy", fields: [unbanned_by_id], references: [id], onDelete: SetNull)
 
   expires_at DateTime?
 
@@ -422,6 +485,8 @@ model ShadowBan {
   @@index([fingerprint_hash])
   @@index([client_ip])
   @@index([active])
+  @@index([violation_category])
+  @@index([severity])
   @@map("shadow_bans")
 }
 
@@ -434,9 +499,9 @@ model QuarantinedEmergencyRequest {
   fingerprint_hash String?
   client_ip        String?
 
-  resident_latitude    Decimal? @db.Decimal(10, 7)
-  resident_longitude   Decimal? @db.Decimal(10, 7)
-  location_accuracy    Decimal? @db.Decimal(10, 2)
+  resident_latitude    Decimal?  @db.Decimal(10, 7)
+  resident_longitude   Decimal?  @db.Decimal(10, 7)
+  location_accuracy    Decimal?  @db.Decimal(10, 2)
   location_timestamp   DateTime?
   location_status      String?
   communication_method String?
@@ -453,33 +518,33 @@ model QuarantinedEmergencyRequest {
 
 model InternalConversation {
   id String @id @default(uuid()) @db.Uuid
-  
+
   is_group Boolean @default(false)
   title    String?
-  
+
   created_by_id String? @db.Uuid
   created_by    User?   @relation("GroupChatCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
-  
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  
+
   participants InternalConversationParticipant[]
   messages     InternalMessage[]
-  
+
   @@map("internal_conversations")
 }
 
 model InternalConversationParticipant {
   conversation_id String @db.Uuid
   user_id         String @db.Uuid
-  
+
   conversation InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
   user         User                 @relation("InternalConversationParticipant", fields: [user_id], references: [id], onDelete: Cascade)
-  
+
   joined_at    DateTime @default(now())
   last_read_at DateTime @default(now())
   is_muted     Boolean  @default(false)
-  
+
   @@id([conversation_id, user_id])
   @@index([user_id])
   @@map("internal_conversation_participants")
@@ -487,23 +552,72 @@ model InternalConversationParticipant {
 
 model InternalMessage {
   id String @id @default(uuid()) @db.Uuid
-  
-  conversation_id String @db.Uuid
+
+  conversation_id String               @db.Uuid
   conversation    InternalConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
-  
+
   sender_id String? @db.Uuid
   sender    User?   @relation("InternalMessageSender", fields: [sender_id], references: [id], onDelete: SetNull)
-  
+
   text       String?
   image_keys String[]
-  
-  reply_to_id String?          @db.Uuid
-  reply_to    InternalMessage? @relation("MessageReplies", fields: [reply_to_id], references: [id], onDelete: SetNull)
+
+  reply_to_id String?           @db.Uuid
+  reply_to    InternalMessage?  @relation("MessageReplies", fields: [reply_to_id], references: [id], onDelete: SetNull)
   replies     InternalMessage[] @relation("MessageReplies")
-  
+
   created_at DateTime @default(now())
-  
+
   @@index([conversation_id])
   @@index([created_at])
   @@map("internal_messages")
+}
+
+model Agency {
+  id           String     @id @default(uuid()) @db.Uuid
+  name         String     @unique
+  type         AgencyType
+  contact_info String?
+  is_active    Boolean    @default(true)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  incident_categories AgencyIncidentCategory[]
+  log_coordinations   LogAgencyCoordination[]
+
+  @@map("agencies")
+}
+
+model AgencyIncidentCategory {
+  agency_id            String @db.Uuid
+  incident_category_id String @db.Uuid
+
+  agency            Agency           @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+  incident_category IncidentCategory @relation(fields: [incident_category_id], references: [id], onDelete: Cascade)
+
+  @@id([agency_id, incident_category_id])
+  @@map("agency_incident_categories")
+}
+
+model LogAgencyCoordination {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String @db.Uuid
+  log    Log    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  agency_id String @db.Uuid
+  agency    Agency @relation(fields: [agency_id], references: [id], onDelete: Cascade)
+
+  status  CoordinationStatus @default(pending)
+  remarks String?
+
+  created_by_id String? @db.Uuid
+  created_by    User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([log_id, agency_id])
+  @@map("log_agency_coordinations")
 }

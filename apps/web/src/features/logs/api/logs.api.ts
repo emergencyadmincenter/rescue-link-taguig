@@ -78,4 +78,21 @@ export const logsApi = {
 
   getResidentMyLogs: (): Promise<any> =>
     apiClient.get("/logs/resident/my-logs").then((res) => res.data.data),
+
+  getAgencies: (): Promise<any[]> =>
+    apiClient.get("/agencies").then((res) => res.data.data),
+
+  getLogCoordinations: (
+    id: string,
+  ): Promise<{ recommendedAgencies: any[]; coordinations: any[] }> =>
+    apiClient.get(`/logs/${id}/coordinations`).then((res) => res.data.data),
+
+  updateLogCoordination: (
+    id: string,
+    agencyId: string,
+    data: { status: string; remarks?: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/${id}/coordinations/${agencyId}`, data)
+      .then((res) => res.data.data),
 };

@@ -5,6 +5,7 @@ import {
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { Prisma, LogStatus } from '../../generated/prisma/client';
 import { Server, Socket } from 'socket.io';
 import { BarangayResolverService } from '../../common/services/barangay-resolver.service';
 
@@ -42,6 +43,36 @@ export class CommunicationsService
     private readonly prisma: PrismaService,
     private readonly barangayResolverService: BarangayResolverService,
   ) {}
+
+  private async updateLogStatusWithHistory(
+    logId: string,
+    newStatus: LogStatus,
+    changedById: string | null,
+    data: Prisma.LogUpdateInput,
+    remarks?: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.log.findUnique({
+        where: { id: logId },
+        select: { status: true },
+      });
+      if (!existing) return null;
+
+      const updated = await tx.log.update({ where: { id: logId }, data });
+      if (existing.status !== newStatus) {
+        await tx.logStatusHistory.create({
+          data: {
+            log_id: logId,
+            previous_status: existing.status,
+            new_status: newStatus,
+            changed_by_id: changedById,
+            remarks: remarks?.trim() || undefined,
+          },
+        });
+      }
+      return updated;
+    });
+  }
 
   async onModuleInit() {
     this.logger.log(
@@ -498,13 +529,16 @@ export class CommunicationsService
           },
         }),
         call.log_id
-          ? this.prisma.log.update({
-              where: { id: call.log_id },
-              data: {
-                status: 'cancelled',
+          ? this.updateLogStatusWithHistory(
+              call.log_id,
+              LogStatus.cancelled,
+              coordinatorId,
+              {
+                status: LogStatus.cancelled,
                 description: `Rejected by coordinator. Reason: ${rejectReason || 'None given'}`,
               },
-            })
+              rejectReason,
+            )
           : Promise.resolve(),
       ]).catch((err) =>
         this.logger.error('Failed to update call/log on reject:', err),
@@ -538,14 +572,17 @@ export class CommunicationsService
         data: { status: 'missed', ended_at: new Date() },
       }),
       call && call.log_id
-        ? this.prisma.log.update({
-            where: { id: call.log_id },
-            data: {
-              status: 'cancelled',
+        ? this.updateLogStatusWithHistory(
+            call.log_id,
+            LogStatus.cancelled,
+            null,
+            {
+              status: LogStatus.cancelled,
               cancellation_reason: 'Missed emergency call. Timeout reached.',
               description: `Assignment attempts: ${state?.attemptedCoordinators.length || 0}. Rejections: ${state?.rejectedCoordinators.length || 0}.`,
             },
-          })
+            'Automatically cancelled after the emergency call timed out.',
+          )
         : Promise.resolve(),
     ]).catch((err) =>
       this.logger.error('Failed to update call/log on global timeout:', err),
@@ -625,7 +662,10 @@ export class CommunicationsService
 
     if (call.log_id) {
       // Resolve barangay from GPS coordinates and persist alongside lat/lng.
-      const barangay = this.barangayResolverService.resolveBarangay(latitude, longitude);
+      const barangay = this.barangayResolverService.resolveBarangay(
+        latitude,
+        longitude,
+      );
       await this.prisma.log.update({
         where: { id: call.log_id },
         data: {

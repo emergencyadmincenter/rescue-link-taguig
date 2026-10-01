@@ -1,29 +1,49 @@
 import { LogStatus, LogSource, CallStatus } from '../types/logs.types';
 
-export const STATUS_CONFIG: Record<LogStatus, { label: string; bgClass: string; textClass: string; borderClass: string }> = {
+export const STATUS_CONFIG: Record<LogStatus, {
+  label: string;
+  bgClass: string;
+  textClass: string;
+  borderClass: string;
+  dotClass: string;
+  subtleBgClass: string;
+  subtleTextClass: string;
+}> = {
   active: {
     label: 'Active',
     bgClass: 'bg-danger',
     textClass: 'text-danger',
     borderClass: 'border-danger',
+    dotClass: 'bg-danger',
+    subtleBgClass: 'bg-danger/10',
+    subtleTextClass: 'text-danger',
   },
   dispatched: {
     label: 'Dispatched',
     bgClass: 'bg-warning',
     textClass: 'text-warning',
     borderClass: 'border-warning',
+    dotClass: 'bg-warning',
+    subtleBgClass: 'bg-warning/10',
+    subtleTextClass: 'text-warning',
   },
   resolved: {
     label: 'Resolved',
     bgClass: 'bg-success',
     textClass: 'text-success',
     borderClass: 'border-success',
+    dotClass: 'bg-success',
+    subtleBgClass: 'bg-success/10',
+    subtleTextClass: 'text-success',
   },
   cancelled: {
     label: 'Cancelled',
     bgClass: 'bg-foreground/50',
     textClass: 'text-foreground/50',
     borderClass: 'border-foreground/40',
+    dotClass: 'bg-foreground/40',
+    subtleBgClass: 'bg-foreground/5',
+    subtleTextClass: 'text-foreground/50',
   },
 };
 

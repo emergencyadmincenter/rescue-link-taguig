@@ -22,8 +22,15 @@ import {
   FiAlignLeft,
   FiAlertTriangle,
   FiShare2,
+  FiActivity,
+  FiCpu,
+  FiGlobe,
+  FiClock,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
-import { Log, Resource } from "../types/logs.types";
+import { Log, LogStatus, Resource } from "../types/logs.types";
+import { STATUS_CONFIG } from "../constants/logs.constants";
 import { logsApi } from "../api/logs.api";
 import { useAutoSave } from "../hooks/useAutoSave";
 import StatusSelector from "./StatusSelector";
@@ -33,10 +40,11 @@ import SelectorDialog, { SelectorOption } from "./SelectorDialog";
 import ShareLogDialog from "./ShareLogDialog";
 import { useAuth } from "@/providers/AuthProvider";
 import dynamic from "next/dynamic";
+import { AgencyCoordinationSection } from "./AgencyCoordinationSection";
 
 const EditPinMap = dynamic(
   () => import("./EditPinMap").then((m) => m.EditPinMap),
-  { ssr: false, loading: () => null }
+  { ssr: false, loading: () => null },
 );
 
 interface LogDetailsPanelProps {
@@ -110,9 +118,11 @@ export default function LogDetailsPanel({
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     status: string;
-  }>({ isOpen: false, status: "" });
+    remarks: string;
+  }>({ isOpen: false, status: "", remarks: "" });
 
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [showSecurityIdentifiers, setShowSecurityIdentifiers] = useState(false);
 
   // Channels
   const [selectedChannels, setSelectedChannels] = useState<SelectorOption[]>(
@@ -187,6 +197,8 @@ export default function LogDetailsPanel({
 
   if (!log) return null;
 
+  const shadowBan = log.is_shadow_banned ? log.shadow_ban_details : null;
+
   const handleChange = (field: string, value: string) => {
     if (isReadOnly) return;
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -198,7 +210,10 @@ export default function LogDetailsPanel({
   const handlePinSave = async (lat: number, lng: number) => {
     if (!log) return;
     try {
-      const updated = await logsApi.updateLog(log.id, { latitude: lat, longitude: lng });
+      const updated = await logsApi.updateLog(log.id, {
+        latitude: lat,
+        longitude: lng,
+      });
       onUpdate(updated);
       toast.success("Pin location updated.");
     } catch {
@@ -206,13 +221,16 @@ export default function LogDetailsPanel({
     }
   };
 
-  const executeStatusChange = async (status: string) => {
+  const executeStatusChange = async (status: LogStatus, remarks?: string) => {
     if (isReadOnly) return;
     try {
       const updated = await logsApi.updateLog(log.id, {
-        status: status as any,
+        status,
+        status_remarks:
+          remarks?.trim() || `Status changed from ${log.status} to ${status}.`,
       });
-      onUpdate(updated);
+      const refreshed = await logsApi.getLog(updated.id);
+      onUpdate(refreshed);
       toast.success(`Status updated to ${status}`);
     } catch (error) {
       toast.error("Failed to update status");
@@ -221,11 +239,7 @@ export default function LogDetailsPanel({
 
   const handleStatusChange = (status: string) => {
     if (isReadOnly) return;
-    if (status === "cancelled" || status === "resolved") {
-      setConfirmDialog({ isOpen: true, status });
-    } else {
-      executeStatusChange(status);
-    }
+    setConfirmDialog({ isOpen: true, status, remarks: "" });
   };
 
   const toggleChannel = (id: string) => {
@@ -424,37 +438,292 @@ export default function LogDetailsPanel({
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
-        {log.is_shadow_banned && log.shadow_ban_details && (
-          <div className="mb-6 p-4 rounded-xl bg-danger/10 border border-danger/20 flex flex-col gap-2 text-danger shadow-sm">
-            <div className="flex items-start gap-3">
-              <FiShield className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-bold text-sm">Shadow Banned Request</h3>
-                <p className="text-xs mt-0.5 opacity-90">
-                  This request is associated with a device or IP address that is currently shadow-banned.
+        {shadowBan && (
+          <section className="mb-6 overflow-hidden rounded-xl border-2 border-danger/30 bg-danger/5 text-danger shadow-sm">
+            <div className="flex items-start gap-3 border-b border-danger/20 bg-danger/10 px-5 py-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-danger text-white">
+                <FiShield className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-bold text-sm">Active Shadow Ban</h3>
+                  {shadowBan.severity && (
+                    <span className="rounded-full bg-danger/15 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+                      {shadowBan.severity}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs opacity-90">
+                  Future requests matching this resident&apos;s security
+                  identifiers are quarantined from normal dispatch.
                 </p>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-white/50 p-3 rounded-lg border border-danger/10">
+              </div>
+              <div className="shrink-0 text-right text-xs">
+                <span className="block font-semibold opacity-70">
+                  Restriction
+                </span>
+                <span className="font-semibold">
+                  {shadowBan.expires_at
+                    ? `Until ${new Date(shadowBan.expires_at).toLocaleString()}`
+                    : "Indefinite"}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <div className="rounded-lg border border-danger/15 bg-white/70 p-3">
+                <div className="flex items-start gap-2">
+                  <FiAlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
-                    <span className="font-semibold block opacity-70 mb-1">Reason</span>
-                    {log.shadow_ban_details.reason}
-                  </div>
-                  <div>
-                    <span className="font-semibold block opacity-70 mb-1">Status</span>
-                    {log.shadow_ban_details.expires_at ? (
-                       <span>Expires on {new Date(log.shadow_ban_details.expires_at).toLocaleString()}</span>
-                    ) : (
-                       <span>Permanent</span>
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                      Enforcement reason
+                    </span>
+                    <p className="mt-1 text-sm font-semibold">
+                      {shadowBan.reason}
+                    </p>
+                    {shadowBan.details && (
+                      <p className="mt-1 text-xs opacity-80">
+                        {shadowBan.details}
+                      </p>
                     )}
-                  </div>
-                  <div>
-                    <span className="font-semibold block opacity-70 mb-1">Applied By</span>
-                    {log.shadow_ban_details.coordinator?.name || "Unknown"}
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {shadowBan.violation_category && (
+                  <div className="rounded-lg border border-danger/15 bg-white/60 p-3">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                      Violation category
+                    </span>
+                    <span className="mt-1 block text-sm font-medium capitalize">
+                      {shadowBan.violation_category.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                )}
+                <div className="rounded-lg border border-danger/15 bg-white/60 p-3">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                    Applied by
+                  </span>
+                  <span className="mt-1 block text-sm font-medium">
+                    {shadowBan.coordinator?.name || "Unknown"}
+                  </span>
+                </div>
+                <div className="rounded-lg border border-danger/15 bg-white/60 p-3">
+                  <span className="block text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                    Applied
+                  </span>
+                  <span className="mt-1 flex items-center gap-1 text-sm font-medium">
+                    <FiClock className="h-3.5 w-3.5" />
+                    {new Date(shadowBan.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {shadowBan.security_context && (
+                <div className="rounded-lg border border-danger/15 bg-white/60 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <FiActivity className="h-4 w-4" />
+                    <h4 className="text-xs font-bold uppercase tracking-wide">
+                      Security context
+                    </h4>
+                    <div className="ml-auto flex items-center gap-2">
+                      <span className="text-[11px] opacity-70">
+                        Authorized staff only
+                      </span>
+                      {(shadowBan.security_context.device_uuid_full ||
+                        shadowBan.security_context.fingerprint_hash_full) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowSecurityIdentifiers((visible) => !visible)
+                          }
+                          className="inline-flex items-center gap-1 rounded-md border border-danger/20 px-2 py-1 text-[11px] font-semibold hover:bg-danger/10 transition-colors"
+                          aria-pressed={showSecurityIdentifiers}
+                        >
+                          {showSecurityIdentifiers ? (
+                            <FiEyeOff className="h-3 w-3" />
+                          ) : (
+                            <FiEye className="h-3 w-3" />
+                          )}
+                          {showSecurityIdentifiers
+                            ? "Hide full IDs"
+                            : "Show full IDs"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        <FiGlobe className="h-3 w-3" /> Client IP
+                      </span>
+                      <span className="mt-1 block font-mono text-xs">
+                        {shadowBan.security_context.client_ip}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        <FiCpu className="h-3 w-3" /> Device ID
+                      </span>
+                      <span className="mt-1 block break-all font-mono text-xs">
+                        {(showSecurityIdentifiers
+                          ? shadowBan.security_context.device_uuid_full
+                          : shadowBan.security_context.device_uuid) ||
+                          "Not available"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        Fingerprint
+                      </span>
+                      <span className="mt-1 block break-all font-mono text-xs">
+                        {(showSecurityIdentifiers
+                          ? shadowBan.security_context.fingerprint_hash_full
+                          : shadowBan.security_context.fingerprint_hash) ||
+                          "Not available"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        Risk classification
+                      </span>
+                      <span className="mt-1 block text-xs font-semibold">
+                        {shadowBan.security_context.risk_classification ===
+                        "high_fraud_risk"
+                          ? "High fraud risk"
+                          : "Low risk"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        Network signals
+                      </span>
+                      <span className="mt-1 block text-xs">
+                        {[
+                          shadowBan.security_context.is_vpn && "VPN",
+                          shadowBan.security_context.is_proxy && "Proxy",
+                          shadowBan.security_context.is_hosting && "Hosting",
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "None detected"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wide opacity-70">
+                        Location consistency
+                      </span>
+                      <span className="mt-1 block text-xs">
+                        {shadowBan.security_context.distance_km !== null
+                          ? `${Number(shadowBan.security_context.distance_km).toFixed(1)} km from IP location`
+                          : shadowBan.security_context
+                                .location_permission_granted
+                            ? "Location available; no distance recorded"
+                            : "Location permission not granted"}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[11px] opacity-70">
+                    Fraud assessment recorded{" "}
+                    {new Date(
+                      shadowBan.security_context.assessed_at,
+                    ).toLocaleString()}
+                    . These signals support review and are not, by themselves,
+                    proof of intentional misconduct.
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+          </section>
         )}
+
+        <section className="mb-6 rounded-xl border border-background-subtle bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-background-subtle/60 px-5 py-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">
+                Status History
+              </h3>
+              <p className="mt-1 text-xs text-foreground/50">
+                Chronological record of this Log&apos;s status progression.
+              </p>
+            </div>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_CONFIG[log.status].subtleBgClass} ${STATUS_CONFIG[log.status].subtleTextClass}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[log.status].dotClass}`}
+                aria-hidden="true"
+              />
+              Current: {STATUS_CONFIG[log.status].label}
+            </span>
+          </div>
+
+          {log.status_history && log.status_history.length > 0 ? (
+            <div className="max-h-[320px] overflow-y-auto custom-scrollbar px-5 py-4">
+              <div className="relative space-y-5">
+                <div className="absolute bottom-3 left-[7px] top-3 w-px bg-background-subtle" />
+                {log.status_history.map((entry, index) => {
+                  const isCurrent =
+                    index === log.status_history!.length - 1 &&
+                    entry.new_status === log.status;
+                  const newLabel =
+                    STATUS_CONFIG[entry.new_status]?.label ?? entry.new_status;
+                  const previousLabel = entry.previous_status
+                    ? (STATUS_CONFIG[entry.previous_status]?.label ??
+                      entry.previous_status)
+                    : null;
+
+                  return (
+                    <div key={entry.id} className="relative flex gap-3">
+                      <div
+                        className={`relative z-10 mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-white ${STATUS_CONFIG[entry.new_status]?.dotClass ?? "bg-gray-300"} ${isCurrent ? "ring-2 ring-primary/20" : ""}`}
+                      />
+                      <div className="min-w-0 flex-1 rounded-lg border border-background-subtle/70 bg-background-subtle/20 px-3 py-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">
+                            {previousLabel
+                              ? `${previousLabel} → ${newLabel}`
+                              : `Created as ${newLabel}`}
+                            {isCurrent && (
+                              <span
+                                className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_CONFIG[log.status].subtleBgClass} ${STATUS_CONFIG[log.status].subtleTextClass}`}
+                              >
+                                <span
+                                  className={`w-1 h-1 rounded-full ${STATUS_CONFIG[log.status].dotClass}`}
+                                  aria-hidden="true"
+                                />
+                                Current
+                              </span>
+                            )}
+                          </p>
+                          <time
+                            className="text-xs text-foreground/50"
+                            dateTime={entry.changed_at}
+                          >
+                            {new Date(entry.changed_at).toLocaleString()}
+                          </time>
+                        </div>
+                        <p className="mt-1 text-xs text-foreground/60">
+                          {entry.changed_by?.name || "System"}
+                        </p>
+                        {entry.remarks && (
+                          <p className="mt-2 text-xs italic text-foreground/70">
+                            {entry.remarks}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="px-5 py-5 text-xs text-foreground/60">
+              No status history was recorded for this Log. Status changes made
+              before history tracking was enabled are unavailable.
+            </div>
+          )}
+        </section>
 
         {isReadOnly && (
           <div className="mb-6 p-4 rounded-xl bg-warning/10 border border-warning/20 flex items-start gap-3 text-warning-hover shadow-sm">
@@ -631,6 +900,12 @@ export default function LogDetailsPanel({
 
           <hr className="border-background-subtle/50" />
 
+          <section className="mb-4 pt-2">
+            <AgencyCoordinationSection logId={log.id} isReadOnly={isReadOnly} />
+          </section>
+
+          <hr className="border-background-subtle/50" />
+
           <section className="mb-4">
             <h3 className="text-xs font-bold text-info uppercase tracking-wider mb-4 flex items-center gap-2">
               <FiRadio className="w-4 h-4" /> Channels
@@ -682,23 +957,66 @@ export default function LogDetailsPanel({
         title={
           confirmDialog.status === "cancelled"
             ? "Cancel Emergency Log?"
-            : "Resolve Emergency Log?"
+            : confirmDialog.status === "resolved"
+              ? "Resolve Emergency Log?"
+              : confirmDialog.status === "dispatched"
+                ? "Dispatch Emergency Log?"
+                : confirmDialog.status === "active"
+                  ? "Set Log to Active?"
+                  : "Change Status?"
         }
         message={
           confirmDialog.status === "cancelled"
             ? "Are you sure you want to cancel this emergency log? This action marks the request as no longer needed."
-            : "Are you sure you want to resolve this emergency log? This marks the request as successfully handled."
+            : confirmDialog.status === "resolved"
+              ? "Are you sure you want to resolve this emergency log? This marks the request as successfully handled."
+              : confirmDialog.status === "dispatched"
+                ? "Are you sure you want to mark this log as dispatched? This indicates that responders have been deployed to the incident."
+                : confirmDialog.status === "active"
+                  ? "Are you sure you want to set this log back to active? This indicates the incident still requires attention."
+                  : "Are you sure you want to change the status of this log?"
         }
         confirmLabel={
-          confirmDialog.status === "cancelled" ? "Yes, Cancel" : "Yes, Resolve"
+          confirmDialog.status === "cancelled"
+            ? "Yes, Cancel"
+            : confirmDialog.status === "resolved"
+              ? "Yes, Resolve"
+              : confirmDialog.status === "dispatched"
+                ? "Yes, Dispatch"
+                : confirmDialog.status === "active"
+                  ? "Yes, Set Active"
+                  : "Confirm"
         }
         isDestructive={confirmDialog.status === "cancelled"}
         onConfirm={() => {
-          executeStatusChange(confirmDialog.status);
-          setConfirmDialog({ isOpen: false, status: "" });
+          executeStatusChange(
+            confirmDialog.status as LogStatus,
+            confirmDialog.remarks,
+          );
+          setConfirmDialog({ isOpen: false, status: "", remarks: "" });
         }}
-        onCancel={() => setConfirmDialog({ isOpen: false, status: "" })}
-      />
+        onCancel={() =>
+          setConfirmDialog({ isOpen: false, status: "", remarks: "" })
+        }
+      >
+        <div className="mt-4">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-foreground/60">
+            Remarks (Optional)
+          </label>
+          <textarea
+            value={confirmDialog.remarks}
+            onChange={(event) =>
+              setConfirmDialog((current) => ({
+                ...current,
+                remarks: event.target.value,
+              }))
+            }
+            rows={2}
+            placeholder="Add context for this status change..."
+            className="w-full resize-none rounded-lg border border-background-subtle bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+          />
+        </div>
+      </ConfirmationDialog>
 
       <SelectorDialog
         isOpen={isNeedsOpen}

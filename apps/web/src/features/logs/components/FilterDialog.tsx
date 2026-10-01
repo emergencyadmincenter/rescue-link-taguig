@@ -62,12 +62,13 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
                   <button
                     key={s}
                     onClick={() => setFilters((p) => ({ ...p, status: p.status === s ? undefined : s }))}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm font-medium transition-all ${
                       isActive
                         ? `${config.borderClass} ${config.textClass} bg-opacity-5 border-2`
                         : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${config.dotClass}`} aria-hidden="true" />
                     {config.label}
                   </button>
                 );

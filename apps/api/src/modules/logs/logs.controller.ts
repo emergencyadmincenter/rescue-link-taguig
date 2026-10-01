@@ -18,6 +18,7 @@ import { LogsService } from './logs.service';
 import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
 import { UpdateLogDto } from './dto/update-log.dto';
+import { UpdateCoordinationDto } from './dto/update-coordination.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -70,18 +71,21 @@ export class LogsController {
         }
       }
     }
-    
+
     const result = await this.logsService.getResidentMyLogs(callIds);
     return ApiResponse.success(result);
   }
 
   @Get('resident/call/:callId')
-  async getResidentLogByCallId(@Param('callId') callId: string, @Req() req: Request) {
+  async getResidentLogByCallId(
+    @Param('callId') callId: string,
+    @Req() req: Request,
+  ) {
     const isResident = req.cookies[`resident_call_${callId}`] === 'true';
     if (!isResident) {
       throw new NotFoundException('Log not found');
     }
-    
+
     const result = await this.logsService.getResidentLogByCallId(callId);
     return ApiResponse.success(result);
   }
@@ -110,6 +114,32 @@ export class LogsController {
   @Roles('admin', 'coordinator')
   async shareLog(@Param('id') id: string) {
     const result = await this.logsService.generateShareLink(id);
+    return ApiResponse.success(result);
+  }
+
+  @Get(':id/coordinations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async getLogCoordinations(@Param('id') id: string) {
+    const result = await this.logsService.getLogCoordinations(id);
+    return ApiResponse.success(result);
+  }
+
+  @Post(':id/coordinations/:agencyId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async updateLogCoordination(
+    @Param('id') id: string,
+    @Param('agencyId') agencyId: string,
+    @Body() dto: UpdateCoordinationDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const result = await this.logsService.updateLogCoordination(
+      id,
+      agencyId,
+      dto,
+      user.sub,
+    );
     return ApiResponse.success(result);
   }
 

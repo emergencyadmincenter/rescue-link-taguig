@@ -65,11 +65,21 @@ export class CommunicationsController {
     const clientIp = this.fraudDetectionService.extractClientIp(req);
 
     // Shadow Ban Check (Layer 3)
-    const shadowBan = await this.shadowBansService.getActiveBan(dto.device_uuid, dto.fingerprint_hash, clientIp);
+    const shadowBan = await this.shadowBansService.getActiveBan(
+      dto.device_uuid,
+      dto.fingerprint_hash,
+      clientIp,
+    );
     if (shadowBan) {
       // Create quarantined record and return success silently
-      await this.shadowBansService.quarantineRequest(dto, dto.device_uuid, dto.fingerprint_hash, clientIp, shadowBan.reason);
-      
+      await this.shadowBansService.quarantineRequest(
+        dto,
+        dto.device_uuid,
+        dto.fingerprint_hash,
+        clientIp,
+        shadowBan.reason,
+      );
+
       const isProduction = process.env.NODE_ENV === 'production';
       const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
@@ -103,11 +113,20 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         location_accuracy: dto.locationAccuracy,
-        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_timestamp: dto.locationTimestamp
+          ? new Date(dto.locationTimestamp)
+          : undefined,
         location_status: dto.locationStatus,
         channels: [dto.communicationMethod],
         description: '',
         resident_visible_until: expiresAt,
+        status_history: {
+          create: {
+            previous_status: null,
+            new_status: 'active',
+            remarks: 'Emergency request created.',
+          },
+        },
       },
     });
 
@@ -118,29 +137,38 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         location_accuracy: dto.locationAccuracy,
-        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_timestamp: dto.locationTimestamp
+          ? new Date(dto.locationTimestamp)
+          : undefined,
         location_status: dto.locationStatus,
         log_id: log.id,
       },
     });
 
     try {
-      const assessmentPromise = this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude).then((assessment) => {
-        return this.fraudDetectionService.saveFraudAssessment(
-          log.id,
-          call.id,
-          assessment,
-          dto.latitude,
-          dto.longitude,
-          dto.device_uuid,
-          dto.fingerprint_hash
-        );
-      });
+      const assessmentPromise = this.fraudDetectionService
+        .analyzeFraudRisk(clientIp, dto.latitude, dto.longitude)
+        .then((assessment) => {
+          return this.fraudDetectionService.saveFraudAssessment(
+            log.id,
+            call.id,
+            assessment,
+            dto.latitude,
+            dto.longitude,
+            dto.device_uuid,
+            dto.fingerprint_hash,
+          );
+        });
       // 2 second timeout to ensure it never blocks the emergency request if ip-api is slow
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Fraud detection timeout')), 2000));
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Fraud detection timeout')), 2000),
+      );
       await Promise.race([assessmentPromise, timeoutPromise]);
     } catch (err) {
-      console.warn('Fraud assessment timed out or failed, continuing emergency processing...', err);
+      console.warn(
+        'Fraud assessment timed out or failed, continuing emergency processing...',
+        err,
+      );
     }
 
     await this.communicationsService.startRouting(
@@ -152,7 +180,10 @@ export class CommunicationsController {
     // Auto-populate barangay from caller GPS coordinates.
     // The DB update is fire-and-forget; note that barangay resolution itself runs in-process.
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
-      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      const barangay = this.barangayResolverService.resolveBarangay(
+        dto.latitude,
+        dto.longitude,
+      );
       if (barangay) {
         this.prisma.log
           .update({ where: { id: log.id }, data: { barangay } })
@@ -237,20 +268,38 @@ export class CommunicationsController {
       resource_ids?: string[];
     },
   ) {
-    const call = await this.prisma.call.findUnique({ where: { id } });
+    const call = await this.prisma.call.findUnique({
+      where: { id },
+      include: { log: { select: { status: true } } },
+    });
     if (!call) throw new NotFoundException('Call not found');
 
     if (call.log_id) {
-      const log = await this.prisma.log.update({
-        where: { id: call.log_id },
-        data: {
-          caller_name: dto.caller_name,
-          caller_contact: dto.caller_contact,
-          address: dto.address,
-          description: dto.description,
-          status: 'resolved',
-          resolved_at: new Date(),
-        },
+      const log = await this.prisma.$transaction(async (tx) => {
+        const updatedLog = await tx.log.update({
+          where: { id: call.log_id as string },
+          data: {
+            caller_name: dto.caller_name,
+            caller_contact: dto.caller_contact,
+            address: dto.address,
+            description: dto.description,
+            status: 'resolved',
+            resolved_at: new Date(),
+          },
+        });
+        if (call.log?.status !== 'resolved') {
+          await tx.logStatusHistory.create({
+            data: {
+              log_id: updatedLog.id,
+              previous_status: call.log?.status,
+              new_status: 'resolved',
+              changed_by_id: call.coordinator_id,
+              remarks:
+                'Log resolved when the communication session was finalized.',
+            },
+          });
+        }
+        return updatedLog;
       });
       return { success: true, data: log };
     }
@@ -276,6 +325,15 @@ export class CommunicationsController {
         longitude: call.longitude,
         channels: [call.communication_method],
         resident_visible_until: expiresAt,
+        status_history: {
+          create: {
+            previous_status: null,
+            new_status: 'resolved',
+            changed_by_id: call.coordinator_id,
+            remarks:
+              'Resolved Log created when the communication session was finalized.',
+          },
+        },
       },
     });
 
@@ -348,18 +406,25 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         location_accuracy: dto.locationAccuracy,
-        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_timestamp: dto.locationTimestamp
+          ? new Date(dto.locationTimestamp)
+          : undefined,
         location_status: dto.locationStatus,
       },
     });
 
     // Auto-populate barangay from updated GPS coordinates if not already set.
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
-      const barangay = this.barangayResolverService.resolveBarangay(dto.latitude, dto.longitude);
+      const barangay = this.barangayResolverService.resolveBarangay(
+        dto.latitude,
+        dto.longitude,
+      );
       if (barangay) {
         this.prisma.log
           .update({ where: { id: call.log_id }, data: { barangay } })
-          .catch((err) => console.error('Failed to update barangay on location update:', err));
+          .catch((err) =>
+            console.error('Failed to update barangay on location update:', err),
+          );
       }
     }
 
@@ -369,7 +434,9 @@ export class CommunicationsController {
         latitude: dto.latitude,
         longitude: dto.longitude,
         location_accuracy: dto.locationAccuracy,
-        location_timestamp: dto.locationTimestamp ? new Date(dto.locationTimestamp) : undefined,
+        location_timestamp: dto.locationTimestamp
+          ? new Date(dto.locationTimestamp)
+          : undefined,
         location_status: dto.locationStatus,
       },
     });
@@ -383,7 +450,7 @@ export class CommunicationsController {
 
       // Re-run fraud detection silently
       const clientIp = this.fraudDetectionService.extractClientIp(req);
-      
+
       // We fetch the most recent fraud assessment to get the device IDs if needed
       const prevAssessment = await this.prisma.fraudAssessment.findFirst({
         where: { call_id: id },
@@ -391,7 +458,11 @@ export class CommunicationsController {
       });
 
       try {
-        const assessment = await this.fraudDetectionService.analyzeFraudRisk(clientIp, dto.latitude, dto.longitude);
+        const assessment = await this.fraudDetectionService.analyzeFraudRisk(
+          clientIp,
+          dto.latitude,
+          dto.longitude,
+        );
         await this.fraudDetectionService.saveFraudAssessment(
           log.id,
           call.id,
@@ -399,7 +470,7 @@ export class CommunicationsController {
           dto.latitude,
           dto.longitude,
           prevAssessment?.device_uuid || undefined,
-          prevAssessment?.fingerprint_hash || undefined
+          prevAssessment?.fingerprint_hash || undefined,
         );
       } catch (err) {
         console.warn('Fraud assessment failed during location update', err);

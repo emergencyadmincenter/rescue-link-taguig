@@ -2,12 +2,40 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
 @Injectable()
 export class ShadowBansService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly defaultDurations = {
+    low: 24 * 60 * 60 * 1000,
+    high: 7 * 24 * 60 * 60 * 1000,
+    critical: null,
+  } as const;
+
+  private readonly categorySeverities = {
+    fake_rescue_call: 'high',
+    spam: 'low',
+    fraudulent_activity: 'critical',
+    abusive_malicious_use: 'high',
+    impersonation_identity_misuse: 'high',
+    coordinated_system_abuse: 'critical',
+  } as const;
+
+  private readonly validCategories = new Set([
+    'fake_rescue_call',
+    'spam',
+    'fraudulent_activity',
+    'abusive_malicious_use',
+    'impersonation_identity_misuse',
+    'coordinated_system_abuse',
+    'other',
+  ]);
+
+  private readonly validSeverities = new Set(['low', 'high', 'critical']);
 
   async getActiveBan(
     device_uuid?: string,
@@ -35,6 +63,7 @@ export class ShadowBansService {
       data: {
         active: false,
         unban_reason: 'Automatically expired',
+        unbanned_at: now,
       },
     });
 
@@ -79,6 +108,9 @@ export class ShadowBansService {
     reason: string,
     coordinatorId: string,
     expires_at?: Date,
+    violationCategory = 'other',
+    severity?: string,
+    details?: string,
   ) {
     const call = await this.prisma.call.findUnique({
       where: { id: callId },
@@ -112,6 +144,53 @@ export class ShadowBansService {
     }
 
     if (action === 'ban') {
+      if (!reason?.trim()) {
+        throw new BadRequestException(
+          'A reason is required to apply a shadow ban',
+        );
+      }
+      if (!this.validCategories.has(violationCategory)) {
+        throw new BadRequestException('Invalid shadow-ban violation category');
+      }
+      const categorySeverity =
+        this.categorySeverities[
+          violationCategory as keyof typeof this.categorySeverities
+        ];
+      if (categorySeverity && severity && severity !== categorySeverity) {
+        throw new BadRequestException(
+          'This violation category has a fixed severity under the enforcement policy',
+        );
+      }
+      const effectiveSeverity = categorySeverity ?? severity ?? 'low';
+      if (!this.validSeverities.has(effectiveSeverity)) {
+        throw new BadRequestException('Invalid shadow-ban severity');
+      }
+
+      const defaultDuration =
+        this.defaultDurations[
+          effectiveSeverity as keyof typeof this.defaultDurations
+        ];
+      if (severity === 'critical' && expires_at !== undefined) {
+        throw new BadRequestException(
+          'Critical violations require an indefinite restriction',
+        );
+      }
+      if (
+        severity === 'high' &&
+        expires_at &&
+        expires_at.getTime() - Date.now() < 24 * 60 * 60 * 1000
+      ) {
+        throw new BadRequestException(
+          'High-severity violations require at least a 24-hour restriction',
+        );
+      }
+      const usesPolicyDuration = Boolean(categorySeverity || severity);
+      const effectiveExpiresAt = usesPolicyDuration
+        ? defaultDuration === null
+          ? undefined
+          : new Date(Date.now() + defaultDuration)
+        : expires_at;
+
       await this.prisma.shadowBan.create({
         data: {
           device_uuid,
@@ -119,9 +198,12 @@ export class ShadowBansService {
           client_ip,
           caller_contact,
           reason,
+          violation_category: violationCategory as any,
+          severity: effectiveSeverity as any,
+          details: details?.trim() || undefined,
           created_by_id: coordinatorId,
           active: true,
-          expires_at,
+          expires_at: effectiveExpiresAt,
         },
       });
     } else {
@@ -139,6 +221,8 @@ export class ShadowBansService {
         data: {
           active: false,
           unban_reason: reason, // In this case reason acts as unban_reason
+          unbanned_at: new Date(),
+          unbanned_by_id: coordinatorId,
         },
       });
     }
@@ -163,5 +247,62 @@ export class ShadowBansService {
       fraudAssessment.client_ip,
     );
     return ban;
+  }
+
+  async getStatusByCall(callId: string) {
+    const call = await this.prisma.call.findUnique({
+      where: { id: callId },
+      include: {
+        fraud_assessments: { orderBy: { created_at: 'desc' }, take: 1 },
+      },
+    });
+
+    if (!call) throw new NotFoundException('Call not found');
+
+    const assessment = call.fraud_assessments[0];
+    if (!assessment) return { isBanned: false, current: null, history: [] };
+
+    const identifiers = [
+      assessment.device_uuid
+        ? { device_uuid: assessment.device_uuid }
+        : undefined,
+      assessment.fingerprint_hash
+        ? { fingerprint_hash: assessment.fingerprint_hash }
+        : undefined,
+      assessment.client_ip ? { client_ip: assessment.client_ip } : undefined,
+    ].filter(Boolean) as any[];
+
+    const now = new Date();
+    await this.prisma.shadowBan.updateMany({
+      where: {
+        active: true,
+        OR: identifiers,
+        expires_at: { lte: now },
+      },
+      data: {
+        active: false,
+        unban_reason: 'Automatically expired',
+        unbanned_at: now,
+      },
+    });
+
+    const history = await this.prisma.shadowBan.findMany({
+      where: { OR: identifiers },
+      orderBy: { created_at: 'desc' },
+      include: {
+        created_by: { select: { id: true, name: true } },
+        unbanned_by: { select: { id: true, name: true } },
+      },
+    });
+
+    const current = history.find(
+      (ban) => ban.active && (!ban.expires_at || ban.expires_at > now),
+    );
+
+    return {
+      isBanned: Boolean(current),
+      current: current ?? null,
+      history,
+    };
   }
 }

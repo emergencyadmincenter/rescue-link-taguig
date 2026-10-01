@@ -9,9 +9,12 @@ import {
   FiUser,
   FiPhone,
   FiArrowLeft,
+  FiActivity,
 } from "react-icons/fi";
 import InteractiveLocationMap from "@/features/logs/components/InteractiveLocationMap";
 import Image from "next/image";
+import { STATUS_CONFIG } from "../constants/logs.constants";
+import { LogStatus } from "../types/logs.types";
 
 interface SharedLogViewProps {
   log: any;
@@ -27,21 +30,28 @@ export default function SharedLogView({
   footerText = "This is a securely shared public record. Sensitive internal data has been redacted.",
 }: SharedLogViewProps) {
   const getStatusColor = (status: string) => {
+    const config = STATUS_CONFIG[status as LogStatus];
+    if (config) return config.bgClass + " text-white";
     switch (status?.toLowerCase()) {
-      case "active":
       case "ringing":
         return "bg-danger text-white";
-      case "dispatched":
-        return "bg-warning text-warning-foreground";
-      case "resolved":
       case "ended":
         return "bg-success text-white";
-      case "cancelled":
       case "dropped":
         return "bg-gray-500 text-white";
       default:
         return "bg-gray-200 text-gray-700";
     }
+  };
+
+  const getStatusDotClass = (status: string) => {
+    const config = STATUS_CONFIG[status as LogStatus];
+    return config?.dotClass ?? "bg-white/30";
+  };
+
+  const getStatusLabel = (status: string) => {
+    const config = STATUS_CONFIG[status as LogStatus];
+    return config?.label ?? status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
@@ -87,9 +97,10 @@ export default function SharedLogView({
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusColor(log.status)}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusColor(log.status)}`}
                 >
-                  {log.status}
+                  <span className={`w-1.5 h-1.5 rounded-full bg-white/30`} aria-hidden="true" />
+                  {getStatusLabel(log.status)}
                 </span>
                 <span className="text-gray-400 text-sm font-medium">
                   Ref: {log.reference_no}
@@ -239,6 +250,76 @@ export default function SharedLogView({
                     )}
                 </div>
               </section>
+
+              {log.status_history && log.status_history.length > 0 && (
+                <section>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <FiActivity className="w-4 h-4" /> Status History
+                  </h3>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div className="relative max-h-[320px] space-y-4 overflow-y-auto custom-scrollbar pr-2">
+                      <div className="absolute bottom-3 left-[7px] top-3 w-px bg-gray-200" />
+                      {log.status_history.map(
+                        (
+                          entry: {
+                            previous_status: string | null;
+                            new_status: string;
+                            changed_at: string;
+                            remarks?: string | null;
+                          },
+                          index: number,
+                        ) => {
+                          const isCurrent =
+                            index === log.status_history.length - 1 &&
+                            entry.new_status === log.status;
+                          const previousLabel = entry.previous_status
+                            ? getStatusLabel(entry.previous_status)
+                            : null;
+
+                          return (
+                            <div
+                              key={`${entry.changed_at}-${index}`}
+                              className="relative flex gap-3"
+                            >
+                              <div
+                                className={`relative z-10 mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-gray-50 ${getStatusDotClass(entry.new_status)} ${isCurrent ? "ring-2 ring-primary/20" : ""}`}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {previousLabel
+                                      ? `${previousLabel} to ${getStatusLabel(entry.new_status)}`
+                                      : `Created as ${getStatusLabel(entry.new_status)}`}
+                                    {isCurrent && (
+                                      <span className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_CONFIG[log.status as LogStatus]?.subtleBgClass ?? 'bg-primary/10'} ${STATUS_CONFIG[log.status as LogStatus]?.subtleTextClass ?? 'text-primary'}`}>
+                                        <span className={`w-1 h-1 rounded-full ${getStatusDotClass(log.status)}`} aria-hidden="true" />
+                                        Current
+                                      </span>
+                                    )}
+                                  </p>
+                                  <time
+                                    className="text-xs text-gray-400"
+                                    dateTime={entry.changed_at}
+                                  >
+                                    {new Date(
+                                      entry.changed_at,
+                                    ).toLocaleString()}
+                                  </time>
+                                </div>
+                                {entry.remarks && (
+                                  <p className="mt-1 text-xs italic text-gray-500">
+                                    {entry.remarks}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               <section>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
