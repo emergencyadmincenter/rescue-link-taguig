@@ -5,6 +5,7 @@ import {
   FiClock,
   FiPlus,
   FiPhoneForwarded,
+  FiX,
 } from "react-icons/fi";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
@@ -47,6 +48,17 @@ export function AgencyCoordinationSection({
     }
   };
 
+  const handleDeleteCoordination = async (agencyId: string) => {
+    if (isReadOnly) return;
+    try {
+      await logsApi.deleteLogCoordination(logId, agencyId);
+      toast.success('Agency coordination removed');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to remove agency');
+    }
+  };
+
   const handleUpdateStatus = async (agencyId: string, status: string) => {
     if (isReadOnly) return;
     try {
@@ -58,7 +70,7 @@ export function AgencyCoordinationSection({
     }
   };
 
-  if (isLoading) {
+  if (isLoading && allAgencies.length === 0) {
     return (
       <div className="p-4 text-xs opacity-50">Loading coordination data...</div>
     );
@@ -75,7 +87,7 @@ export function AgencyCoordinationSection({
   );
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 transition-opacity duration-200 ${isLoading ? "opacity-50 pointer-events-none" : ""}`}>
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-wider flex items-center gap-2">
           <FiShield className="w-4 h-4" /> Agency Coordination
@@ -129,81 +141,126 @@ export function AgencyCoordinationSection({
             return (
               <div
                 key={agency.id}
-                className="p-3 bg-background-subtle/30 border border-background-subtle rounded-lg flex flex-col gap-2 relative"
+                className="relative group p-4 bg-background border border-background-subtle rounded-xl hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 {isRecommended && (
-                  <span className="absolute -top-2 -left-2 bg-info text-info-foreground text-[9px] uppercase font-bold px-1.5 py-0.5 rounded shadow-sm">
+                  <span className="absolute -top-2.5 -right-2 bg-info text-info-foreground text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shadow-sm border border-background">
                     Recommended
                   </span>
                 )}
 
-                <div className="flex justify-between items-start pt-1">
-                  <div>
-                    <h4 className="text-sm font-medium">{agency.name}</h4>
-                    {agency.contact_info && (
-                      <p className="text-[11px] text-foreground/60 mt-0.5 flex items-center gap-1">
-                        <FiPhoneForwarded className="w-3 h-3" />{" "}
-                        {agency.contact_info}
-                      </p>
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div
+                    className={`mt-1 p-2 rounded-full shrink-0 ${
+                      status === "completed"
+                        ? "bg-success/15 text-success"
+                        : status === "contacted"
+                          ? "bg-primary/15 text-primary"
+                          : "bg-warning/15 text-warning"
+                    }`}
+                  >
+                    {status === "completed" ? (
+                      <FiCheck className="w-4 h-4" />
+                    ) : status === "contacted" ? (
+                      <FiPhoneForwarded className="w-4 h-4" />
+                    ) : (
+                      <FiClock className="w-4 h-4" />
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {status === "pending" && (
-                      <span className="px-2 py-1 bg-warning/10 text-warning text-[10px] font-bold uppercase rounded flex items-center gap-1">
-                        <FiClock className="w-3 h-3" /> Pending
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-semibold flex flex-wrap items-center gap-2">
+                      <span className="truncate">{agency.name}</span>
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                          status === "completed"
+                            ? "text-success bg-success/10"
+                            : status === "contacted"
+                              ? "text-primary bg-primary/10"
+                              : "text-warning bg-warning/10"
+                        }`}
+                      >
+                        {status}
                       </span>
-                    )}
-                    {status === "contacted" && (
-                      <span className="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase rounded flex items-center gap-1">
-                        <FiPhoneForwarded className="w-3 h-3" /> Contacted
-                      </span>
-                    )}
-                    {status === "completed" && (
-                      <span className="px-2 py-1 bg-success/10 text-success text-[10px] font-bold uppercase rounded flex items-center gap-1">
-                        <FiCheck className="w-3 h-3" /> Completed
-                      </span>
+                    </h4>
+                    {agency.contact_info ? (
+                      <p className="text-xs text-foreground/60 mt-1 flex items-center gap-1.5 truncate">
+                        <FiPhoneForwarded className="w-3 h-3 shrink-0" />{" "}
+                        {agency.contact_info}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-foreground/40 mt-1 italic">
+                        No contact info available
+                      </p>
                     )}
                   </div>
                 </div>
 
                 {!isReadOnly && (
-                  <div className="flex gap-2 mt-2 pt-2 border-t border-background-subtle/50">
-                    <button
-                      onClick={() => handleUpdateStatus(agency.id, "pending")}
-                      disabled={status === "pending"}
-                      className="text-[10px] font-medium px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:bg-foreground/5 disabled:text-foreground/40 bg-background hover:bg-background-subtle border border-background-subtle"
-                    >
-                      Reset to Pending
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(agency.id, "contacted")}
-                      disabled={status === "contacted"}
-                      className="text-[10px] font-medium px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:bg-primary/20 disabled:text-primary bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground border border-primary/20"
-                    >
-                      Mark Contacted
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(agency.id, "completed")}
-                      disabled={status === "completed"}
-                      className="text-[10px] font-medium px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:bg-success/20 disabled:text-success bg-success/10 text-success hover:bg-success hover:text-success-foreground border border-success/20"
-                    >
-                      Mark Completed
-                    </button>
+                  <div className="flex flex-wrap items-center gap-3 sm:shrink-0 pt-2 sm:pt-0 mt-2 sm:mt-0 border-t sm:border-0 border-background-subtle">
+                    <div className="flex bg-background-subtle/50 p-1 rounded-lg border border-background-subtle items-center">
+                      <button
+                        onClick={() => handleUpdateStatus(agency.id, "pending")}
+                        disabled={status === "pending"}
+                        className={`px-3 py-1 text-xs rounded-md font-semibold transition-all ${
+                          status === "pending"
+                            ? "bg-background text-warning shadow-sm ring-1 ring-background-subtle"
+                            : "text-foreground/50 hover:text-foreground hover:bg-background-subtle/50"
+                        }`}
+                      >
+                        Pending
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus(agency.id, "contacted")}
+                        disabled={status === "contacted"}
+                        className={`px-3 py-1 text-xs rounded-md font-semibold transition-all ${
+                          status === "contacted"
+                            ? "bg-background text-primary shadow-sm ring-1 ring-background-subtle"
+                            : "text-foreground/50 hover:text-foreground hover:bg-background-subtle/50"
+                        }`}
+                      >
+                        Contacted
+                      </button>
+                      <button
+                        onClick={() => handleUpdateStatus(agency.id, "completed")}
+                        disabled={status === "completed"}
+                        className={`px-3 py-1 text-xs rounded-md font-semibold transition-all ${
+                          status === "completed"
+                            ? "bg-background text-success shadow-sm ring-1 ring-background-subtle"
+                            : "text-foreground/50 hover:text-foreground hover:bg-background-subtle/50"
+                        }`}
+                      >
+                        Completed
+                      </button>
+                    </div>
+
+                    {!isRecommended && (
+                      <button
+                        onClick={() => handleDeleteCoordination(agency.id)}
+                        title="Remove manually added agency"
+                        className="p-1.5 text-foreground/40 hover:text-danger hover:bg-danger/10 rounded-md transition-colors active:scale-95"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 )}
-
+                
                 {coordRecord?.updated_at && (
-                  <p className="text-[10px] text-foreground/40 text-right w-full mt-1">
-                    Last updated by {coordRecord.created_by?.name || "System"}{" "}
-                    at {new Date(coordRecord.updated_at).toLocaleString()}
-                  </p>
+                    <p className="text-[9px] text-foreground/40 absolute -bottom-5 right-0 hidden sm:block">
+                      Updated by {coordRecord.created_by?.name || "System"} at {new Date(coordRecord.updated_at).toLocaleString()}
+                    </p>
                 )}
               </div>
             );
           })
         )}
+
+        </div>
       </div>
-    </div>
-  );
+    );
 }
+
+
+
+

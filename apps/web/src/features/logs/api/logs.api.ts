@@ -95,4 +95,9 @@ export const logsApi = {
     apiClient
       .post(`/logs/${id}/coordinations/${agencyId}`, data)
       .then((res) => res.data.data),
+
+  deleteLogCoordination: (id: string, agencyId: string): Promise<any> =>
+    apiClient
+      .delete(`/logs/${id}/coordinations/${agencyId}`)
+      .then((res) => res.data.data),
 };

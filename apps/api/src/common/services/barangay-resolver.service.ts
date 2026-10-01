@@ -26,7 +26,13 @@ export class BarangayResolverService implements OnModuleInit {
     const candidatePaths = [
       path.join(__dirname, '..', 'data', 'taguig-barangays.geojson'),
       // Fallback for local development when Nest CLI has not copied assets to dist
-      path.join(process.cwd(), 'src', 'common', 'data', 'taguig-barangays.geojson'),
+      path.join(
+        process.cwd(),
+        'src',
+        'common',
+        'data',
+        'taguig-barangays.geojson',
+      ),
     ];
 
     let geojsonPath: string | null = null;
@@ -52,7 +58,9 @@ export class BarangayResolverService implements OnModuleInit {
         `Loaded ${this.barangayFeatures.length} barangay polygons from ${geojsonPath}`,
       );
     } catch (err) {
-      this.logger.error(`Failed to parse taguig-barangays.geojson: ${(err as Error).message}`);
+      this.logger.error(
+        `Failed to parse taguig-barangays.geojson: ${(err as Error).message}`,
+      );
     }
   }
 
@@ -63,7 +71,10 @@ export class BarangayResolverService implements OnModuleInit {
    *  - the GeoJSON failed to load
    *  - the point does not fall inside any known barangay polygon
    */
-  resolveBarangay(latitude: number | null | undefined, longitude: number | null | undefined): string | null {
+  resolveBarangay(
+    latitude: number | null | undefined,
+    longitude: number | null | undefined,
+  ): string | null {
     if (
       latitude == null ||
       longitude == null ||
@@ -86,7 +97,14 @@ export class BarangayResolverService implements OnModuleInit {
           (feature.geometry.type === 'Polygon' ||
             feature.geometry.type === 'MultiPolygon')
         ) {
-          if (turf.booleanPointInPolygon(pt, feature as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>)) {
+          if (
+            turf.booleanPointInPolygon(
+              pt,
+              feature as GeoJSON.Feature<
+                GeoJSON.Polygon | GeoJSON.MultiPolygon
+              >,
+            )
+          ) {
             // Return the barangay name from GeoJSON properties
             const name: string | undefined =
               (feature.properties as Record<string, any>)?.['name'] ??
@@ -97,7 +115,9 @@ export class BarangayResolverService implements OnModuleInit {
         }
       }
     } catch (err) {
-      this.logger.error(`Barangay point-in-polygon check failed: ${(err as Error).message}`);
+      this.logger.error(
+        `Barangay point-in-polygon check failed: ${(err as Error).message}`,
+      );
     }
 
     return null;

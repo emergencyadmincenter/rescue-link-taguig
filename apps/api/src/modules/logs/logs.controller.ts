@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Delete,
   Param,
   Query,
   UseGuards,
@@ -145,6 +146,17 @@ export class LogsController {
       dto,
       user.sub,
     );
+    return ApiResponse.success(result);
+  }
+
+  @Delete(':id/coordinations/:agencyId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async removeLogCoordination(
+    @Param('id') id: string,
+    @Param('agencyId') agencyId: string,
+  ) {
+    const result = await this.logsService.removeLogCoordination(id, agencyId);
     return ApiResponse.success(result);
   }
 

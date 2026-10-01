@@ -35,7 +35,8 @@ export class InsightsService {
 
     if (filters.dateFrom || filters.dateTo) {
       where.created_at = {};
-      if (filters.dateFrom) where.created_at.gte = parsePhDateStart(filters.dateFrom);
+      if (filters.dateFrom)
+        where.created_at.gte = parsePhDateStart(filters.dateFrom);
       if (filters.dateTo) where.created_at.lte = parsePhDateEnd(filters.dateTo);
     }
 
@@ -56,7 +57,7 @@ export class InsightsService {
         longitude: true,
         status: true,
         incident_category: {
-          select: { name: true }
+          select: { name: true },
         },
         barangay: true,
         created_at: true,
@@ -66,7 +67,7 @@ export class InsightsService {
       take: 1000, // Limit for performance on map
     });
 
-    return logs.map(l => ({
+    return logs.map((l) => ({
       ...l,
       // Prisma returns Decimal fields as Decimal objects which JSON-serialize as strings.
       // Convert explicitly to JS numbers so Leaflet receives the correct numeric type.
@@ -78,12 +79,22 @@ export class InsightsService {
   }
 
   async getResponseTimesByBarangay(filters: InsightsFilters = {}) {
-    const conditions: string[] = ["1=1"];
+    const conditions: string[] = ['1=1'];
 
-    if (filters.dateFrom) conditions.push(`created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`);
-    if (filters.dateTo) conditions.push(`created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`);
-    if (filters.barangay) conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}'`);
-    if (filters.incidentCategoryId) conditions.push(`incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `);
+    if (filters.dateFrom)
+      conditions.push(
+        `created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`,
+      );
+    if (filters.dateTo)
+      conditions.push(
+        `created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`,
+      );
+    if (filters.barangay)
+      conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}'`);
+    if (filters.incidentCategoryId)
+      conditions.push(
+        `incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `,
+      );
 
     const whereClause = conditions.join(' AND ');
 
@@ -99,23 +110,30 @@ export class InsightsService {
       ORDER BY total_cases DESC, avg_response_time_seconds ASC
     `);
 
-    return (result as any[]).map(row => ({
+    return (result as any[]).map((row) => ({
       barangay: row.barangay,
-      avg_response_time_seconds: row.avg_response_time_seconds ? Number(row.avg_response_time_seconds) : null,
+      avg_response_time_seconds: row.avg_response_time_seconds
+        ? Number(row.avg_response_time_seconds)
+        : null,
       total_cases: Number(row.total_cases),
-      total_resolved: Number(row.total_resolved)
+      total_resolved: Number(row.total_resolved),
     }));
   }
 
   async getCoordinatorWorkload(filters: InsightsFilters = {}) {
-    const where: Prisma.LogWhereInput = { assigned_coordinator_id: { not: null } };
+    const where: Prisma.LogWhereInput = {
+      assigned_coordinator_id: { not: null },
+    };
     if (filters.dateFrom || filters.dateTo) {
       where.created_at = {};
-      if (filters.dateFrom) (where.created_at as any).gte = parsePhDateStart(filters.dateFrom);
-      if (filters.dateTo) (where.created_at as any).lte = parsePhDateEnd(filters.dateTo);
+      if (filters.dateFrom)
+        (where.created_at as any).gte = parsePhDateStart(filters.dateFrom);
+      if (filters.dateTo)
+        (where.created_at as any).lte = parsePhDateEnd(filters.dateTo);
     }
     if (filters.barangay) where.barangay = filters.barangay;
-    if (filters.incidentCategoryId) where.incident_category_id = filters.incidentCategoryId;
+    if (filters.incidentCategoryId)
+      where.incident_category_id = filters.incidentCategoryId;
 
     const result = await this.prisma.log.groupBy({
       by: ['assigned_coordinator_id'],
@@ -123,7 +141,9 @@ export class InsightsService {
       where,
     });
 
-    const coordinatorIds = result.map((r) => r.assigned_coordinator_id as string);
+    const coordinatorIds = result.map(
+      (r) => r.assigned_coordinator_id as string,
+    );
     const users = await this.prisma.user.findMany({
       where: { id: { in: coordinatorIds } },
       select: { id: true, name: true },
@@ -131,21 +151,36 @@ export class InsightsService {
 
     const userMap = new Map(users.map((u) => [u.id, u.name]));
 
-    return result.map((r) => ({
-      coordinator_id: r.assigned_coordinator_id,
-      coordinator_name: userMap.get(r.assigned_coordinator_id as string) || 'Unknown',
-      handled_cases: r._count.id,
-    })).sort((a, b) => b.handled_cases - a.handled_cases);
+    return result
+      .map((r) => ({
+        coordinator_id: r.assigned_coordinator_id,
+        coordinator_name:
+          userMap.get(r.assigned_coordinator_id as string) || 'Unknown',
+        handled_cases: r._count.id,
+      }))
+      .sort((a, b) => b.handled_cases - a.handled_cases);
   }
 
   async getPeakTimes(filters: InsightsFilters = {}) {
     const conditions: string[] = [];
-    if (filters.dateFrom) conditions.push(`created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`);
-    if (filters.dateTo) conditions.push(`created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`);
-    if (filters.barangay) conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}' `);
-    if (filters.incidentCategoryId) conditions.push(`incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `);
+    if (filters.dateFrom)
+      conditions.push(
+        `created_at >= '${parsePhDateStart(filters.dateFrom).toISOString()}'`,
+      );
+    if (filters.dateTo)
+      conditions.push(
+        `created_at <= '${parsePhDateEnd(filters.dateTo).toISOString()}'`,
+      );
+    if (filters.barangay)
+      conditions.push(`barangay = '${filters.barangay.replace(/'/g, "''")}' `);
+    if (filters.incidentCategoryId)
+      conditions.push(
+        `incident_category_id = '${filters.incidentCategoryId.replace(/'/g, "''")}' `,
+      );
 
-    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(' AND ')}`
+      : '';
 
     const result = await this.prisma.$queryRawUnsafe(`
       SELECT 
@@ -157,7 +192,7 @@ export class InsightsService {
       GROUP BY day_of_week, hour_of_day
     `);
 
-    return (result as any[]).map(r => ({
+    return (result as any[]).map((r) => ({
       dayOfWeek: Number(r.day_of_week),
       hourOfDay: Number(r.hour_of_day),
       count: Number(r.count),

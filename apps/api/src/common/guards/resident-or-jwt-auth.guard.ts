@@ -10,13 +10,14 @@ import { Request } from 'express';
 export class ResidentOrJwtAuthGuard extends JwtAuthGuard {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    
+
     // Check if the request has any resident_call_* cookie
     if (request.cookies) {
-      const hasResidentCookie = Object.keys(request.cookies).some((key) =>
-        key.startsWith('resident_call_') && request.cookies[key] === 'true'
+      const hasResidentCookie = Object.keys(request.cookies).some(
+        (key) =>
+          key.startsWith('resident_call_') && request.cookies[key] === 'true',
       );
-      
+
       if (hasResidentCookie) {
         // We consider them authorized as a resident
         request['user'] = { role: 'resident' };

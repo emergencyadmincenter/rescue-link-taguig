@@ -13,7 +13,7 @@ describe('FraudDetectionService', () => {
           provide: PrismaService,
           useValue: {
             shadowBan: { findUnique: jest.fn(), create: jest.fn() },
-            quarantinedEmergencyRequest: { create: jest.fn() }
+            quarantinedEmergencyRequest: { create: jest.fn() },
           },
         },
       ],

@@ -900,4 +900,12 @@ export class LogsService {
       },
     });
   }
+
+  async removeLogCoordination(logId: string, agencyId: string) {
+    return this.prisma.logAgencyCoordination.delete({
+      where: {
+        log_id_agency_id: { log_id: logId, agency_id: agencyId },
+      },
+    });
+  }
 }

@@ -904,7 +904,7 @@ export default function LogDetailsPanel({
             <AgencyCoordinationSection
               logId={log.id}
               isReadOnly={isReadOnly}
-              updateTrigger={selectedNeeds.map((n) => n.id).join(",")}
+              updateTrigger={log.resource_assignments?.map(ra => ra.resource_id).join(",")}
             />
           </section>
 

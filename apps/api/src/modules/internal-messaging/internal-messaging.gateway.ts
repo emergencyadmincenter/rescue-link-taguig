@@ -102,20 +102,26 @@ export class InternalMessagingGateway
     @MessageBody() payload: { conversationIds: string[] },
   ) {
     const userId = client.data.userId;
-    if (!userId || !payload?.conversationIds || !Array.isArray(payload.conversationIds)) return;
+    if (
+      !userId ||
+      !payload?.conversationIds ||
+      !Array.isArray(payload.conversationIds)
+    )
+      return;
 
     for (const conversationId of payload.conversationIds) {
       if (conversationId.startsWith('temp-')) continue;
-      
+
       try {
-        const participant = await this.prisma.internalConversationParticipant.findUnique({
-          where: {
-            conversation_id_user_id: {
-              conversation_id: conversationId,
-              user_id: userId,
+        const participant =
+          await this.prisma.internalConversationParticipant.findUnique({
+            where: {
+              conversation_id_user_id: {
+                conversation_id: conversationId,
+                user_id: userId,
+              },
             },
-          },
-        });
+          });
 
         if (participant) {
           client.join(conversationId);
@@ -189,19 +195,20 @@ export class InternalMessagingGateway
 
     await this.prisma.internalConversation.update({
       where: { id: payload.conversationId },
-      data: { updated_at: new Date() }
+      data: { updated_at: new Date() },
     });
 
-    const allParticipants = await this.prisma.internalConversationParticipant.findMany({
-      where: { conversation_id: payload.conversationId },
-      select: { user_id: true }
-    });
-    
+    const allParticipants =
+      await this.prisma.internalConversationParticipant.findMany({
+        where: { conversation_id: payload.conversationId },
+        select: { user_id: true },
+      });
+
     let broadcast = this.server.to(payload.conversationId);
     for (const p of allParticipants) {
       broadcast = broadcast.to(`user_${p.user_id}`);
     }
-    
+
     broadcast.emit('new_internal_message', message);
   }
 }

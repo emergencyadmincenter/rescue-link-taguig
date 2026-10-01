@@ -27,8 +27,8 @@ export class InternalMessagingService {
                       user_roles: {
                         include: {
                           role: true,
-                        }
-                      }
+                        },
+                      },
                     },
                   },
                 },
@@ -86,8 +86,8 @@ export class InternalMessagingService {
                 user_roles: {
                   include: {
                     role: true,
-                  }
-                }
+                  },
+                },
               },
             },
           },
@@ -122,11 +122,11 @@ export class InternalMessagingService {
                 user_roles: {
                   include: {
                     role: true,
-                  }
-                }
-              }
-            }
-          }
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });
@@ -160,11 +160,11 @@ export class InternalMessagingService {
                 user_roles: {
                   include: {
                     role: true,
-                  }
-                }
-              }
-            }
-          }
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });

@@ -32,16 +32,16 @@ export class StorageController {
     // Default folder for private uploads if not specified otherwise
     // You could also accept a folder from the body, but for now we'll use a generic one
     // or let's just use 'private-general'
-    const key = await this.storageService.uploadPrivateFile(file, 'private-general');
-    
+    const key = await this.storageService.uploadPrivateFile(
+      file,
+      'private-general',
+    );
+
     return ApiResponse.success({ key });
   }
 
   @Get('private/access')
-  async getPrivateAccess(
-    @CurrentUser() user: any,
-    @Query('key') key: string,
-  ) {
+  async getPrivateAccess(@CurrentUser() user: any, @Query('key') key: string) {
     if (!key) {
       throw new BadRequestException('S3 object key is required');
     }

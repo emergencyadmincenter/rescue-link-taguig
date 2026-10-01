@@ -166,10 +166,7 @@ export class ShadowBansService {
         throw new BadRequestException('Invalid shadow-ban severity');
       }
 
-      const defaultDuration =
-        this.defaultDurations[
-          effectiveSeverity as keyof typeof this.defaultDurations
-        ];
+      const defaultDuration = this.defaultDurations[effectiveSeverity];
       if (severity === 'critical' && expires_at !== undefined) {
         throw new BadRequestException(
           'Critical violations require an indefinite restriction',
