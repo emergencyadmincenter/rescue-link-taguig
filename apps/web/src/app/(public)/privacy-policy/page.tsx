@@ -1,74 +1,107 @@
 import React from "react";
 import { LandingHeader } from "@/features/landing/components/LandingHeader";
 import { LandingFooter } from "@/features/landing/components/LandingFooter";
+import { FiShield, FiLock, FiEye, FiServer } from "react-icons/fi";
 
 export default function PrivacyPolicyPage() {
+  const sections = [
+    {
+      title: "Information Collection",
+      icon: <FiEye className="w-5 h-5" />,
+      content:
+        "The City Government of Taguig, through the Rescue Link platform, strictly collects only data deemed essential for the provision of immediate emergency assistance. This encompasses precise geolocational coordinates, requisite contact identifiers, and associated hardware telemetry to ensure accurate dispatching and verify caller authenticity.",
+    },
+    {
+      title: "Data Utilization",
+      icon: <FiServer className="w-5 h-5" />,
+      content:
+        "All acquired information is exclusively utilized for emergency response orchestration. Data serves to rapidly triangulate incident locations, facilitate continuous communication between the reporting citizen and the Command Center, and maintain official historical logs necessary for post-incident municipal audits.",
+    },
+    {
+      title: "Security & Encryption",
+      icon: <FiLock className="w-5 h-5" />,
+      content:
+        "Information transit between the citizen's device and the Command Center utilizes industry-standard cryptographic protocols (TLS/SSL). At rest, data is secured within government-sanctioned infrastructure protected by rigorous access control policies, ensuring confidentiality against unauthorized interception.",
+    },
+    {
+      title: "Disclosure Limitations",
+      icon: <FiShield className="w-5 h-5" />,
+      content:
+        "The platform explicitly prohibits the monetization or commercial sharing of user data. Information is disclosed solely to dispatched responding units (e.g., Medical, Fire, Police) and, when mandated, to authorized legal entities acting under the jurisdiction of Philippine law.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-primary/30 flex flex-col">
       <LandingHeader />
 
-      <main className="flex-1 max-w-4xl mx-auto px-6 py-12 md:py-24">
-        <h1 className="display-medium text-gray-900 mb-6">Privacy Policy</h1>
-        <p className="text-gray-500 mb-10">Last Updated: October 2026</p>
-
-        <div className="prose prose-lg text-gray-700 space-y-6">
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">1. Introduction</h2>
-            <p>
-              Rescue Link ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and share information when you use our web-based emergency response platform designed for the City of Taguig.
+      <main className="flex-1 w-full">
+        {/* Hero Banner */}
+        <div className="w-full bg-gray-50 border-b border-gray-100 pb-8 pt-16 md:pt-24 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+          <div className="mx-auto px-6 relative z-10 text-center">
+            <h1 className="display-medium text-gray-900 mt-12 mb-4 lg:my-4 tracking-tight">
+              Data Privacy Policy
+            </h1>
+            <p className="text-gray-500 text-lg mx-auto">
+              Effective Date: October 2026. This document governs the data
+              collection and security practices of the Rescue Link Taguig
+              emergency response infrastructure.
             </p>
-          </section>
+          </div>
+        </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">2. Information We Collect</h2>
-            <p>
-              When you use our application to request emergency assistance, we collect information that is strictly necessary for providing rapid emergency response. This includes:
+        {/* Content Section */}
+        <div className="mx-auto px-6 py-16">
+          <div className="mb-16">
+            <h2 className="title-medium text-gray-900 mb-6">
+              Statement of Policy
+            </h2>
+            <p className="text-gray-600 leading-relaxed text-lg mb-4">
+              The City Government of Taguig recognizes the fundamental right to
+              privacy and is steadfastly committed to safeguarding the personal
+              information of its citizens. The operation of the Rescue Link
+              emergency response system adheres strictly to the principles and
+              provisions of the Data Privacy Act of 2012 (Republic Act No.
+              10173).
             </p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>Location Data:</strong> We collect your precise GPS coordinates to help responders locate you instantly. This is vital for the core functionality of the service.</li>
-              <li><strong>Contact Information:</strong> We may ask for your phone number or name so that the Command Center can coordinate with you effectively.</li>
-              <li><strong>Device & Interaction Information:</strong> We collect non-personally identifiable metrics (such as IP address, browser type, and device UUID) for fraud prevention, shadow banning malicious users (e.g., prank callers), and maintaining system security.</li>
-              <li><strong>Communications:</strong> Any chats, audio calls, and incident descriptions provided during an emergency session are logged for coordination and legal compliance purposes.</li>
-            </ul>
-          </section>
+            <p className="text-gray-600 leading-relaxed text-lg">
+              Participation in the platform and the subsequent reporting of
+              emergency incidents constitutes explicit consent for the
+              collection and processing of relevant personal and geolocational
+              data strictly for life-saving and emergency mitigation purposes.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">3. How We Use Your Information</h2>
-            <p>
-              The information we collect is used primarily to:
-            </p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li>Dispatch emergency units (Medical, Fire, Police, etc.) to your precise location.</li>
-              <li>Enable seamless real-time communication between you and the Taguig Command Center.</li>
-              <li>Maintain an accurate log of emergencies for post-incident review and analytics by the local government.</li>
-              <li>Prevent system abuse, prank calls, and fraudulent requests through automated assessments.</li>
-            </ul>
-          </section>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {sections.map((section, index) => (
+              <div
+                key={index}
+                className="p-8 rounded-2xl bg-white border border-gray-100 shadow-sm"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-5">
+                  {section.icon}
+                </div>
+                <h3 className="title-small text-gray-900 mb-3">
+                  {section.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-sm">
+                  {section.content}
+                </p>
+              </div>
+            ))}
+          </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">4. Information Sharing and Disclosure</h2>
-            <p>
-              We do not sell your personal information. Your data is shared strictly with authorized personnel, including:
+          <div className="mt-16 p-8 rounded-2xl bg-gray-50 border border-gray-200 text-center">
+            <h3 className="title-small text-gray-900 mb-2">
+              Inquiries and Clarifications
+            </h3>
+            <p className="text-gray-600 text-sm mx-auto">
+              Citizens requiring further clarification regarding these data
+              privacy practices are directed to contact the official Taguig City
+              Command Center administration.
             </p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>First Responders and Agencies:</strong> Taguig Command Center operators, PNP, BFP, and Medical Rescue units who need your information to assist you.</li>
-              <li><strong>Legal Authorities:</strong> When required by Philippine law to comply with legal processes or protect public safety.</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">5. Data Security</h2>
-            <p>
-              We implement industry-standard security measures, including encryption and secure real-time protocols (WebSockets), to protect your data. However, please be aware that no method of transmission over the internet is completely secure.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">6. Contact Us</h2>
-            <p>
-              If you have any questions or concerns regarding this Privacy Policy or how your data is handled, please contact the Taguig Command Center via their official communication channels.
-            </p>
-          </section>
+          </div>
         </div>
       </main>
 

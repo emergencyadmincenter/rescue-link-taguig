@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/sos") ||
     pathname.startsWith("/activate") ||
     pathname.startsWith("/public/log") ||
-    pathname.startsWith("/resident/log") ||
+  pathname.startsWith("/resident/log") ||
     pathname === "/privacy-policy" ||
     pathname === "/terms-of-service";
 

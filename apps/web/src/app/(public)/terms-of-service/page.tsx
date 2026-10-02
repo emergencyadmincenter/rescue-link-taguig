@@ -1,77 +1,107 @@
 import React from "react";
 import { LandingHeader } from "@/features/landing/components/LandingHeader";
 import { LandingFooter } from "@/features/landing/components/LandingFooter";
+import { FiAlertTriangle, FiMapPin, FiCrosshair, FiCpu } from "react-icons/fi";
 
 export default function TermsOfServicePage() {
+  const provisions = [
+    {
+      title: "Jurisdiction & Eligibility",
+      icon: <FiMapPin className="w-5 h-5" />,
+      content:
+        "The Rescue Link platform operates exclusively within the territorial jurisdiction of Taguig City, Philippines. The system is designed to service residents and individuals currently situated within city limits. Dispatch protocols are structurally bound to Taguig municipal response units.",
+    },
+    {
+      title: "Zero-Tolerance for Misuse",
+      icon: <FiAlertTriangle className="w-5 h-5" />,
+      content:
+        "The filing of fraudulent emergency requests or prank calls is explicitly prohibited and constitutes a criminal offense under Presidential Decree No. 1727. The Command Center retains the absolute right to actively trace, permanently blacklist (shadow ban), and initiate prosecution against malicious actors.",
+    },
+    {
+      title: "Consent to Geolocation",
+      icon: <FiCrosshair className="w-5 h-5" />,
+      content:
+        "Activation of the emergency dispatch protocol requires unconditional consent to real-time GPS telemetry transmission. Failure to grant appropriate browser or device location permissions restricts the platform's operational capacity and relieves the municipality of liability regarding delayed response times.",
+    },
+    {
+      title: "System Availability Constraints",
+      icon: <FiCpu className="w-5 h-5" />,
+      content:
+        "While engineered for maximum resilience, the platform is provided on an 'as is' and 'as available' basis. The City Government does not mathematically guarantee uninterrupted service or instantaneous physical arrival of responders, as these are inherently subject to exogenous factors such as severe weather, traffic conditions, and concurrent critical municipal demands.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-white font-sans selection:bg-primary/30 flex flex-col">
       <LandingHeader />
 
-      <main className="flex-1 max-w-4xl mx-auto px-6 py-12 md:py-24">
-        <h1 className="display-medium text-gray-900 mb-6">Terms of Service</h1>
-        <p className="text-gray-500 mb-10">Last Updated: October 2026</p>
-
-        <div className="prose prose-lg text-gray-700 space-y-6">
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">1. Acceptance of Terms</h2>
-            <p>
-              By accessing and using Rescue Link (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. This Service is designed specifically for residents and individuals within the jurisdiction of Taguig City, Philippines.
+      <main className="flex-1 w-full">
+        {/* Hero Banner */}
+        <div className="w-full bg-gray-50 border-b border-gray-100 pb-8 pt-16 md:pt-24 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+          <div className="mx-auto px-6 relative z-10 text-center">
+            <h1 className="display-medium text-gray-900 mt-12 mb-4 lg:my-4 tracking-tight">
+              Terms of Service
+            </h1>
+            <p className="text-gray-500 text-lg mx-auto">
+              Effective Date: October 2026. These terms strictly govern the
+              authorized usage of the Rescue Link emergency response framework.
             </p>
-          </section>
+          </div>
+        </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">2. Description of Service</h2>
-            <p>
-              Rescue Link is a web-based emergency response platform that connects users directly to the Taguig Command Center. It facilitates real-time location sharing, communication, and dispatching of emergency response units.
+        {/* Content Section */}
+        <div className="mx-auto px-6 py-16">
+          <div className="mb-16">
+            <h2 className="title-medium text-gray-900 mb-6">
+              Binding Agreement
+            </h2>
+            <p className="text-gray-600 leading-relaxed text-lg mb-4">
+              By accessing, browsing, or initiating any emergency transmission
+              through the Rescue Link platform, the user explicitly acknowledges
+              and agrees to be bound by the operational terms outlined herein.
+              This framework exists strictly to facilitate critical, life-saving
+              communication between citizens and the Taguig Command Center.
             </p>
-          </section>
+            <p className="text-gray-600 leading-relaxed text-lg text-danger font-medium bg-danger/5 p-4 rounded-xl border border-danger/10">
+              Warning: Unauthorized access, penetration testing, or the
+              submission of falsified incident reports will trigger immediate
+              systemic lockdown protocols and subsequent legal referral.
+            </p>
+          </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">3. Proper Use and Misuse</h2>
-            <p>
-              The Service is strictly for reporting genuine, life-threatening, or critical emergencies.
-            </p>
-            <ul className="list-disc pl-5 space-y-2 mt-3">
-              <li><strong>Prohibited Conduct:</strong> You must not use the Service to make prank calls, submit false reports, or harass operators. </li>
-              <li><strong>Penalties under Philippine Law:</strong> Submitting malicious or false reports is a serious offense punishable under Philippine laws, such as Presidential Decree No. 1727 (Prank Caller Law) and related local ordinances.</li>
-              <li><strong>Enforcement:</strong> We employ fraud assessment protocols. Users found abusing the system will be shadow-banned, permanently restricted from using the Service, and reported to law enforcement agencies for appropriate legal action.</li>
-            </ul>
-          </section>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {provisions.map((provision, index) => (
+              <div
+                key={index}
+                className="p-8 rounded-2xl bg-white border border-gray-100 shadow-sm"
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-5">
+                  {provision.icon}
+                </div>
+                <h3 className="title-small text-gray-900 mb-3">
+                  {provision.title}
+                </h3>
+                <p className="text-gray-600 leading-relaxed text-sm">
+                  {provision.content}
+                </p>
+              </div>
+            ))}
+          </div>
 
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">4. Location and Tracking</h2>
-            <p>
-              By initiating an emergency request, you explicitly consent to the Service obtaining your real-time GPS location. This is critical for responders to find you. Ensure your browser or device permissions allow location access when using the Service.
+          <div className="mt-16 p-8 rounded-2xl bg-gray-50 border border-gray-200 text-center">
+            <h3 className="title-small text-gray-900 mb-2">
+              Limitation of Municipal Liability
+            </h3>
+            <p className="text-gray-600 text-sm mx-auto">
+              To the absolute extent permitted by Philippine law, the City
+              Government of Taguig, its administrators, and technology partners
+              shall not be held liable for incidental, consequential, or
+              indirect damages arising from systemic outages, telecommunication
+              failures, or uncontrollable environmental delays during an
+              emergency operation.
             </p>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">5. Disclaimer of Warranties</h2>
-            <p>
-              While we strive for high availability and rapid response, Rescue Link is provided "as is" and "as available." We do not guarantee that the Service will be uninterrupted, error-free, or that emergency responders will arrive within a guaranteed timeframe, as responses are subject to physical constraints such as traffic and resource availability.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">6. Limitation of Liability</h2>
-            <p>
-              To the fullest extent permitted by Philippine law, Rescue Link, its developers, and the Taguig Local Government Unit shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from the use or inability to use the Service during an emergency.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">7. Modifications to the Service</h2>
-            <p>
-              We reserve the right to modify or discontinue the Service (or any part thereof) temporarily or permanently with or without prior notice, in order to perform critical system upgrades or maintenance.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="title-medium text-gray-900 mb-3">8. Contact Information</h2>
-            <p>
-              For non-emergency inquiries regarding these Terms of Service, please contact the appropriate Taguig City administrative offices.
-            </p>
-          </section>
+          </div>
         </div>
       </main>
 

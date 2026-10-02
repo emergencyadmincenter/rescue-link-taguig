@@ -67,11 +67,11 @@ export function EmergencyHotlinesSection() {
             {hotlines.map((hotline, index) => (
               <div
                 key={index}
-                className="group flex flex-col justify-between p-6 rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white hover:border-primary/20 hover:shadow-sm transition-all duration-300"
+                className="flex flex-col justify-between p-6 rounded-2xl border border-primary/10 bg-primary/5"
               >
                 <div>
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="title-medium text-gray-900 group-hover:text-primary transition-colors">
+                    <h4 className="title-medium text-primary">
                       {hotline.name}
                     </h4>
                     {hotline.is247 && (

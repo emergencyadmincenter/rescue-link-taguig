@@ -63,7 +63,7 @@ export function FeaturesSection() {
           <h3 className="font-outfit font-bold text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 tracking-tight">
             Built for Critical Moments
           </h3>
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed mx-auto max-w-3xl">
+          <p className="text-lg md:text-xl text-gray-600 leading-relaxed mx-auto">
             Rescue Link provides the tools and infrastructure necessary for
             rapid, organized, and effective emergency response.
           </p>
@@ -73,9 +73,9 @@ export function FeaturesSection() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group relative p-8 md:p-10 rounded-2xl border border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white hover:shadow-sm transition-all duration-300 overflow-hidden flex flex-col"
+              className="relative p-8 md:p-10 rounded-2xl border border-gray-100 bg-gray-50 overflow-hidden flex flex-col"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-white">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-primary/10 text-primary">
                 {feature.icon}
               </div>
               <h4 className="title-medium text-gray-900 mb-3">
