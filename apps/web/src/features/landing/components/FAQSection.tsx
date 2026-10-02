@@ -6,23 +6,19 @@ import { FiChevronDown } from "react-icons/fi";
 const faqs = [
   {
     q: "Do I need to download an app or create an account?",
-    a: "No. Rescue Link Taguig is a progressive web app. You can access it directly through your browser and trigger an SOS without needing an account.",
+    a: "No. Rescue Link Taguig is a web-based platform. You can access it directly through your mobile or desktop browser and report an emergency without needing an account.",
   },
   {
     q: "What happens if I am outside Taguig City?",
-    a: "The system is strictly geo-fenced to Taguig City. If you trigger an SOS from outside the boundary, the system will alert you and block the request to prevent resource misallocation.",
+    a: "The system is specifically designed for Taguig City. If you request an emergency response from outside the city boundary, the system will alert you and block the request to ensure local resources are properly allocated.",
   },
   {
-    q: "Can I text instead of calling?",
-    a: "Yes! While we offer high-fidelity WebRTC voice and video calls, there is a real-time chat fallback where you can type and send images if it's unsafe to speak.",
+    q: "Can I chat instead of calling?",
+    a: "Yes! While we offer direct communication with the Command Center, a real-time chat interface is available where you can type your concerns and send updates if it's unsafe or difficult to speak.",
   },
   {
-    q: "How does the system prevent fake emergency calls?",
-    a: "Our advanced fraud detection compares your network IP address footprint against your device's GPS coordinates. Mismatches (like using VPNs to spoof locations) are flagged and blocked.",
-  },
-  {
-    q: "Will responders know my exact location?",
-    a: "Yes. With your browser permission, we instantly transmit your precise GPS coordinates. The Command Center drops a pin on our interactive Taguig map and dispatches resources directly to you.",
+    q: "How does the system handle my location?",
+    a: "With your browser permission, we securely transmit your exact GPS coordinates to the Command Center. This allows responders to pinpoint your location on the map and dispatch help efficiently.",
   },
 ];
 

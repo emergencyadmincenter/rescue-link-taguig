@@ -15,6 +15,7 @@ interface ShadowBanActionProps {
   callId: string;
   isOwner: boolean;
   isAdmin: boolean;
+  onActionSuccess?: () => void;
 }
 
 const CATEGORY_OPTIONS: {
@@ -82,6 +83,7 @@ export function ShadowBanAction({
   callId,
   isOwner,
   isAdmin,
+  onActionSuccess,
 }: ShadowBanActionProps) {
   const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -148,6 +150,7 @@ export function ShadowBanAction({
       setDialogOpen(false);
       setReason("");
       setDetails("");
+      if (onActionSuccess) onActionSuccess();
     } catch (error: unknown) {
       const msg = isAxiosError(error)
         ? error.response?.data?.message

@@ -8,8 +8,17 @@ import ActiveSOSChatView from "./ActiveSOSChatView";
 import { logsApi } from "@/features/logs/api/logs.api";
 import toast from "react-hot-toast";
 
+const PRANK_CALL_WARNINGS = [
+  "WARNING: Prank calling an emergency hotline is a criminal offense under P.D. 1727.",
+  "Violators of P.D. 1727 may face up to 5 years imprisonment or a fine of up to ₱40,000.",
+  "Your IP address and precise GPS coordinates are actively logged to prevent and prosecute abuse.",
+  "False reports delay critical resources for true life-threatening emergencies.",
+  "Please remain on the line and use this service responsibly. Coordinators are being routed.",
+];
+
 export default function ConnectingScreen({ callId }: { callId: string }) {
   const { socket, isConnected } = useSocket();
+  const [warningIndex, setWarningIndex] = useState(0);
   const [status, setStatus] = useState<
     "connecting" | "ringing" | "accepted" | "timeout" | "missed" | "rejected"
   >("connecting");
@@ -29,6 +38,13 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
       })
       .catch(() => {});
   }, [callId]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWarningIndex((prev) => (prev + 1) % PRANK_CALL_WARNINGS.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -192,6 +208,15 @@ export default function ConnectingScreen({ callId }: { callId: string }) {
                   connected.
                 </p>
               )}
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <div
+                key={warningIndex}
+                className="text-xs font-medium text-danger/80 text-center animate-in fade-in slide-in-from-bottom-2 duration-500"
+              >
+                {PRANK_CALL_WARNINGS[warningIndex]}
+              </div>
             </div>
           </>
         )}

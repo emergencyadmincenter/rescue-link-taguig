@@ -20,6 +20,7 @@ export function CoordinationUpdatesSection({
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   const fetchUpdates = async () => {
@@ -34,7 +35,14 @@ export function CoordinationUpdatesSection({
   };
 
   useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current && endOfMessagesRef.current) {
+      const container = chatContainerRef.current;
+      const target = endOfMessagesRef.current;
+      container.scrollTo({
+        top: target.offsetTop,
+        behavior: "smooth"
+      });
+    }
   }, [updates]);
 
   useEffect(() => {
@@ -88,7 +96,10 @@ export function CoordinationUpdatesSection({
         <FiMessageSquare className="w-4 h-4" /> Coordination Updates
       </h3>
 
-      <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse">
+      <div 
+        ref={chatContainerRef}
+        className="bg-gray-50 rounded-xl p-4 border border-gray-100 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse relative"
+      >
         {loading && updates.length === 0 ? (
           <div className="text-sm text-gray-500 text-center py-4">
             Loading chat...
@@ -99,7 +110,7 @@ export function CoordinationUpdatesSection({
           </div>
         ) : (
           <>
-            <div ref={endOfMessagesRef} />
+            <div ref={endOfMessagesRef} className="absolute bottom-0 left-0 w-full h-px" />
             {updates.map((update, idx) => {
               const isInternal = update.source === "internal";
               return (

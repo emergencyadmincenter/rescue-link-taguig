@@ -15,7 +15,6 @@ import {
   InsightsResponseTime,
   InsightsWorkload,
   InsightsPeakTime,
-  IncidentCategory,
 } from "../api/insights.api";
 import { InsightsFilterBar } from "./InsightsFilterBar";
 import { ResponseTimeStats } from "./ResponseTimeStats";
@@ -96,7 +95,6 @@ export function InsightsDashboard() {
   );
   const [workload, setWorkload] = useState<InsightsWorkload[]>([]);
   const [peakTimes, setPeakTimes] = useState<InsightsPeakTime[]>([]);
-  const [categories, setCategories] = useState<IncidentCategory[]>([]);
 
   const [loadingIncidents, setLoadingIncidents] = useState(true);
   const [loadingAggregates, setLoadingAggregates] = useState(true);
@@ -155,16 +153,14 @@ export function InsightsDashboard() {
         barangay: f.barangay || undefined,
         incidentCategoryId: f.incidentCategoryId || undefined,
       };
-      const [rtData, wlData, ptData, catData] = await Promise.all([
+      const [rtData, wlData, ptData] = await Promise.all([
         insightsApi.getResponseTimes(params),
         insightsApi.getWorkload(params),
         insightsApi.getPeakTimes(params),
-        insightsApi.getIncidentCategories(),
       ]);
       setResponseTimes(rtData);
       setWorkload(wlData);
       setPeakTimes(ptData);
-      setCategories(catData);
     } catch (error) {
       console.error("Failed to load aggregate insights:", error);
     } finally {
@@ -326,7 +322,6 @@ export function InsightsDashboard() {
 
       <InsightsFilterBar
         filters={filters}
-        categories={categories}
         onFilterChange={setFilters}
         isLoading={loadingIncidents}
       />

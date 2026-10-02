@@ -13,6 +13,7 @@ import {
 import { Log } from "../types/logs.types";
 import { logsApi } from "../api/logs.api";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAutoSave } from "../hooks/useAutoSave";
 import { ShadowBanAction } from "./ShadowBanAction";
@@ -28,6 +29,7 @@ export default function IncidentFormPanel({
   onUpdate,
   isActiveSession,
 }: IncidentFormPanelProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const isOwner =
     user &&
@@ -65,19 +67,23 @@ export default function IncidentFormPanel({
     formDataRef.current = formData;
   }, [formData]);
 
+  const initializedLogId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (log) {
-      setFormData((prev) => ({
-        // We only override with log's value if we don't have local edits or if log has a new truthy value.
-        caller_name: log.caller_name || prev.caller_name || "",
-        caller_contact: log.caller_contact || prev.caller_contact || "",
+    if (log && initializedLogId.current !== log.id) {
+      initializedLogId.current = log.id;
+      setFormData({
+        caller_name: log.caller_name || "",
+        caller_contact: log.caller_contact || "",
         address:
           log.address && log.address !== "Unknown"
             ? log.address
-            : prev.address || "",
-        description: log.description || prev.description || "",
-      }));
+            : "",
+        description: log.description || "",
+      });
+    }
 
+    if (log) {
       // Auto-populate address from lat/lng if not present or if it's "Unknown"
       if (
         (!log.address || log.address === "Unknown") &&
@@ -145,6 +151,10 @@ export default function IncidentFormPanel({
             callId={log.calls[0].id}
             isOwner={Boolean(isOwner)}
             isAdmin={isAdmin}
+            onActionSuccess={() => {
+              logsApi.getLog(log.id).then(onUpdate).catch(console.error);
+              router.refresh();
+            }}
           />
         )}
       </div>

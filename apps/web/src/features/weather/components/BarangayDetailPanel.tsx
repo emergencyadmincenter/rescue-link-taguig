@@ -167,25 +167,6 @@ export const BarangayDetailPanel: React.FC<BarangayDetailPanelProps> = ({
                       {cluster.label}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="body-small text-gray-500">
-                      Assigned Team
-                    </span>
-                    <span className="body-small font-medium text-gray-900">
-                      {cluster.assignedTeam}
-                    </span>
-                  </div>
-                  {cluster.commandPost && (
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-200">
-                      <span className="body-small text-gray-500 flex items-center gap-1">
-                        <FiMapPin className="w-3 h-3" />
-                        Command Post
-                      </span>
-                      <span className="body-small font-medium text-gray-900 text-right max-w-[150px] truncate">
-                        {cluster.commandPost}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}

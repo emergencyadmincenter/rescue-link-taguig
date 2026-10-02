@@ -48,12 +48,10 @@ export interface ClusterConfig {
    * // TODO: BACKEND — Replace with real assignment from the backend.
    * // Should support dynamic reassignment during operations.
    */
-  assignedTeam: string;
   /**
    * Mock command post location for this cluster.
    * // TODO: BACKEND — Replace with real command post data.
    */
-  commandPost: string;
 }
 
 // --- Cluster Color Palette ---
@@ -138,8 +136,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Tuktukan",
       "Ususan",
     ],
-    assignedTeam: "Rescue Unit Alpha-1",
-    commandPost: "Tipas Emergency Station",
     ...CLUSTER_COLORS[0],
   },
   {
@@ -155,8 +151,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "New Lower Bicutan",
       "Bagumbayan",
     ],
-    assignedTeam: "Rescue Unit Bravo-2",
-    commandPost: "Lower Bicutan Command Center",
     ...CLUSTER_COLORS[1],
   },
   {
@@ -172,8 +166,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Central Signal Village",
       "South Signal Village",
     ],
-    assignedTeam: "Rescue Unit Charlie-3",
-    commandPost: "Western Bicutan Fire Station",
     ...CLUSTER_COLORS[2],
   },
   {
@@ -188,8 +180,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "North Daang Hari",
       "Tanyag",
     ],
-    assignedTeam: "Rescue Unit Delta-4",
-    commandPost: "Upper Bicutan Barangay Hall",
     ...CLUSTER_COLORS[3],
   },
   {
@@ -208,8 +198,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Pitogo",
       "Comembo",
     ],
-    assignedTeam: "Rescue Unit Echo-5",
-    commandPost: "Pembo Community Center",
     ...CLUSTER_COLORS[4],
   },
 ];

@@ -149,19 +149,6 @@ export default function ClusterLegendPanel({
                 {stats.totalBarangays} barangays
               </span>
             </div>
-
-            {/* Response Assignment (Mock) */}
-            {/* // TODO: BACKEND — Replace with real team assignment data */}
-            <div className="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-gray-100/80">
-              <div className="flex items-center gap-1 text-gray-400">
-                <FiUsers className="w-3 h-3" />
-                <span className="body-xsmall">{cluster.assignedTeam}</span>
-              </div>
-              <div className="flex items-center gap-1 text-gray-400">
-                <FiMapPin className="w-3 h-3" />
-                <span className="body-xsmall">{cluster.commandPost}</span>
-              </div>
-            </div>
           </button>
         );
       })}

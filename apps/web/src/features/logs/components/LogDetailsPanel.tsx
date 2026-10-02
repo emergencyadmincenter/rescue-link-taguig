@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FiChevronLeft,
   FiSettings,
@@ -13,7 +13,7 @@ import {
   FiWind,
   FiHeart,
   FiDroplet,
-  FiBriefcase,
+  
   FiMapPin,
   FiTruck,
   FiBatteryCharging,
@@ -69,7 +69,7 @@ const PREDEFINED_CHANNELS: SelectorOption[] = [
 ];
 
 const PREDEFINED_NEEDS_FALLBACK: SelectorOption[] = [
-  { id: "custom_Food", label: "Food", icon: <FiBriefcase /> },
+  { id: "custom_Food", label: "Food" },
   { id: "custom_Drinking Water", label: "Drinking Water", icon: <FiDroplet /> },
   { id: "custom_Rescue", label: "Rescue", icon: <FiHeart /> },
   { id: "custom_First Aid", label: "First Aid", icon: <FiHeart /> },
@@ -81,8 +81,8 @@ const PREDEFINED_NEEDS_FALLBACK: SelectorOption[] = [
   { id: "custom_Ambulance", label: "Ambulance", icon: <FiTruck /> },
   { id: "custom_Shelter", label: "Shelter", icon: <FiMapPin /> },
   { id: "custom_Evacuation", label: "Evacuation", icon: <FiMapPin /> },
-  { id: "custom_Clothing", label: "Clothing", icon: <FiBriefcase /> },
-  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiBriefcase /> },
+  { id: "custom_Clothing", label: "Clothing" },
+  { id: "custom_Baby Supplies", label: "Baby Supplies" },
   { id: "custom_Hygiene Kit", label: "Hygiene Kit", icon: <FiDroplet /> },
   { id: "custom_Transportation", label: "Transportation", icon: <FiTruck /> },
   { id: "custom_Generator", label: "Generator", icon: <FiBatteryCharging /> },
@@ -144,13 +144,15 @@ export default function LogDetailsPanel({
       .map((r) => ({
         id: r.id,
         label: r.name,
-        icon: <FiBriefcase />,
       }));
     return [...PREDEFINED_NEEDS_FALLBACK, ...dbNeeds];
   })();
 
+  const initializedLogId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (log) {
+    if (log && initializedLogId.current !== log.id) {
+      initializedLogId.current = log.id;
       setFormData({
         caller_name: log.caller_name || "",
         caller_contact: log.caller_contact || "",
@@ -176,12 +178,12 @@ export default function LogDetailsPanel({
             p.id === res.id || p.label.toLowerCase() === res.name.toLowerCase(),
         );
         return (
-          predefined || { id: res.id, label: res.name, icon: <FiBriefcase /> }
+          predefined || { id: res.id, label: res.name }
         );
       });
       setSelectedNeeds(mappedNeeds);
     }
-  }, [log]);
+  }, [log, predefinedNeeds]);
 
   const { debouncedSave, immediateSave } = useAutoSave({
     onSave: async (data) => {
@@ -618,7 +620,7 @@ export default function LogDetailsPanel({
                         {shadowBan.security_context.distance_km !== null
                           ? `${Number(shadowBan.security_context.distance_km).toFixed(1)} km from IP location`
                           : shadowBan.security_context
-                                .location_permission_granted
+                                .location_permission_granted || (log.latitude && log.longitude)
                             ? "Location available; no distance recorded"
                             : "Location permission not granted"}
                       </span>

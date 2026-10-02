@@ -32,9 +32,9 @@ export function LandingFooter() {
               response coordination.
               <br />
               <br />
-              📍 Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
+               Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
               <br />
-              📍 Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
+               Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
             </p>
             <div className="flex items-center gap-4">
               <a

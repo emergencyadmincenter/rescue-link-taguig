@@ -1,6 +1,5 @@
 "use client";
 
-import { IncidentCategory } from "../api/insights.api";
 import { TAGUIG_BARANGAYS } from "@/lib/barangays";
 
 interface Filters {
@@ -12,12 +11,11 @@ interface Filters {
 
 interface Props {
   filters: Filters;
-  categories: IncidentCategory[];
   onFilterChange: (filters: Filters) => void;
   isLoading?: boolean;
 }
 
-export function InsightsFilterBar({ filters, categories, onFilterChange, isLoading }: Props) {
+export function InsightsFilterBar({ filters, onFilterChange, isLoading }: Props) {
   const handleChange = (key: keyof Filters, value: string) => {
     onFilterChange({ ...filters, [key]: value });
   };
@@ -61,22 +59,7 @@ export function InsightsFilterBar({ filters, categories, onFilterChange, isLoadi
         </select>
       </div>
 
-      <div className="flex flex-col gap-1.5 flex-1 min-w-[150px]">
-        <label className="body-small font-medium text-gray-600">Incident Type</label>
-        <select
-          className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all disabled:opacity-50 bg-white"
-          value={filters.incidentCategoryId}
-          onChange={(e) => handleChange("incidentCategoryId", e.target.value)}
-          disabled={isLoading}
-        >
-          <option value="">All Types</option>
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id} className="capitalize">
-              {cat.name}
-            </option>
-          ))}
-        </select>
-      </div>
+
     </div>
   );
 }

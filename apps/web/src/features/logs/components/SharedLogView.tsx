@@ -15,7 +15,7 @@ import {
   FiMessageSquare,
   FiSend,
   FiCheckCircle,
-  FiBriefcase,
+  
   FiDroplet,
   FiHeart,
   FiTruck,
@@ -34,7 +34,7 @@ const getNeedIcon = (label: string) => {
     return <FiBatteryCharging className="w-3 h-3" />;
   if (l.includes("shelter") || l.includes("evacuation"))
     return <FiMapPin className="w-3 h-3" />;
-  return <FiBriefcase className="w-3 h-3" />;
+  return null;
 };
 import InteractiveLocationMap from "@/features/logs/components/InteractiveLocationMap";
 import Image from "next/image";
@@ -66,9 +66,17 @@ export default function SharedLogView({
   const [updateMessage, setUpdateMessage] = useState("");
   const [submittingUpdate, setSubmittingUpdate] = useState(false);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (chatContainerRef.current && endOfMessagesRef.current) {
+      const container = chatContainerRef.current;
+      const target = endOfMessagesRef.current;
+      container.scrollTo({
+        top: target.offsetTop,
+        behavior: "smooth"
+      });
+    }
   }, [log.coordination_updates]);
 
   useEffect(() => {
@@ -482,19 +490,6 @@ export default function SharedLogView({
                               {agency.agency?.type || agency.agency_type}
                             </div>
                           </div>
-                          <span
-                            className={`px-2.5 py-1 text-xs font-bold uppercase rounded-full tracking-wide ${
-                              agency.status === "accepted"
-                                ? "bg-success/10 text-success"
-                                : agency.status === "rejected"
-                                  ? "bg-danger/10 text-danger"
-                                  : agency.status === "completed"
-                                    ? "bg-info/10 text-info"
-                                    : "bg-warning/10 text-warning"
-                            }`}
-                          >
-                            {agency.status}
-                          </span>
                         </div>
                       ))}
                     </div>
@@ -506,7 +501,10 @@ export default function SharedLogView({
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <FiMessageSquare className="w-4 h-4" /> Coordination Updates
                   </h3>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse">
+                  <div 
+                    ref={chatContainerRef}
+                    className="bg-gray-50 rounded-xl p-4 border border-gray-100 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse relative"
+                  >
                     {!log.coordination_updates ||
                     log.coordination_updates.length === 0 ? (
                       <div className="text-sm text-gray-400 italic text-center py-4">
@@ -514,7 +512,7 @@ export default function SharedLogView({
                       </div>
                     ) : (
                       <>
-                        <div ref={endOfMessagesRef} />
+                        <div ref={endOfMessagesRef} className="absolute bottom-0 left-0 w-full h-px" />
                         {log.coordination_updates.map(
                           (update: any, idx: number) => {
                             const isOwn =

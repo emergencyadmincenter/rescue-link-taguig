@@ -103,9 +103,6 @@ export function EmergencyHotlinesSection() {
                 className={`flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 rounded-2xl border ${hotline.bgClass} ${hotline.borderClass}`}
               >
                 <div className="flex items-center gap-6 mb-4 md:mb-0">
-                  <div className="flex-shrink-0 bg-white rounded-2xl shadow-sm border border-white/50 p-2">
-                    {hotline.icon}
-                  </div>
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <h4 className="title-small lg:title-large text-gray-900">
