@@ -684,7 +684,7 @@ export default function InteractiveLocationMap({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-xl overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-white rounded-xl overflow-hidden relative z-0">
       {/* Action Bar (Top) */}
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 bg-white z-10">
         <div className="flex flex-col">

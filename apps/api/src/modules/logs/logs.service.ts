@@ -23,12 +23,16 @@ function maskSecurityIdentifier(
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
+import { LogsGateway } from './logs.gateway';
+
 @Injectable()
 export class LogsService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(forwardRef(() => CommunicationsService))
     private readonly communicationsService: CommunicationsService,
+    @Inject(forwardRef(() => LogsGateway))
+    private readonly logsGateway: LogsGateway,
   ) {}
 
   private async recordStatusHistory(
@@ -649,6 +653,13 @@ export class LogsService {
           },
         },
         status_history: { orderBy: { changed_at: 'asc' } },
+        logAgencyCoordinations: {
+          include: {
+            agency: {
+              select: { id: true, name: true, type: true },
+            },
+          },
+        },
       },
     });
 
@@ -660,8 +671,25 @@ export class LogsService {
       throw new NotFoundException('Invalid or expired public link');
     }
 
-    // Return only public information
+    const coords = await this.getLogCoordinations(log.id);
+    const manualCoords = coords.coordinations.map((c: any) => ({
+      id: c.agency_id,
+      agency_name: c.agency.name,
+      agency_type: c.agency.type,
+      status: c.status,
+    }));
+    const existingIds = new Set(manualCoords.map((c) => c.id));
+    const recommendedCoords = coords.recommendedAgencies
+      .filter((a: any) => !existingIds.has(a.id))
+      .map((a: any) => ({
+        id: a.id,
+        agency_name: a.name,
+        agency_type: a.type,
+        status: 'recommended',
+      }));
+
     return {
+      id: log.id,
       reference_no: log.reference_no,
       status: log.status,
       source: log.source,
@@ -686,6 +714,7 @@ export class LogsService {
         changed_at: entry.changed_at,
         remarks: entry.remarks,
       })),
+      agency_coordinations: [...manualCoords, ...recommendedCoords],
     };
   }
 
@@ -722,6 +751,7 @@ export class LogsService {
 
     // Return only public information (same as getPublicLog)
     return {
+      id: log.id,
       reference_no: log.reference_no,
       status: log.status,
       source: log.source,
@@ -775,6 +805,7 @@ export class LogsService {
 
     return logs.map((log: any) => ({
       callId: log.calls[0]?.id,
+      id: log.id,
       reference_no: log.reference_no,
       status: log.status,
       created_at: log.created_at,
@@ -906,6 +937,159 @@ export class LogsService {
       where: {
         log_id_agency_id: { log_id: logId, agency_id: agencyId },
       },
+    });
+  }
+
+  // ─── Public Share Link Revocation ─────────────────────────────
+
+  async revokePublicShareLink(logId: string) {
+    const log = await this.prisma.log.findUnique({ where: { id: logId } });
+    if (!log) throw new NotFoundException('Log not found');
+
+    return this.prisma.log.update({
+      where: { id: logId },
+      data: {
+        public_token: null,
+        public_token_expires_at: null,
+      },
+    });
+  }
+
+  // ─── Agency Token Validation & Updates ────────────────────────
+
+  async validateAgencyToken(shareToken: string, agencyToken: string) {
+    const log = await this.prisma.log.findUnique({
+      where: { public_token: shareToken },
+      select: {
+        id: true,
+        public_token_expires_at: true,
+      },
+    });
+
+    if (
+      !log ||
+      !log.public_token_expires_at ||
+      log.public_token_expires_at < new Date()
+    ) {
+      throw new NotFoundException('Invalid or expired public link');
+    }
+
+    const coord = await this.prisma.logAgencyCoordination.findUnique({
+      where: { access_token: agencyToken },
+      include: {
+        agency: { select: { id: true, name: true, type: true } },
+      },
+    });
+
+    if (!coord || coord.log_id !== log.id) {
+      throw new NotFoundException('Invalid agency token or revoked access');
+    }
+
+    const updates = await this.prisma.coordinationUpdate.findMany({
+      where: { log_id: log.id },
+      include: {
+        agency: { select: { id: true, name: true } },
+        created_by: { select: { id: true, name: true } },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return {
+      agency_id: coord.agency_id,
+      name: coord.agency.name,
+      type: coord.agency.type,
+      can_submit_updates: true,
+      coordination_updates: updates,
+    };
+  }
+
+  // ─── Coordination Updates (Live Chat) ─────────────────────────
+
+  async submitExternalUpdate(
+    shareToken: string,
+    dto: {
+      agency_token: string;
+      message: string;
+    },
+  ) {
+    // Validate share token
+    const log = await this.prisma.log.findUnique({
+      where: { public_token: shareToken },
+      select: { id: true, public_token_expires_at: true },
+    });
+
+    if (
+      !log ||
+      !log.public_token_expires_at ||
+      log.public_token_expires_at < new Date()
+    ) {
+      throw new NotFoundException('Invalid or expired public link');
+    }
+
+    // Validate agency token
+    const coord = await this.prisma.logAgencyCoordination.findUnique({
+      where: { access_token: dto.agency_token },
+    });
+
+    if (!coord || coord.log_id !== log.id) {
+      throw new NotFoundException('Invalid agency token or revoked access');
+    }
+
+    const update = await this.prisma.coordinationUpdate.create({
+      data: {
+        log_id: log.id,
+        agency_id: coord.agency_id,
+        message: dto.message,
+        source: 'external',
+      },
+      include: {
+        agency: { select: { name: true } },
+      },
+    });
+
+    this.logsGateway.broadcastCoordinationUpdate(log.id, update);
+    return update;
+  }
+
+  async createInternalCoordinationUpdate(
+    logId: string,
+    dto: { message: string },
+    userId: string,
+  ) {
+    const log = await this.prisma.log.findUnique({ where: { id: logId } });
+    if (!log) throw new NotFoundException('Log not found');
+
+    const update = await this.prisma.coordinationUpdate.create({
+      data: {
+        log_id: logId,
+        created_by_id: userId,
+        message: dto.message,
+        source: 'internal',
+      },
+      include: {
+        created_by: { select: { id: true, name: true } },
+      },
+    });
+
+    this.logsGateway.broadcastCoordinationUpdate(logId, update);
+    return update;
+  }
+
+  async getCoordinationUpdates(logId: string) {
+    return this.prisma.coordinationUpdate.findMany({
+      where: { log_id: logId },
+      include: {
+        agency: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        created_by: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
     });
   }
 }

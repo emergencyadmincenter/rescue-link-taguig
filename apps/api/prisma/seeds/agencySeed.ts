@@ -53,6 +53,16 @@ export async function seedAgencies(prisma: PrismaService) {
       type: AgencyType.police,
       contact_info: null,
     },
+    {
+      name: 'Local Barangay',
+      type: AgencyType.other,
+      contact_info: null,
+    },
+    {
+      name: 'Health Center',
+      type: AgencyType.medical,
+      contact_info: null,
+    },
   ];
 
   for (const agency of agencies) {

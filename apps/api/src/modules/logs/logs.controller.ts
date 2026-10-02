@@ -20,6 +20,8 @@ import { QueryLogsDto } from './dto/query-logs.dto';
 import { CreateLogDto } from './dto/create-log.dto';
 import { UpdateLogDto } from './dto/update-log.dto';
 import { UpdateCoordinationDto } from './dto/update-coordination.dto';
+import { CreateRecipientDto } from './dto/create-recipient.dto';
+import { CreateCoordinationUpdateDto, SubmitExternalUpdateDto } from './dto/create-coordination-update.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -169,6 +171,65 @@ export class LogsController {
     @CurrentUser() user: JwtPayload,
   ) {
     const result = await this.logsService.update(id, updateLogDto, user.sub);
+    return ApiResponse.success(result);
+  }
+
+  // ─── Public Share Link Revocation ─────────────────────────────
+
+  @Patch(':id/share/revoke')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async revokePublicShareLink(@Param('id') id: string) {
+    const result = await this.logsService.revokePublicShareLink(id);
+    return ApiResponse.success(result);
+  }
+
+  // ─── Agency Token Validation & Updates ────────────────────────
+
+  @Get('public/:token/agency/:agencyToken')
+  async validateAgencyToken(
+    @Param('token') shareToken: string,
+    @Param('agencyToken') agencyToken: string,
+  ) {
+    const result = await this.logsService.validateAgencyToken(
+      shareToken,
+      agencyToken,
+    );
+    return ApiResponse.success(result);
+  }
+
+  @Post('public/:token/updates')
+  async submitExternalUpdate(
+    @Param('token') shareToken: string,
+    @Body() dto: SubmitExternalUpdateDto,
+  ) {
+    const result = await this.logsService.submitExternalUpdate(shareToken, dto);
+    return ApiResponse.success(result);
+  }
+
+  // ─── Coordination Updates ─────────────────────────────────────
+
+  @Get(':id/coordination-updates')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async getCoordinationUpdates(@Param('id') id: string) {
+    const result = await this.logsService.getCoordinationUpdates(id);
+    return ApiResponse.success(result);
+  }
+
+  @Post(':id/coordination-updates')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'coordinator')
+  async createInternalCoordinationUpdate(
+    @Param('id') id: string,
+    @Body() dto: CreateCoordinationUpdateDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const result = await this.logsService.createInternalCoordinationUpdate(
+      id,
+      dto,
+      user.sub,
+    );
     return ApiResponse.success(result);
   }
 }

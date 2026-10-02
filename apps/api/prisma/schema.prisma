@@ -22,6 +22,12 @@ enum CoordinationStatus {
   completed
 }
 
+
+enum UpdateSource {
+  external
+  internal
+}
+
 enum UserStatus {
   pending_activation
   active
@@ -140,6 +146,8 @@ model User {
   sent_internal_messages InternalMessage[]                 @relation("InternalMessageSender")
 
   log_agency_coordinations LogAgencyCoordination[]
+
+  created_coordination_updates CoordinationUpdate[]  @relation("CoordinationUpdateCreator")
 
   @@map("users")
 }
@@ -278,6 +286,8 @@ model Log {
   public_token            String?                 @unique
   public_token_expires_at DateTime?
   logAgencyCoordinations  LogAgencyCoordination[]
+
+  coordination_updates CoordinationUpdate[]
 
   @@index([status])
   @@index([assigned_coordinator_id])
@@ -585,6 +595,7 @@ model Agency {
 
   incident_categories AgencyIncidentCategory[]
   log_coordinations   LogAgencyCoordination[]
+  coordination_updates CoordinationUpdate[]
 
   @@map("agencies")
 }
@@ -612,6 +623,8 @@ model LogAgencyCoordination {
   status  CoordinationStatus @default(pending)
   remarks String?
 
+  access_token String @unique @default(uuid())
+
   created_by_id String? @db.Uuid
   created_by    User?   @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
 
@@ -620,4 +633,26 @@ model LogAgencyCoordination {
 
   @@unique([log_id, agency_id])
   @@map("log_agency_coordinations")
+}
+
+model CoordinationUpdate {
+  id String @id @default(uuid()) @db.Uuid
+
+  log_id String @db.Uuid
+  log    Log    @relation(fields: [log_id], references: [id], onDelete: Cascade)
+
+  agency_id String? @db.Uuid
+  agency    Agency? @relation(fields: [agency_id], references: [id], onDelete: SetNull)
+
+  created_by_id String? @db.Uuid
+  created_by    User?   @relation("CoordinationUpdateCreator", fields: [created_by_id], references: [id], onDelete: SetNull)
+
+  message     String
+
+  source UpdateSource @default(external)
+
+  created_at DateTime @default(now())
+
+  @@index([log_id, created_at])
+  @@map("coordination_updates")
 }

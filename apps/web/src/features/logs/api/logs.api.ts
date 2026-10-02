@@ -100,4 +100,22 @@ export const logsApi = {
     apiClient
       .delete(`/logs/${id}/coordinations/${agencyId}`)
       .then((res) => res.data.data),
+
+  // Public Link Revocation
+  revokePublicShareLink: (id: string): Promise<any> =>
+    apiClient.patch(`/logs/${id}/share/revoke`).then((res) => res.data.data),
+
+  // Coordination Updates
+  getCoordinationUpdates: (id: string): Promise<any[]> =>
+    apiClient.get(`/logs/${id}/coordination-updates`).then((res) => res.data.data),
+
+  createInternalCoordinationUpdate: (id: string, data: { message: string }): Promise<any> =>
+    apiClient.post(`/logs/${id}/coordination-updates`, data).then((res) => res.data.data),
+
+  // Public/External Endpoints
+  validateAgencyToken: (token: string, agencyToken: string): Promise<any> =>
+    apiClient.get(`/logs/public/${token}/agency/${agencyToken}`).then((res) => res.data.data),
+
+  submitExternalUpdate: (token: string, data: { agency_token: string; message: string }): Promise<any> =>
+    apiClient.post(`/logs/public/${token}/updates`, data).then((res) => res.data.data),
 };

@@ -41,6 +41,7 @@ import ShareLogDialog from "./ShareLogDialog";
 import { useAuth } from "@/providers/AuthProvider";
 import dynamic from "next/dynamic";
 import { AgencyCoordinationSection } from "./AgencyCoordinationSection";
+import { CoordinationUpdatesSection } from "./CoordinationUpdatesSection";
 
 const EditPinMap = dynamic(
   () => import("./EditPinMap").then((m) => m.EditPinMap),
@@ -854,6 +855,49 @@ export default function LogDetailsPanel({
 
           <hr className="border-background-subtle/50" />
 
+          <section className="mb-8">
+            <h3 className="text-xs font-bold text-info uppercase tracking-wider mb-4 flex items-center gap-2">
+              <FiRadio className="w-4 h-4" /> Channels
+            </h3>
+            <div>
+              <div className="flex flex-wrap gap-2.5">
+                {selectedChannels.map((c) => (
+                  <span
+                    key={c.id}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-info/5 text-info border border-info/10 body-small font-medium transition-colors"
+                  >
+                    {c.icon && (
+                      <span className="opacity-70 shrink-0">{c.icon}</span>
+                    )}
+                    <span className="truncate max-w-[160px]">{c.label}</span>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeChannel(c.id)}
+                        className="opacity-50 hover:opacity-100 hover:text-info ml-1 shrink-0 p-0.5 rounded-full transition-colors"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    )}
+                  </span>
+                ))}
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => setIsChannelsOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
+                  >
+                    <FiPlus className="w-4 h-4" /> Add Channel
+                  </button>
+                )}
+              </div>
+              {selectedChannels.length === 0 && (
+                <p className="body-small text-foreground/40 mt-3 italic pl-1">
+                  No communication channels added.
+                </p>
+              )}
+            </div>
+          </section>
           <section>
             <h3 className="text-xs font-bold text-danger uppercase tracking-wider mb-4 flex items-center gap-2">
               <FiPlus className="w-4 h-4" /> Requested Needs
@@ -904,54 +948,19 @@ export default function LogDetailsPanel({
             <AgencyCoordinationSection
               logId={log.id}
               isReadOnly={isReadOnly}
-              updateTrigger={log.resource_assignments?.map(ra => ra.resource_id).join(",")}
+              updateTrigger={log.resource_assignments
+                ?.map((ra) => ra.resource_id)
+                .join(",")}
             />
           </section>
 
           <hr className="border-background-subtle/50" />
 
-          <section className="mb-4">
-            <h3 className="text-xs font-bold text-info uppercase tracking-wider mb-4 flex items-center gap-2">
-              <FiRadio className="w-4 h-4" /> Channels
-            </h3>
-            <div>
-              <div className="flex flex-wrap gap-2.5">
-                {selectedChannels.map((c) => (
-                  <span
-                    key={c.id}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-info/5 text-info border border-info/10 body-small font-medium transition-colors"
-                  >
-                    {c.icon && (
-                      <span className="opacity-70 shrink-0">{c.icon}</span>
-                    )}
-                    <span className="truncate max-w-[160px]">{c.label}</span>
-                    {!isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={() => removeChannel(c.id)}
-                        className="opacity-50 hover:opacity-100 hover:text-info ml-1 shrink-0 p-0.5 rounded-full transition-colors"
-                      >
-                        <FiX className="w-4 h-4" />
-                      </button>
-                    )}
-                  </span>
-                ))}
-                {!isReadOnly && (
-                  <button
-                    type="button"
-                    onClick={() => setIsChannelsOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-dashed border-background-subtle text-foreground/50 hover:border-foreground/40 hover:text-foreground/80 hover:bg-background-subtle/30 body-small font-medium transition-all shrink-0"
-                  >
-                    <FiPlus className="w-4 h-4" /> Add Channel
-                  </button>
-                )}
-              </div>
-              {selectedChannels.length === 0 && (
-                <p className="body-small text-foreground/40 mt-3 italic pl-1">
-                  No communication channels added.
-                </p>
-              )}
-            </div>
+          <section className="mb-4 pt-2">
+            <CoordinationUpdatesSection
+              logId={log.id}
+              isReadOnly={isReadOnly}
+            />
           </section>
         </div>
       </div>
