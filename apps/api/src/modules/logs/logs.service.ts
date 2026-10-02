@@ -71,6 +71,78 @@ export class LogsService {
     );
   }
 
+  private async buildBaseWhereClause(query: QueryLogsDto) {
+    const {
+      search,
+      source,
+      assigned_coordinator_id,
+      barangay,
+      incident_category_id,
+      date_from,
+      date_to,
+    } = query;
+
+    const where: Prisma.LogWhereInput = {};
+
+    if (search) {
+      where.OR = [
+        { caller_name: { contains: search, mode: 'insensitive' } },
+        { caller_contact: { contains: search, mode: 'insensitive' } },
+        { reference_no: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { assigned_coordinator: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (source) where.source = source;
+    if (assigned_coordinator_id) where.assigned_coordinator_id = assigned_coordinator_id;
+    if (barangay) where.barangay = barangay;
+    if (incident_category_id) where.incident_category_id = incident_category_id;
+
+    if (date_from || date_to) {
+      where.created_at = {};
+      if (date_from) where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
+      if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
+    }
+
+    const activeBans = await this.prisma.shadowBan.findMany({
+      where: { active: true, OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }] },
+    });
+
+    const bannedDeviceUuids = Array.from(new Set(activeBans.map((b) => b.device_uuid).filter(Boolean))) as string[];
+    const bannedHashes = Array.from(new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean))) as string[];
+    const bannedIps = Array.from(new Set(activeBans.map((b) => b.client_ip).filter(Boolean))) as string[];
+
+    if (query.is_shadow_banned === 'true') {
+      where.fraud_assessments = {
+        some: {
+          OR: [
+            { device_uuid: { in: bannedDeviceUuids } },
+            { fingerprint_hash: { in: bannedHashes } },
+            { client_ip: { in: bannedIps } },
+          ],
+        },
+      };
+    } else if (query.is_shadow_banned === 'false') {
+      where.AND = [
+        {
+          fraud_assessments: {
+            none: {
+              OR: [
+                { device_uuid: { in: bannedDeviceUuids } },
+                { fingerprint_hash: { in: bannedHashes } },
+                { client_ip: { in: bannedIps } },
+              ],
+            },
+          },
+        },
+      ];
+    }
+
+    return { where, bannedDeviceUuids, bannedHashes, bannedIps };
+  }
+
   async findAll(query: QueryLogsDto) {
     const {
       search,
@@ -87,67 +159,9 @@ export class LogsService {
       sort_order = 'desc',
     } = query;
 
-    const where: Prisma.LogWhereInput = {};
-
-    if (search) {
-      where.OR = [
-        { caller_name: { contains: search, mode: 'insensitive' } },
-        { caller_contact: { contains: search, mode: 'insensitive' } },
-        { reference_no: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        {
-          assigned_coordinator: {
-            name: { contains: search, mode: 'insensitive' },
-          },
-        },
-      ];
-    }
+    const { where, bannedDeviceUuids, bannedHashes, bannedIps } = await this.buildBaseWhereClause(query);
 
     if (status) where.status = status;
-    if (source) where.source = source;
-    if (assigned_coordinator_id)
-      where.assigned_coordinator_id = assigned_coordinator_id;
-    if (barangay) where.barangay = barangay;
-    if (incident_category_id) where.incident_category_id = incident_category_id;
-
-    if (date_from || date_to) {
-      where.created_at = {};
-      // Treat bare date strings as Philippine Time (UTC+8) boundaries
-      if (date_from)
-        where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
-      if (date_to)
-        where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
-    }
-
-    const activeBans = await this.prisma.shadowBan.findMany({
-      where: {
-        active: true,
-        OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
-      },
-    });
-
-    const bannedDeviceUuids = new Set(
-      activeBans.map((b) => b.device_uuid).filter(Boolean),
-    );
-    const bannedHashes = new Set(
-      activeBans.map((b) => b.fingerprint_hash).filter(Boolean),
-    );
-    const bannedIps = new Set(
-      activeBans.map((b) => b.client_ip).filter(Boolean),
-    );
-
-    if (query.is_shadow_banned === 'true') {
-      where.fraud_assessments = {
-        some: {
-          OR: [
-            { device_uuid: { in: Array.from(bannedDeviceUuids) as string[] } },
-            { fingerprint_hash: { in: Array.from(bannedHashes) as string[] } },
-            { client_ip: { in: Array.from(bannedIps) as string[] } },
-          ],
-        },
-      };
-    }
 
     const skip = (page - 1) * limit;
 
@@ -181,9 +195,9 @@ export class LogsService {
     const enrichedData = data.map((log) => {
       const isShadowBanned = log.fraud_assessments?.some(
         (fa) =>
-          (fa.device_uuid && bannedDeviceUuids.has(fa.device_uuid)) ||
-          (fa.fingerprint_hash && bannedHashes.has(fa.fingerprint_hash)) ||
-          (fa.client_ip && bannedIps.has(fa.client_ip)),
+          (fa.device_uuid && bannedDeviceUuids.includes(fa.device_uuid)) ||
+          (fa.fingerprint_hash && bannedHashes.includes(fa.fingerprint_hash)) ||
+          (fa.client_ip && bannedIps.includes(fa.client_ip)),
       );
       return { ...log, is_shadow_banned: !!isShadowBanned };
     });
@@ -577,16 +591,18 @@ export class LogsService {
     });
   }
 
-  async getStatusCounts(userId: string) {
+  async getStatusCounts(userId: string, query: QueryLogsDto) {
+    const { where } = await this.buildBaseWhereClause(query);
     const counts = await this.prisma.log.groupBy({
       by: ['status'],
+      where,
       _count: {
         status: true,
       },
     });
 
     const myLogsCount = await this.prisma.log.count({
-      where: { assigned_coordinator_id: userId },
+      where: { ...where, assigned_coordinator_id: userId },
     });
 
     const result = {
@@ -599,7 +615,9 @@ export class LogsService {
     };
 
     counts.forEach((item) => {
-      result[item.status] = item._count.status;
+      if (result[item.status] !== undefined) {
+        result[item.status] = item._count.status;
+      }
       result.total += item._count.status;
     });
 

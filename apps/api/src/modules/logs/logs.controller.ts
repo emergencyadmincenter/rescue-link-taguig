@@ -50,8 +50,8 @@ export class LogsController {
   @Get('status-counts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async getStatusCounts(@CurrentUser() user: any) {
-    const result = await this.logsService.getStatusCounts(user.sub);
+  async getStatusCounts(@Query() query: QueryLogsDto, @CurrentUser() user: any) {
+    const result = await this.logsService.getStatusCounts(user.sub, query);
     return ApiResponse.success(result);
   }
 

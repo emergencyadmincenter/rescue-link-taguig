@@ -32,9 +32,9 @@ export function LandingFooter() {
               response coordination.
               <br />
               <br />
-               Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
+              Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
               <br />
-               Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
+              Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -103,7 +103,7 @@ export function LandingFooter() {
             <ul className="space-y-4">
               <li>
                 <a
-                  href="#"
+                  href="/privacy-policy"
                   className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
                 >
                   Privacy Policy
@@ -111,18 +111,10 @@ export function LandingFooter() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/terms-of-service"
                   className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
                 >
                   Terms of Service
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
-                >
-                  Cookie Policy
                 </a>
               </li>
             </ul>

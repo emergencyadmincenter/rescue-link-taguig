@@ -69,7 +69,7 @@ export function LandingHeader() {
             </button>
             <Link
               href="/resident/logs"
-              className="body-small font-medium text-primary hover:text-primary-hover transition-colors"
+              className="px-4 py-1.5 border border-gray-200 rounded-full body-small font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
               My Logs
             </Link>
@@ -119,7 +119,7 @@ export function LandingHeader() {
             </button>
             <Link
               href="/resident/logs"
-              className="text-left font-medium text-primary py-2 border-b border-gray-50"
+              className="text-left font-medium text-gray-700 py-2 border-b border-gray-50"
             >
               My Emergency Logs
             </Link>

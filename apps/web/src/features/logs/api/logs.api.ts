@@ -22,8 +22,10 @@ export const logsApi = {
   updateLog: (id: string, data: UpdateLogPayload): Promise<Log> =>
     apiClient.patch(`/logs/${id}`, data).then((res) => res.data.data),
 
-  getStatusCounts: (): Promise<StatusCounts> =>
-    apiClient.get("/logs/status-counts").then((res) => res.data.data),
+  getStatusCounts: (params?: LogsQueryParams): Promise<StatusCounts> =>
+    apiClient
+      .get("/logs/status-counts", { params })
+      .then((res) => res.data.data),
 
   getResources: (): Promise<Resource[]> =>
     apiClient.get("/logs/resources").then((res) => res.data.data),
@@ -107,15 +109,29 @@ export const logsApi = {
 
   // Coordination Updates
   getCoordinationUpdates: (id: string): Promise<any[]> =>
-    apiClient.get(`/logs/${id}/coordination-updates`).then((res) => res.data.data),
+    apiClient
+      .get(`/logs/${id}/coordination-updates`)
+      .then((res) => res.data.data),
 
-  createInternalCoordinationUpdate: (id: string, data: { message: string }): Promise<any> =>
-    apiClient.post(`/logs/${id}/coordination-updates`, data).then((res) => res.data.data),
+  createInternalCoordinationUpdate: (
+    id: string,
+    data: { message: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/${id}/coordination-updates`, data)
+      .then((res) => res.data.data),
 
   // Public/External Endpoints
   validateAgencyToken: (token: string, agencyToken: string): Promise<any> =>
-    apiClient.get(`/logs/public/${token}/agency/${agencyToken}`).then((res) => res.data.data),
+    apiClient
+      .get(`/logs/public/${token}/agency/${agencyToken}`)
+      .then((res) => res.data.data),
 
-  submitExternalUpdate: (token: string, data: { agency_token: string; message: string }): Promise<any> =>
-    apiClient.post(`/logs/public/${token}/updates`, data).then((res) => res.data.data),
+  submitExternalUpdate: (
+    token: string,
+    data: { agency_token: string; message: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/public/${token}/updates`, data)
+      .then((res) => res.data.data),
 };

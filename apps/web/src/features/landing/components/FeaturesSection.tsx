@@ -10,40 +10,40 @@ import {
 
 const features = [
   {
-    icon: <FiZap className="w-6 h-6" />,
-    title: "One-Tap SOS",
+    icon: <FiZap className="w-5 h-5" />,
+    title: "Instant Web Access",
     description:
-      "Trigger an immediate distress signal with a single tap, instantly alerting local responders to your situation.",
+      "No app installation or account registration required. Simply open the website and request immediate assistance during critical moments.",
   },
   {
-    icon: <FiMessageCircle className="w-6 h-6" />,
-    title: "Live Video Assistance",
+    icon: <FiMessageCircle className="w-5 h-5" />,
+    title: "Direct Communication",
     description:
-      "Connect instantly with first responders via high-quality video or voice call so they can see exactly what's happening.",
+      "Establish a secure, real-time voice or chat connection directly with the Taguig Command Center.",
   },
   {
-    icon: <FiMapPin className="w-6 h-6" />,
-    title: "Precise Location Sharing",
+    icon: <FiMapPin className="w-5 h-5" />,
+    title: "Automated Geolocation",
     description:
-      "Share your exact location on the map with a single tap, eliminating the need to explain where you are during a crisis.",
+      "The system securely acquires your precise GPS coordinates to help responders find you instantly without needing complex explanations.",
   },
   {
-    icon: <FiUsers className="w-6 h-6" />,
-    title: "Direct to Authorities",
+    icon: <FiUsers className="w-5 h-5" />,
+    title: "Unified Response",
     description:
-      "Your emergency is immediately routed to the appropriate local responders and coordinators for quick action.",
+      "Seamlessly connects multiple local agencies (Police, Fire, Medical, Disaster Risk) into a single, coordinated response channel.",
   },
   {
-    icon: <FiShield className="w-6 h-6" />,
-    title: "Secure & Reliable",
+    icon: <FiShield className="w-5 h-5" />,
+    title: "Anti-Spam Security",
     description:
-      "Advanced location verification ensures the emergency network stays free of prank calls, keeping lines open for real needs.",
+      "Built-in geographic IP validation and shadow banning systems ensure emergency lines stay open and available for real victims.",
   },
   {
-    icon: <FiBell className="w-6 h-6" />,
-    title: "Fastest Response Times",
+    icon: <FiBell className="w-5 h-5" />,
+    title: "Real-time Updates",
     description:
-      "Our smart coordination system organizes dispatchers and responders to ensure you get the help you need without delay.",
+      "Receive live status updates on your rescue request, so you know exactly when help is arriving.",
   },
 ];
 
@@ -58,30 +58,30 @@ export function FeaturesSection() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-danger/5 rounded-full blur-[80px] pointer-events-none translate-y-1/2 -translate-x-1/2"></div>
 
       <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
-        <div className="text-center mx-auto mb-8 md:mb-16">
+        <div className="text-center mx-auto mb-10 md:mb-16">
           <h2 className="title-large text-primary mb-3">Key Capabilities</h2>
           <h3 className="font-outfit font-bold text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 tracking-tight">
             Built for Critical Moments
           </h3>
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+          <p className="text-lg md:text-xl text-gray-600 leading-relaxed mx-auto max-w-3xl">
             Rescue Link provides the tools and infrastructure necessary for
             rapid, organized, and effective emergency response.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8 xl:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group p-8 md:p-10 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-gray-900/5 hover:-translate-y-1 transition-all duration-300"
+              className="group relative p-8 md:p-10 rounded-2xl border border-gray-100 hover:border-gray-200 bg-gray-50 hover:bg-white hover:shadow-sm transition-all duration-300 overflow-hidden flex flex-col"
             >
-              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-primary mb-6 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-white">
                 {feature.icon}
               </div>
               <h4 className="title-medium text-gray-900 mb-3">
                 {feature.title}
               </h4>
-              <p className="text-gray-600 leading-relaxed text-base md:text-lg">
+              <p className="text-gray-600 leading-relaxed text-base">
                 {feature.description}
               </p>
             </div>

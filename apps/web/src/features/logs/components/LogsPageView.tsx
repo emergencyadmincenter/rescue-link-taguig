@@ -12,6 +12,7 @@ import { useLogs } from "../hooks/useLogs";
 import { logsApi } from "../api/logs.api";
 import { LogStatus, Resource } from "../types/logs.types";
 import { useAuth } from "@/providers/AuthProvider";
+import { FiX } from "react-icons/fi";
 
 export default function LogsPageView() {
   const router = useRouter();
@@ -47,18 +48,13 @@ export default function LogsPageView() {
     [updateParams],
   );
 
-  const activeTab =
-    params.assigned_coordinator_id === user?.id
-      ? "my_logs"
-      : params.status || "all";
+  const activeTab = params.status || "all";
 
   const handleTabChange = (tab: string) => {
-    if (tab === "my_logs") {
-      updateParams({ status: undefined, assigned_coordinator_id: user?.id });
-    } else if (tab === "all") {
-      updateParams({ status: undefined, assigned_coordinator_id: undefined });
+    if (tab === "all") {
+      updateParams({ status: undefined });
     } else {
-      updateParams({ status: tab as any, assigned_coordinator_id: undefined });
+      updateParams({ status: tab as any });
     }
   };
 
@@ -91,11 +87,64 @@ export default function LogsPageView() {
           dateLabel={dateLabel || "Date range"}
         />
 
-        <LogTabs
-          activeTab={activeTab as any}
-          onTabChange={handleTabChange}
-          counts={statusCounts}
-        />
+        <div className="flex flex-wrap items-center gap-2 mt-2 mb-2">
+          {params.source && (
+            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200">
+              Source: {params.source}
+              <button
+                onClick={() => updateParams({ source: undefined })}
+                className="hover:bg-gray-200 rounded-full p-0.5 transition-colors"
+              >
+                <FiX className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {params.is_shadow_banned && (
+            <span className="flex items-center gap-1.5 bg-danger/10 text-danger text-xs font-semibold px-2.5 py-1 rounded-full border border-danger/20">
+              Shadow Banned: {params.is_shadow_banned === "true" ? "Yes" : "No"}
+              <button
+                onClick={() => updateParams({ is_shadow_banned: undefined })}
+                className="hover:bg-danger/20 rounded-full p-0.5 transition-colors"
+              >
+                <FiX className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {(params.date_from || params.date_to) && (
+            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-gray-200">
+              Date: {dateLabel || "Custom"}
+              <button
+                onClick={() => {
+                  updateParams({ date_from: undefined, date_to: undefined });
+                  setDateLabel("");
+                }}
+                className="hover:bg-gray-200 rounded-full p-0.5 transition-colors"
+              >
+                <FiX className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-4">
+          <LogTabs
+            activeTab={activeTab as any}
+            onTabChange={handleTabChange}
+            counts={statusCounts}
+          />
+          <button
+            onClick={() =>
+              updateParams({
+                assigned_coordinator_id: params.assigned_coordinator_id
+                  ? undefined
+                  : user?.id,
+              })
+            }
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold border transition-all shadow-sm ${params.assigned_coordinator_id ? "border-primary bg-primary text-white hover:bg-primary-hover shadow-primary/20" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"}`}
+          >
+            My Assignments
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area (Scrollable List) */}
@@ -132,16 +181,16 @@ export default function LogsPageView() {
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
         onApply={(filters) =>
-          updateParams({ 
-            status: filters.status, 
+          updateParams({
+            status: filters.status,
             source: filters.source,
-            is_shadow_banned: filters.is_shadow_banned 
+            is_shadow_banned: filters.is_shadow_banned,
           })
         }
-        initialFilters={{ 
-          status: params.status, 
+        initialFilters={{
+          status: params.status,
           source: params.source,
-          is_shadow_banned: params.is_shadow_banned 
+          is_shadow_banned: params.is_shadow_banned,
         }}
       />
 
