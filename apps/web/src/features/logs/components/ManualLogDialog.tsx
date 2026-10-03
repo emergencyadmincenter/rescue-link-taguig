@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
+import { 
   FiX,
   FiPlus,
   FiAlertCircle,
@@ -20,6 +20,14 @@ import {
   FiBatteryCharging,
   FiMaximize,
   FiMinimize,
+  FiShoppingBag,
+  FiPackage,
+  FiLifeBuoy,
+  FiActivity,
+  FiAlertOctagon,
+  FiHome,
+  FiAnchor,
+  FiTarget
 } from "react-icons/fi";
 import { logsApi } from "../api/logs.api";
 import { Resource, CreateLogPayload } from "../types/logs.types";
@@ -46,16 +54,14 @@ const CustomPinIcon = L.divIcon({
     transform: translate(-50%, -50%);
   "></div>`,
   iconSize: [16, 16],
-  iconAnchor: [8, 8],
-});
+  iconAnchor: [8, 8]});
 L.Marker.prototype.options.icon = CustomPinIcon;
 
 const TAGUIG_CENTER: [number, number] = [14.5176, 121.0509];
 
 // GeoJSON name normaliser
 const GEOJSON_NAME_VARIANTS: Record<string, string[]> = {
-  Palingon: ["Palingon-Tipas"],
-};
+  Palingon: ["Palingon-Tipas"]};
 
 function resolveGeoJsonName(geoName: string): string[] {
   return GEOJSON_NAME_VARIANTS[geoName] ?? [geoName];
@@ -72,8 +78,7 @@ function LocationPickerMap({
   useMapEvents({
     click(e) {
       setPosition([e.latlng.lat, e.latlng.lng]);
-    },
-  });
+    }});
   return position === null ? null : <Marker position={position} />;
 }
 
@@ -97,8 +102,7 @@ function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
 // ── Inner: pans/zooms to the selected barangay polygon ────────────────────
 function BarangayFocusHandler({
   selectedBarangay,
-  geoJsonData,
-}: {
+  geoJsonData}: {
   selectedBarangay: string;
   geoJsonData: GeoJSON.FeatureCollection | null;
 }) {
@@ -128,9 +132,7 @@ function BarangayFocusHandler({
         weight: 3,
         fillColor: "#3b82f6",
         fillOpacity: 0.2,
-        dashArray: "6 3",
-      },
-    });
+        dashArray: "6 3"}});
 
     highlight.addTo(map);
     highlightRef.current = highlight;
@@ -172,31 +174,27 @@ const PREDEFINED_CHANNELS: SelectorOption[] = [
 ];
 
 const PREDEFINED_NEEDS_FALLBACK: SelectorOption[] = [
-  { id: "custom_Food", label: "Food", icon: <FiBriefcase /> },
+  { id: "custom_Food", label: "Food", icon: <FiShoppingBag /> },
   { id: "custom_Drinking Water", label: "Drinking Water", icon: <FiDroplet /> },
-  { id: "custom_Rescue", label: "Rescue", icon: <FiHeart /> },
+  { id: "custom_Rescue", label: "Rescue", icon: <FiLifeBuoy /> },
   { id: "custom_First Aid", label: "First Aid", icon: <FiHeart /> },
-  { id: "custom_Medical Assistance", label: "Medical Assistance", icon: <FiHeart /> },
+  { id: "custom_Medical Assistance", label: "Medical Assistance", icon: <FiActivity /> },
   { id: "custom_Ambulance", label: "Ambulance", icon: <FiTruck /> },
-  { id: "custom_Shelter", label: "Shelter", icon: <FiMapPin /> },
+  { id: "custom_Firetruck", label: "Firetruck", icon: <FiAlertOctagon /> },
+  { id: "custom_Shelter", label: "Shelter", icon: <FiHome /> },
   { id: "custom_Evacuation", label: "Evacuation", icon: <FiMapPin /> },
-  { id: "custom_Clothing", label: "Clothing", icon: <FiBriefcase /> },
-  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiBriefcase /> },
-  { id: "custom_Hygiene Kit", label: "Hygiene Kit", icon: <FiDroplet /> },
-  { id: "custom_Transportation", label: "Transportation", icon: <FiTruck /> },
-  { id: "custom_Generator", label: "Generator", icon: <FiBatteryCharging /> },
-  { id: "custom_Flashlight", label: "Flashlight", icon: <FiBatteryCharging /> },
-  { id: "custom_Fuel", label: "Fuel", icon: <FiBatteryCharging /> },
-  { id: "custom_Oxygen", label: "Oxygen", icon: <FiWind /> },
-  { id: "custom_Blood Donation", label: "Blood Donation", icon: <FiHeart /> },
+  { id: "custom_Clothing", label: "Clothing", icon: <FiShoppingBag /> },
+  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiPackage /> },
+  { id: "custom_Rescue Boat", label: "Rescue Boat", icon: <FiAnchor /> },
+  { id: "custom_Police Assistance", label: "Police Assistance", icon: <FiShield /> },
+  { id: "custom_Search and Rescue", label: "Search and Rescue", icon: <FiTarget /> },
 ];
 
 export default function ManualLogDialog({
   isOpen,
   onClose,
   onSuccess,
-  resources,
-}: ManualLogDialogProps) {
+  resources}: ManualLogDialogProps) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [address, setAddress] = useState("");
@@ -292,8 +290,7 @@ export default function ManualLogDialog({
         longitude: pinPosition ? pinPosition[1] : undefined,
         resource_ids: selectedNeeds.length > 0 ? selectedNeeds.map((n) => n.id) : undefined,
         channels: selectedChannels.length > 0 ? selectedChannels.map((c) => c.label) : undefined,
-        status,
-      };
+        status};
       await logsApi.createLog(payload);
       toast.success("Emergency log created successfully");
       onSuccess();
@@ -433,8 +430,7 @@ export default function ManualLogDialog({
                           weight: 1.5,
                           color: "#6b7280",
                           fillOpacity: 0.15,
-                          dashArray: "",
-                        }}
+                          dashArray: ""}}
                       />
                     )}
 

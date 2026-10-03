@@ -150,38 +150,12 @@ export function AgencyCoordinationSection({
                 )}
 
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div
-                    className={`mt-1 p-2 rounded-full shrink-0 ${
-                      status === "completed"
-                        ? "bg-success/15 text-success"
-                        : status === "contacted"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-warning/15 text-warning"
-                    }`}
-                  >
-                    {status === "completed" ? (
-                      <FiCheck className="w-4 h-4" />
-                    ) : status === "contacted" ? (
-                      <FiPhoneForwarded className="w-4 h-4" />
-                    ) : (
-                      <FiClock className="w-4 h-4" />
-                    )}
-                  </div>
+                  
 
                   <div className="min-w-0 flex-1">
                     <h4 className="text-sm font-semibold flex flex-wrap items-center gap-2">
                       <span className="truncate">{agency.name}</span>
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                          status === "completed"
-                            ? "text-success bg-success/10"
-                            : status === "contacted"
-                              ? "text-primary bg-primary/10"
-                              : "text-warning bg-warning/10"
-                        }`}
-                      >
-                        {status}
-                      </span>
+                      
                     </h4>
                     {agency.contact_info ? (
                       <p className="text-xs text-foreground/60 mt-1 flex items-center gap-1.5 truncate">

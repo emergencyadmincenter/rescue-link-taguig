@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
+import { 
   FiChevronLeft,
   FiSettings,
   FiPhoneCall,
@@ -13,7 +13,6 @@ import {
   FiWind,
   FiHeart,
   FiDroplet,
-  
   FiMapPin,
   FiTruck,
   FiBatteryCharging,
@@ -28,6 +27,13 @@ import {
   FiClock,
   FiEye,
   FiEyeOff,
+  FiShoppingBag,
+  FiPackage,
+  FiLifeBuoy,
+  FiAlertOctagon,
+  FiHome,
+  FiAnchor,
+  FiTarget
 } from "react-icons/fi";
 import { Log, LogStatus, Resource } from "../types/logs.types";
 import { STATUS_CONFIG } from "../constants/logs.constants";
@@ -69,35 +75,27 @@ const PREDEFINED_CHANNELS: SelectorOption[] = [
 ];
 
 const PREDEFINED_NEEDS_FALLBACK: SelectorOption[] = [
-  { id: "custom_Food", label: "Food" },
+  { id: "custom_Food", label: "Food", icon: <FiShoppingBag /> },
   { id: "custom_Drinking Water", label: "Drinking Water", icon: <FiDroplet /> },
-  { id: "custom_Rescue", label: "Rescue", icon: <FiHeart /> },
+  { id: "custom_Rescue", label: "Rescue", icon: <FiLifeBuoy /> },
   { id: "custom_First Aid", label: "First Aid", icon: <FiHeart /> },
-  {
-    id: "custom_Medical Assistance",
-    label: "Medical Assistance",
-    icon: <FiHeart />,
-  },
+  { id: "custom_Medical Assistance", label: "Medical Assistance", icon: <FiActivity /> },
   { id: "custom_Ambulance", label: "Ambulance", icon: <FiTruck /> },
-  { id: "custom_Shelter", label: "Shelter", icon: <FiMapPin /> },
+  { id: "custom_Firetruck", label: "Firetruck", icon: <FiAlertOctagon /> },
+  { id: "custom_Shelter", label: "Shelter", icon: <FiHome /> },
   { id: "custom_Evacuation", label: "Evacuation", icon: <FiMapPin /> },
-  { id: "custom_Clothing", label: "Clothing" },
-  { id: "custom_Baby Supplies", label: "Baby Supplies" },
-  { id: "custom_Hygiene Kit", label: "Hygiene Kit", icon: <FiDroplet /> },
-  { id: "custom_Transportation", label: "Transportation", icon: <FiTruck /> },
-  { id: "custom_Generator", label: "Generator", icon: <FiBatteryCharging /> },
-  { id: "custom_Flashlight", label: "Flashlight", icon: <FiBatteryCharging /> },
-  { id: "custom_Fuel", label: "Fuel", icon: <FiBatteryCharging /> },
-  { id: "custom_Oxygen", label: "Oxygen", icon: <FiWind /> },
-  { id: "custom_Blood Donation", label: "Blood Donation", icon: <FiHeart /> },
+  { id: "custom_Clothing", label: "Clothing", icon: <FiShoppingBag /> },
+  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiPackage /> },
+  { id: "custom_Rescue Boat", label: "Rescue Boat", icon: <FiAnchor /> },
+  { id: "custom_Police Assistance", label: "Police Assistance", icon: <FiShield /> },
+  { id: "custom_Search and Rescue", label: "Search and Rescue", icon: <FiTarget /> },
 ];
 
 export default function LogDetailsPanel({
   log,
   resources,
   onBack,
-  onUpdate,
-}: LogDetailsPanelProps) {
+  onUpdate}: LogDetailsPanelProps) {
   const { user } = useAuth();
   const isAdmin = user?.roles?.includes("admin");
   const isOwner =
@@ -113,8 +111,7 @@ export default function LogDetailsPanel({
     caller_name: "",
     caller_contact: "",
     address: "",
-    description: "",
-  });
+    description: ""});
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -143,8 +140,7 @@ export default function LogDetailsPanel({
       .filter((r) => !fallbackLabels.has(r.name.toLowerCase()))
       .map((r) => ({
         id: r.id,
-        label: r.name,
-      }));
+        label: r.name}));
     return [...PREDEFINED_NEEDS_FALLBACK, ...dbNeeds];
   })();
 
@@ -157,8 +153,7 @@ export default function LogDetailsPanel({
         caller_name: log.caller_name || "",
         caller_contact: log.caller_contact || "",
         address: log.address || "",
-        description: log.description || "",
-      });
+        description: log.description || ""});
 
       // Map existing channels
       const dbChannels = log.channels || [];
@@ -195,8 +190,7 @@ export default function LogDetailsPanel({
         toast.error("Failed to save changes");
       }
     },
-    debounceMs: 1500,
-  });
+    debounceMs: 1500});
 
   if (!log) return null;
 
@@ -215,8 +209,7 @@ export default function LogDetailsPanel({
     try {
       const updated = await logsApi.updateLog(log.id, {
         latitude: lat,
-        longitude: lng,
-      });
+        longitude: lng});
       onUpdate(updated);
       toast.success("Pin location updated.");
     } catch {
@@ -230,8 +223,7 @@ export default function LogDetailsPanel({
       const updated = await logsApi.updateLog(log.id, {
         status,
         status_remarks:
-          remarks?.trim() || `Status changed from ${log.status} to ${status}.`,
-      });
+          remarks?.trim() || `Status changed from ${log.status} to ${status}.`});
       const refreshed = await logsApi.getLog(updated.id);
       onUpdate(refreshed);
       toast.success(`Status updated to ${status}`);
@@ -318,8 +310,7 @@ export default function LogDetailsPanel({
         <span className="text-foreground font-semibold title-small">
           {new Date(log.created_at).toLocaleTimeString([], {
             hour: "2-digit",
-            minute: "2-digit",
-          })}
+            minute: "2-digit"})}
         </span>
       </div>
       <div className="flex flex-col gap-1.5 p-4 rounded-2xl bg-background-subtle/40 border border-background-subtle/50 col-span-2">
@@ -1023,8 +1014,7 @@ export default function LogDetailsPanel({
             onChange={(event) =>
               setConfirmDialog((current) => ({
                 ...current,
-                remarks: event.target.value,
-              }))
+                remarks: event.target.value}))
             }
             rows={2}
             placeholder="Add context for this status change..."
