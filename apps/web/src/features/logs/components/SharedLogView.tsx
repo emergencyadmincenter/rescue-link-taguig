@@ -15,7 +15,6 @@ import {
   FiMessageSquare,
   FiSend,
   FiCheckCircle,
-  
   FiDroplet,
   FiHeart,
   FiTruck,
@@ -74,7 +73,7 @@ export default function SharedLogView({
       const target = endOfMessagesRef.current;
       container.scrollTo({
         top: target.offsetTop,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   }, [log.coordination_updates]);
@@ -157,7 +156,7 @@ export default function SharedLogView({
             <div className="relative w-32 h-8">
               <Image
                 src="/images/logos/rlt-main-logo.png"
-                alt="Rescue Link Logo"
+                alt="RescueLink Logo"
                 fill
                 className="object-contain object-left"
                 priority
@@ -501,7 +500,7 @@ export default function SharedLogView({
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <FiMessageSquare className="w-4 h-4" /> Coordination Updates
                   </h3>
-                  <div 
+                  <div
                     ref={chatContainerRef}
                     className="bg-gray-50 rounded-xl p-4 border border-gray-100 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar flex flex-col-reverse relative"
                   >
@@ -512,7 +511,10 @@ export default function SharedLogView({
                       </div>
                     ) : (
                       <>
-                        <div ref={endOfMessagesRef} className="absolute bottom-0 left-0 w-full h-px" />
+                        <div
+                          ref={endOfMessagesRef}
+                          className="absolute bottom-0 left-0 w-full h-px"
+                        />
                         {log.coordination_updates.map(
                           (update: any, idx: number) => {
                             const isOwn =

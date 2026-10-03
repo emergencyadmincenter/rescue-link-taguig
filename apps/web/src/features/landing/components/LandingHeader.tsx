@@ -39,7 +39,7 @@ export function LandingHeader() {
             <div className="relative w-36 md:w-44 h-10 transition-transform group-hover:scale-[1.02]">
               <Image
                 src="/images/logos/rlt-main-logo.png"
-                alt="Rescue Link Logo"
+                alt="RescueLink Logo"
                 fill
                 className="object-contain object-left"
                 priority

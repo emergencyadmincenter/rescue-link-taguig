@@ -36,7 +36,7 @@ export function HowItWorksSection() {
             <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-3xl"></div>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
               <Image
-                src="/images/how-it-works.jpg"
+                src="/images/how-it-works.png"
                 alt="Emergency App Interface"
                 width={1000}
                 height={750}

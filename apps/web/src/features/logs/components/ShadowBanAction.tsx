@@ -292,7 +292,7 @@ export function ShadowBanAction({
                   {selectedDuration}
                 </p>
                 <p className="text-xs text-foreground/60 mt-1">
-                  Based on the Rescue Link progressive enforcement policy.
+                  Based on the RescueLink progressive enforcement policy.
                 </p>
               </div>
 

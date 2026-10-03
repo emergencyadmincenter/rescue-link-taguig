@@ -1,6 +1,6 @@
 # API
 
-NestJS backend for Rescue Link Taguig.
+NestJS backend for RescueLink Taguig.
 
 ## Development
 

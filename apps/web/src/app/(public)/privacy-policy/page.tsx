@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
       title: "Information Collection",
       icon: <FiEye className="w-5 h-5" />,
       content:
-        "The City Government of Taguig, through the Rescue Link platform, strictly collects only data deemed essential for the provision of immediate emergency assistance. This encompasses precise geolocational coordinates, requisite contact identifiers, and associated hardware telemetry to ensure accurate dispatching and verify caller authenticity.",
+        "The City Government of Taguig, through the RescueLink platform, strictly collects only data deemed essential for the provision of immediate emergency assistance. This encompasses precise geolocational coordinates, requisite contact identifiers, and associated hardware telemetry to ensure accurate dispatching and verify caller authenticity.",
     },
     {
       title: "Data Utilization",
@@ -44,9 +44,8 @@ export default function PrivacyPolicyPage() {
               Data Privacy Policy
             </h1>
             <p className="text-gray-500 text-lg mx-auto">
-              Effective Date: October 2026. This document governs the data
-              collection and security practices of the Rescue Link Taguig
-              emergency response infrastructure.
+              This document governs the data collection and security practices
+              of the RescueLink Taguig emergency response infrastructure.
             </p>
           </div>
         </div>
@@ -60,7 +59,7 @@ export default function PrivacyPolicyPage() {
             <p className="text-gray-600 leading-relaxed text-lg mb-4">
               The City Government of Taguig recognizes the fundamental right to
               privacy and is steadfastly committed to safeguarding the personal
-              information of its citizens. The operation of the Rescue Link
+              information of its citizens. The operation of the RescueLink
               emergency response system adheres strictly to the principles and
               provisions of the Data Privacy Act of 2012 (Republic Act No.
               10173).

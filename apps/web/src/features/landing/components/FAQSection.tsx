@@ -6,7 +6,7 @@ import { FiChevronDown } from "react-icons/fi";
 const faqs = [
   {
     q: "Do I need to download an app or create an account?",
-    a: "No. Rescue Link Taguig is a web-based platform. You can access it directly through your mobile or desktop browser and report an emergency without needing an account.",
+    a: "No. RescueLink Taguig is a web-based platform. You can access it directly through your mobile or desktop browser and report an emergency without needing an account.",
   },
   {
     q: "What happens if I am outside Taguig City?",
@@ -38,8 +38,7 @@ export function FAQSection() {
             Frequently Asked Questions
           </h3>
           <p className="text-lg md:text-xl text-gray-600">
-            Find answers to common questions about using the Rescue Link
-            platform.
+            Find answers to common questions about using RescueLink platform.
           </p>
         </div>
 

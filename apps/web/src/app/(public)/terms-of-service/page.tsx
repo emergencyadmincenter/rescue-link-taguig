@@ -9,7 +9,7 @@ export default function TermsOfServicePage() {
       title: "Jurisdiction & Eligibility",
       icon: <FiMapPin className="w-5 h-5" />,
       content:
-        "The Rescue Link platform operates exclusively within the territorial jurisdiction of Taguig City, Philippines. The system is designed to service residents and individuals currently situated within city limits. Dispatch protocols are structurally bound to Taguig municipal response units.",
+        "The RescueLink platform operates exclusively within the territorial jurisdiction of Taguig City, Philippines. The system is designed to service residents and individuals currently situated within city limits. Dispatch protocols are structurally bound to Taguig municipal response units.",
     },
     {
       title: "Zero-Tolerance for Misuse",
@@ -44,8 +44,8 @@ export default function TermsOfServicePage() {
               Terms of Service
             </h1>
             <p className="text-gray-500 text-lg mx-auto">
-              Effective Date: October 2026. These terms strictly govern the
-              authorized usage of the Rescue Link emergency response framework.
+              These terms strictly govern the authorized usage of the RescueLink
+              emergency response framework.
             </p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export default function TermsOfServicePage() {
             </h2>
             <p className="text-gray-600 leading-relaxed text-lg mb-4">
               By accessing, browsing, or initiating any emergency transmission
-              through the Rescue Link platform, the user explicitly acknowledges
+              through the RescueLink platform, the user explicitly acknowledges
               and agrees to be bound by the operational terms outlined herein.
               This framework exists strictly to facilitate critical, life-saving
               communication between citizens and the Taguig Command Center.

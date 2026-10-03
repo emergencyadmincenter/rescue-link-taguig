@@ -18,18 +18,18 @@ export class MailService {
       const { data, error } = await this.resend.emails.send({
         from:
           process.env.RESEND_FROM_EMAIL ||
-          'Rescue Link Taguig <rescuelinktaguig@gmail.com>',
+          'RescueLink Taguig <rescuelinktaguig@gmail.com>',
         to,
-        subject: 'Activate Your Rescue Link Taguig Account',
+        subject: 'Activate Your RescueLink Taguig Account',
         html: `
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
             <div style="text-align: center; margin-bottom: 24px;">
-              <h2 style="color: #0f172a; margin: 0;">Welcome to Rescue Link Taguig</h2>
+              <h2 style="color: #0f172a; margin: 0;">Welcome to RescueLink Taguig</h2>
               <p style="color: #64748b; margin-top: 8px;">Command Center System</p>
             </div>
             
             <p>Hi <strong>${name}</strong>,</p>
-            <p>An account has been created for you on the Rescue Link Taguig Command Center system.</p>
+            <p>An account has been created for you on the RescueLink Taguig Command Center system.</p>
             <p>Please click the button below to securely set your password and activate your account:</p>
             
             <div style="text-align: center; margin: 32px 0;">

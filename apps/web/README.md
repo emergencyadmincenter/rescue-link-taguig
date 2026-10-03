@@ -1,6 +1,6 @@
 # Web
 
-Next.js frontend for Rescue Link Taguig.
+Next.js frontend for RescueLink Taguig.
 
 ## Development
 

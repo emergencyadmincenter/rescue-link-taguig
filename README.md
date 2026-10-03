@@ -1,6 +1,6 @@
-# Rescue Link Taguig
+# RescueLink Taguig
 
-Monorepo for the Rescue Link Taguig web app, API, shared packages, and supporting docs.
+Monorepo for the RescueLink Taguig web app, API, shared packages, and supporting docs.
 
 ## Workspace layout
 

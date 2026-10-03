@@ -64,7 +64,7 @@ export function FeaturesSection() {
             Built for Critical Moments
           </h3>
           <p className="text-lg md:text-xl text-gray-600 leading-relaxed mx-auto">
-            Rescue Link provides the tools and infrastructure necessary for
+            RescueLink provides the tools and infrastructure necessary for
             rapid, organized, and effective emergency response.
           </p>
         </div>
