@@ -38,40 +38,130 @@ interface LocationFactors {
  */
 const BARANGAY_TERRAIN: Record<string, LocationFactors> = {
   // Lakeshore & River areas (High vulnerability)
-  "brgy-napindan": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-wawa": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-hagonoy": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-ususan": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-bagumbayan": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-lower-bicutan": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-ibayo-tipas": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-palingon-tipas": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-ligid-tipas": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-santa-ana": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-bambang": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-tuktukan": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
-  "brgy-calzada": { elevation: "low", waterwayProximity: true, drainageQuality: "poor" },
-  "brgy-new-lower-bicutan": { elevation: "low", waterwayProximity: true, drainageQuality: "fair" },
+  "brgy-napindan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-wawa": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-hagonoy": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-ususan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-bagumbayan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-lower-bicutan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-ibayo-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-palingon-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-ligid-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-santa-ana": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-bambang": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-tuktukan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-calzada": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-new-lower-bicutan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
 
   // Hilly / Higher elevation areas (Low vulnerability)
-  "brgy-fort-bonifacio": { elevation: "high", waterwayProximity: false, drainageQuality: "good" },
-  "brgy-pinagsama": { elevation: "high", waterwayProximity: false, drainageQuality: "good" },
-  "brgy-pembo": { elevation: "high", waterwayProximity: false, drainageQuality: "fair" },
-  "brgy-west-rembo": { elevation: "high", waterwayProximity: false, drainageQuality: "fair" },
-  "brgy-east-rembo": { elevation: "high", waterwayProximity: false, drainageQuality: "fair" },
-  "brgy-cembo": { elevation: "high", waterwayProximity: false, drainageQuality: "fair" },
-  "brgy-south-cembo": { elevation: "high", waterwayProximity: false, drainageQuality: "fair" },
-  "brgy-pitogo": { elevation: "high", waterwayProximity: false, drainageQuality: "good" },
-  
+  "brgy-fort-bonifacio": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+  "brgy-pinagsama": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+  "brgy-pembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-west-rembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-east-rembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-cembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-south-cembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-pitogo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+
   // Missing barangays default to Moderate vulnerability in the getter
 };
 
 function getLocationFactors(barangayId: string): LocationFactors {
-  return BARANGAY_TERRAIN[barangayId] || {
-    elevation: "moderate",
-    waterwayProximity: false,
-    drainageQuality: "fair",
-  };
+  return (
+    BARANGAY_TERRAIN[barangayId] || {
+      elevation: "moderate",
+      waterwayProximity: false,
+      drainageQuality: "fair",
+    }
+  );
 }
 
 /**
@@ -105,10 +195,10 @@ function calculateLocationScore(factors: LocationFactors): number {
  * Accurately models that prolonged rain over vulnerable terrain is highly risky.
  */
 const WEIGHTS = {
-  precipitation: 0.25,        // Current intensity (mm)
-  rainDuration: 0.25,         // Rain persistence (minutes)
-  locationVulnerability: 0.40, // Elevation, drainage, waterways
-  precipitationChance: 0.10,   // Future forecast probability
+  precipitation: 0.25, // Current intensity (mm)
+  rainDuration: 0.25, // Rain persistence (minutes)
+  locationVulnerability: 0.4, // Elevation, drainage, waterways
+  precipitationChance: 0.1, // Future forecast probability
 } as const;
 
 /**
@@ -144,9 +234,9 @@ export function calculateFloodRisk(weather: BarangayWeather): FloodRiskResult {
   // Weighted sum
   const score = Math.round(
     precipScore * WEIGHTS.precipitation +
-    durationScore * WEIGHTS.rainDuration +
-    locationScore * WEIGHTS.locationVulnerability +
-    chanceScore * WEIGHTS.precipitationChance
+      durationScore * WEIGHTS.rainDuration +
+      locationScore * WEIGHTS.locationVulnerability +
+      chanceScore * WEIGHTS.precipitationChance,
   );
 
   // Determine risk level
@@ -171,7 +261,7 @@ export function calculateFloodRisk(weather: BarangayWeather): FloodRiskResult {
 function buildRiskDescription(
   level: FloodRiskLevel,
   weather: BarangayWeather,
-  factors: LocationFactors
+  factors: LocationFactors,
 ): string {
   const duration = weather.rainDurationMinutes ?? 0;
   let rainStmt = "";
@@ -194,9 +284,10 @@ function buildRiskDescription(
   if (factors.waterwayProximity) locFactors.push("near waterways");
   if (factors.drainageQuality === "poor") locFactors.push("poor drainage");
 
-  const locStmt = locFactors.length > 0
-    ? `Vulnerabilities: ${locFactors.join(", ")}.`
-    : "Standard terrain risk.";
+  const locStmt =
+    locFactors.length > 0
+      ? `Vulnerabilities: ${locFactors.join(", ")}.`
+      : "Standard terrain risk.";
 
   switch (level) {
     case "high":
@@ -226,24 +317,24 @@ export function getFloodRiskConfig(level: FloodRiskLevel): {
         label: "High",
         bgColor: "bg-red-100",
         textColor: "text-red-700",
-        dotColor: "bg-red-500",
+        dotColor: "bg-red-600",
         borderColor: "border-red-200",
       };
     case "elevated":
       return {
         label: "Elevated",
         bgColor: "bg-orange-100",
-        textColor: "text-orange-700",
-        dotColor: "bg-orange-500",
-        borderColor: "border-orange-200",
+        textColor: "text-orange-800",
+        dotColor: "bg-orange-600",
+        borderColor: "border-orange-300",
       };
     case "moderate":
       return {
         label: "Moderate",
-        bgColor: "bg-amber-100",
-        textColor: "text-amber-700",
-        dotColor: "bg-amber-500",
-        borderColor: "border-amber-200",
+        bgColor: "bg-yellow-100",
+        textColor: "text-yellow-800",
+        dotColor: "bg-yellow-500",
+        borderColor: "border-yellow-300",
       };
     case "low":
       return {

@@ -7,10 +7,15 @@ export interface ClusterStats {
   severeCount: number;
   advisoryCount: number;
   normalCount: number;
+
+  floodLowCount: number;
+  floodModerateCount: number;
+  floodElevatedCount: number;
+  floodHighCount: number;
+  
+
   highFloodRiskCount: number;
-  /** True if ANY barangay in the cluster has "high" flood risk */
   isElevatedPriority: boolean;
-  /** Average temperature across cluster barangays */
   avgTemperature: number;
 }
 
@@ -22,6 +27,13 @@ export function computeClusterStats(
   let advisoryCount = 0;
   let normalCount = 0;
   let highFloodRiskCount = 0;
+
+  let floodLowCount = 0;
+  let floodModerateCount = 0;
+  let floodElevatedCount = 0;
+  let floodHighCount = 0;
+  
+
   let totalTemp = 0;
   let matchedCount = 0;
 
@@ -38,7 +50,16 @@ export function computeClusterStats(
     else normalCount++;
 
     const risk = calculateFloodRisk(w);
-    if (risk.level === "high" || risk.level === "elevated")
+      if (risk.level === "low") floodLowCount++;
+      else if (risk.level === "moderate") floodModerateCount++;
+      else if (risk.level === "elevated") floodElevatedCount++;
+      else if (risk.level === "high") floodHighCount++;
+      
+
+    if (
+      risk.level === "high" ||
+      risk.level === "elevated" 
+    )
       highFloodRiskCount++;
   }
 
@@ -47,8 +68,13 @@ export function computeClusterStats(
     severeCount,
     advisoryCount,
     normalCount,
+    floodLowCount,
+    floodModerateCount,
+    floodElevatedCount,
+    floodHighCount,
+    
     highFloodRiskCount,
-    isElevatedPriority: highFloodRiskCount > 0,
+    isElevatedPriority: highFloodRiskCount > 0 || severeCount > 0,
     avgTemperature: matchedCount > 0 ? Math.round(totalTemp / matchedCount) : 0,
   };
 }

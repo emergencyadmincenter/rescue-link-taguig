@@ -18,7 +18,7 @@ import WeatherCardSkeleton from "./WeatherCardSkeleton";
 import { fetchWeatherData } from "../data/weather.mock";
 import { calculateFloodRisk } from "../utils/flood-risk";
 import { CLUSTERS, getClusterForBarangay } from "../data/clusters";
-import ClusterSummaryTiles from "./ClusterSummaryTiles";
+
 import { ExportReportButton } from "./ExportReportButton";
 import type {
   BarangayWeather,
@@ -468,13 +468,7 @@ export default function WeatherPageView() {
         )}
       </div>
 
-      <div className="mb-4">
-        <ClusterSummaryTiles
-          weatherData={weatherData}
-          activeClusterFilter={activeClusterFilter}
-          onClusterSelect={handleClusterSelect}
-        />
-      </div>
+      
 
       {/* Main Content Area */}
       <div className="border-t border-gray-100 pt-4 flex flex-col">

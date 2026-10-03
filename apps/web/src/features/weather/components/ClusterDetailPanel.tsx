@@ -38,6 +38,8 @@ interface ClusterDetailPanelProps {
   onBack: () => void;
   /** Called when the user clicks a specific barangay card to see its full detail */
   onBarangaySelect: (weather: BarangayWeather) => void;
+  /** Active tab to pass down to compact card */
+  activeTab?: "severity" | "flood_risk";
 }
 
 export default function ClusterDetailPanel({
@@ -46,6 +48,7 @@ export default function ClusterDetailPanel({
   weatherByName,
   onBack,
   onBarangaySelect,
+  activeTab = "flood_risk",
 }: ClusterDetailPanelProps) {
   // Compute cluster-level summary stats
   const stats = useMemo(
@@ -96,7 +99,6 @@ export default function ClusterDetailPanel({
         <span className="body-xsmall text-gray-400">· {cluster.area}</span>
       </div>
 
-
       {/* ── Per-Barangay Breakdown ── */}
       <div className="border-t border-gray-100 pt-2 mb-2 shrink-0">
         <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
@@ -108,7 +110,7 @@ export default function ClusterDetailPanel({
         {barangayWeather.map((w) => (
           <div
             key={w.id}
-            className="cursor-pointer transition-transform duration-150 hover:scale-[1.01]"
+            className="cursor-pointer transition-all duration-200 hover:scale-[1.01] rounded-lg hover:shadow-sm hover:ring-2 hover:ring-blue-500/20"
             onClick={() => onBarangaySelect(w)}
             role="button"
             tabIndex={0}
@@ -116,7 +118,11 @@ export default function ClusterDetailPanel({
               if (e.key === "Enter" || e.key === " ") onBarangaySelect(w);
             }}
           >
-            <CompactWeatherCard weather={w} clusterColor={cluster.color} />
+            <CompactWeatherCard
+              weather={w}
+              clusterColor={cluster.color}
+              activeTab={activeTab}
+            />
           </div>
         ))}
         {barangayWeather.length === 0 && (

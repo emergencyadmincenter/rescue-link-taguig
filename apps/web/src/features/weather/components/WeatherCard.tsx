@@ -277,7 +277,8 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
 export function CompactWeatherCard({
   weather,
   clusterColor,
-}: WeatherCardProps & { clusterColor?: string }) {
+  activeTab = "flood_risk",
+}: WeatherCardProps & { clusterColor?: string; activeTab?: "severity" | "flood_risk" }) {
   const Icon = WEATHER_ICONS[weather.condition];
   const iconColor = ICON_COLORS[weather.condition];
 
@@ -288,15 +289,15 @@ export function CompactWeatherCard({
   let cardStyles = "";
   if (clusterColor) {
     cardStyles = isSevere
-      ? "border-danger/40 hover:opacity-80"
+      ? "border-red-200 hover:opacity-80"
       : isAdvisory
-        ? "border-warning/40 hover:opacity-80"
+        ? "border-yellow-200 hover:opacity-80"
         : "border-transparent hover:opacity-80";
   } else {
     cardStyles = isSevere
-      ? "border-danger/40 bg-red-50/30"
+      ? "border-red-200 bg-red-50/30"
       : isAdvisory
-        ? "border-warning/40 bg-yellow-50/30"
+        ? "border-yellow-200 bg-yellow-50/30"
         : "border-gray-100 bg-white hover:bg-gray-50/50";
   }
 
@@ -315,9 +316,9 @@ export function CompactWeatherCard({
       <div
         className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
           isSevere
-            ? "bg-danger/10"
+            ? "bg-red-100"
             : isAdvisory
-              ? "bg-warning/10"
+              ? "bg-yellow-100"
               : "bg-gray-100"
         }`}
       >
@@ -332,17 +333,31 @@ export function CompactWeatherCard({
           <span className="body-xsmall text-gray-500 font-medium">
             {weather.temperature}°C
           </span>
-          <span
-            className={`body-xsmall font-medium ${config.textColor} truncate`}
-          >
-            {config.label} Risk
-          </span>
+          {activeTab === "flood_risk" ? (
+            <span
+              className={`body-xsmall font-medium ${config.textColor} truncate`}
+            >
+              {config.label} Risk
+            </span>
+          ) : (
+            <span
+              className={`body-xsmall font-medium ${
+                isSevere
+                  ? "text-red-700"
+                  : isAdvisory
+                    ? "text-yellow-700"
+                    : "text-emerald-700"
+              } truncate capitalize`}
+            >
+              {weather.severity === "warning" ? "Advisory" : weather.severity} Severity
+            </span>
+          )}
         </div>
       </div>
 
       {(isSevere || isAdvisory) && (
         <FiAlertTriangle
-          className={`w-4 h-4 shrink-0 ${isSevere ? "text-danger" : "text-warning"}`}
+          className={`w-4 h-4 shrink-0 ${isSevere ? "text-red-600" : "text-yellow-600"}`}
         />
       )}
     </div>
