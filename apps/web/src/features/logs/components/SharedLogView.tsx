@@ -490,13 +490,18 @@ export default function SharedLogView({
                             </div>
                           </div>
                           <div>
-                            <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
-                              agency.status === "completed" ? "bg-emerald-100 text-emerald-700" :
-                              agency.status === "contacted" ? "bg-blue-100 text-blue-700" :
-                              "bg-yellow-100 text-yellow-700"
-                            }`}>
-                              {agency.status || 'pending'}
-                            </span>
+                            {(() => {
+                              const displayStatus = (agency.status === "recommended" || !agency.status) ? "pending" : agency.status;
+                              return (
+                                <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${
+                                  displayStatus === "completed" ? "bg-emerald-100 text-emerald-700" :
+                                  displayStatus === "contacted" ? "bg-blue-100 text-blue-700" :
+                                  "bg-yellow-100 text-yellow-700"
+                                }`}>
+                                  {displayStatus}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       ))}

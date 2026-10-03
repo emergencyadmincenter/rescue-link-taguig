@@ -27,7 +27,11 @@ import {
   FiAlertOctagon,
   FiHome,
   FiAnchor,
-  FiTarget
+  FiTarget,
+  FiCoffee,
+  FiPlusSquare,
+  FiBell,
+  FiSmile
 } from "react-icons/fi";
 import { logsApi } from "../api/logs.api";
 import { Resource, CreateLogPayload } from "../types/logs.types";
@@ -174,17 +178,17 @@ const PREDEFINED_CHANNELS: SelectorOption[] = [
 ];
 
 const PREDEFINED_NEEDS_FALLBACK: SelectorOption[] = [
-  { id: "custom_Food", label: "Food", icon: <FiShoppingBag /> },
+  { id: "custom_Food", label: "Food", icon: <FiCoffee /> },
   { id: "custom_Drinking Water", label: "Drinking Water", icon: <FiDroplet /> },
   { id: "custom_Rescue", label: "Rescue", icon: <FiLifeBuoy /> },
-  { id: "custom_First Aid", label: "First Aid", icon: <FiHeart /> },
+  { id: "custom_First Aid", label: "First Aid", icon: <FiPlusSquare /> },
   { id: "custom_Medical Assistance", label: "Medical Assistance", icon: <FiActivity /> },
   { id: "custom_Ambulance", label: "Ambulance", icon: <FiTruck /> },
-  { id: "custom_Firetruck", label: "Firetruck", icon: <FiAlertOctagon /> },
+  { id: "custom_Firetruck", label: "Firetruck", icon: <FiBell /> },
   { id: "custom_Shelter", label: "Shelter", icon: <FiHome /> },
   { id: "custom_Evacuation", label: "Evacuation", icon: <FiMapPin /> },
-  { id: "custom_Clothing", label: "Clothing", icon: <FiShoppingBag /> },
-  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiPackage /> },
+  { id: "custom_Clothing", label: "Clothing", icon: <FiUser /> },
+  { id: "custom_Baby Supplies", label: "Baby Supplies", icon: <FiSmile /> },
   { id: "custom_Rescue Boat", label: "Rescue Boat", icon: <FiAnchor /> },
   { id: "custom_Police Assistance", label: "Police Assistance", icon: <FiShield /> },
   { id: "custom_Search and Rescue", label: "Search and Rescue", icon: <FiTarget /> },
@@ -220,7 +224,7 @@ export default function ManualLogDialog({
     const fallbackLabels = new Set(PREDEFINED_NEEDS_FALLBACK.map((n) => n.label.toLowerCase()));
     const dbNeeds: SelectorOption[] = resources
       .filter((r) => !fallbackLabels.has(r.name.toLowerCase()))
-      .map((r) => ({ id: r.id, label: r.name, icon: <FiBriefcase /> }));
+      .map((r) => ({ id: r.id, label: r.name}));
     return [...PREDEFINED_NEEDS_FALLBACK, ...dbNeeds];
   })();
 
