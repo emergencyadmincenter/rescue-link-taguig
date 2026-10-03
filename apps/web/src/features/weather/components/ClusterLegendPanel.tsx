@@ -73,15 +73,7 @@ export default function ClusterLegendPanel({
                   • {cluster.area}
                 </span>
               </div>
-              {/* Elevated Priority Flag */}
-              {stats.isElevatedPriority && (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-100 border border-red-200">
-                  <FiAlertTriangle className="w-2.5 h-2.5 text-red-600" />
-                  <span className="body-xsmall font-semibold text-red-600">
-                    Priority
-                  </span>
-                </div>
-              )}
+              
             </div>
 
             {/* Aggregated Stats Row */}
@@ -89,7 +81,7 @@ export default function ClusterLegendPanel({
               {activeTab === "severity" ? (
                 <>
                   {stats.severeCount > 0 && (
-                    <span className="body-xsmall font-medium text-red-600">
+                    <span className="body-xsmall font-medium text-red-700">
                       {stats.severeCount} Severe
                     </span>
                   )}
@@ -108,17 +100,17 @@ export default function ClusterLegendPanel({
                 <>
                   
                   {stats.floodHighCount > 0 && (
-                    <span className="body-xsmall font-medium text-red-600">
+                    <span className="body-xsmall font-medium text-red-700">
                       {stats.floodHighCount} High
                     </span>
                   )}
                   {stats.floodElevatedCount > 0 && (
-                    <span className="body-xsmall font-medium text-amber-500">
+                    <span className="body-xsmall font-medium text-orange-500">
                       {stats.floodElevatedCount} Elevated
                     </span>
                   )}
                   {stats.floodModerateCount > 0 && (
-                    <span className="body-xsmall font-medium text-blue-500">
+                    <span className="body-xsmall font-medium text-yellow-400">
                       {stats.floodModerateCount} Moderate
                     </span>
                   )}

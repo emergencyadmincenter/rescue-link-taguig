@@ -76,7 +76,7 @@ interface WeatherCardProps {
 
 export default function WeatherCard({ weather }: WeatherCardProps) {
   const Icon = WEATHER_ICONS[weather.condition];
-  const iconColor = ICON_COLORS[weather.condition];
+  const iconColor = "text-gray-400"; // consistent dull gray
   const label = WEATHER_LABELS[weather.condition];
 
   const isSevere = weather.severity === "severe";
@@ -84,38 +84,19 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
     weather.severity === "advisory" || weather.severity === "warning";
 
   // Card border/background based on severity
-  const cardStyles = isSevere
-    ? "border-danger/40 bg-red-50/30"
-    : isAdvisory
-      ? "border-warning/40 bg-yellow-50/30"
-      : "border-gray-100";
+  const cardStyles = "border-gray-100 bg-white";
 
   return (
     <div
-      className={`bg-white rounded-xl border shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 ease-in-out relative ${cardStyles}`}
+      className={`flex-1 bg-white rounded-xl border shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 ease-in-out relative ${cardStyles}`}
     >
       {/* Severity Badge */}
-      {(isSevere || isAdvisory) && (
-        <div
-          className={`absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full body-xsmall font-semibold ${
-            isSevere ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"
-          }`}
-        >
-          <FiAlertTriangle className="w-3 h-3" />
-          {isSevere ? "Severe" : "Advisory"}
-        </div>
-      )}
+      
 
       {/* Header: Barangay Name + Condition */}
       <div className="flex items-start gap-3">
         <div
-          className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
-            isSevere
-              ? "bg-danger/10"
-              : isAdvisory
-                ? "bg-warning/10"
-                : "bg-gray-50"
-          }`}
+          className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 bg-gray-50/50"
         >
           <Icon className={`w-7 h-7 ${iconColor}`} />
         </div>
@@ -132,6 +113,13 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
             {weather.name}
           </h3>
           <p className="body-xsmall text-gray-500">{label}</p>
+        </div>
+        <div className="text-right">
+          <span className={`body-xsmall capitalize font-bold ${
+            isSevere ? "text-red-700" : isAdvisory ? "text-yellow-600" : "text-emerald-700"
+          }`}>
+            {weather.severity === "warning" ? "Advisory" : weather.severity}
+          </span>
         </div>
       </div>
 
@@ -286,19 +274,9 @@ export function CompactWeatherCard({
   const isAdvisory =
     weather.severity === "advisory" || weather.severity === "warning";
 
-  let cardStyles = "";
+  let cardStyles = "border-gray-100 bg-white hover:bg-gray-50/50";
   if (clusterColor) {
-    cardStyles = isSevere
-      ? "border-red-200 hover:opacity-80"
-      : isAdvisory
-        ? "border-yellow-200 hover:opacity-80"
-        : "border-transparent hover:opacity-80";
-  } else {
-    cardStyles = isSevere
-      ? "border-red-200 bg-red-50/30"
-      : isAdvisory
-        ? "border-yellow-200 bg-yellow-50/30"
-        : "border-gray-100 bg-white hover:bg-gray-50/50";
+    cardStyles = "border-transparent hover:opacity-80";
   }
 
   const risk = calculateFloodRisk(weather);
@@ -314,15 +292,9 @@ export function CompactWeatherCard({
       style={inlineStyle}
     >
       <div
-        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
-          isSevere
-            ? "bg-red-100"
-            : isAdvisory
-              ? "bg-yellow-100"
-              : "bg-gray-100"
-        }`}
+        className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-gray-50/50"
       >
-        <Icon className={`w-6 h-6 ${iconColor}`} />
+        <Icon className="w-6 h-6 text-gray-400" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -354,12 +326,7 @@ export function CompactWeatherCard({
           )}
         </div>
       </div>
-
-      {(isSevere || isAdvisory) && (
-        <FiAlertTriangle
-          className={`w-4 h-4 shrink-0 ${isSevere ? "text-red-600" : "text-yellow-600"}`}
-        />
-      )}
+      
     </div>
   );
 }

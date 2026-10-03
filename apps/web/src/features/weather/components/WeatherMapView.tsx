@@ -98,11 +98,11 @@ function getSeverityFillColor(weather: BarangayWeather | undefined): string {
 function getFloodRiskFillColor(level: FloodRiskLevel): string {
   switch (level) {
     case "high":
-      return "#dc2626"; // red-600
+      return "#b91c1c"; // red-700 (darker red)
     case "elevated":
-      return "#ea580c"; // orange-600
+      return "#f97316"; // orange-500 (distinct orange)
     case "moderate":
-      return "#eab308"; // yellow-500
+      return "#facc15"; // yellow-400 (bright distinct yellow)
     case "low":
       return "#10b981"; // emerald-500
   }
@@ -180,7 +180,7 @@ function MapSearchHandler({
       const layer = L.geoJSON(matchingFeature as GeoJSON.Feature);
       const bounds = layer.getBounds();
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+        map.flyToBounds(bounds, { padding: [60, 60], maxZoom: 16, duration: 0.5 });
       }
 
       // Automatically show side panel information for the searched barangay
@@ -197,6 +197,74 @@ function MapSearchHandler({
 }
 
 // --- Sub-component: Selected Barangay Highlighter ---
+
+function MapResetController({
+  activeClusterFilter,
+  selectedBarangay,
+}: {
+  activeClusterFilter: number | null;
+  selectedBarangay: BarangayWeather | null;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    if (activeClusterFilter === null && selectedBarangay === null) {
+      map.flyTo(TAGUIG_CENTER, DEFAULT_ZOOM, { duration: 0.5 });
+    }
+  }, [activeClusterFilter, selectedBarangay, map]);
+  return null;
+}
+
+function HoverBarangayHighlighter({
+  geoJsonData,
+  hoveredBarangayName,
+}: {
+  geoJsonData: GeoJSON.FeatureCollection | null;
+  hoveredBarangayName: string | null;
+}) {
+  const map = useMap();
+  const highlightLayerRef = useRef<L.GeoJSON | null>(null);
+
+  useEffect(() => {
+    if (highlightLayerRef.current) {
+      map.removeLayer(highlightLayerRef.current);
+      highlightLayerRef.current = null;
+    }
+
+    if (!hoveredBarangayName || !geoJsonData) return;
+
+    const matchingFeature = geoJsonData.features.find((feature) => {
+      const geoName = feature.properties?.name || "";
+      const dataName = GEOJSON_TO_DATA_NAME[geoName] || geoName;
+      return dataName.toLowerCase() === hoveredBarangayName.toLowerCase();
+    });
+
+    if (matchingFeature) {
+      const highlightLayer = L.geoJSON(matchingFeature as GeoJSON.Feature, {
+        style: {
+          color: "#2563eb",
+          weight: 3,
+          fillColor: "#ffffff",
+          fillOpacity: 0.4,
+          dashArray: "",
+        },
+        interactive: false,
+      });
+
+      highlightLayer.addTo(map);
+      highlightLayerRef.current = highlightLayer;
+      
+      
+    }
+
+    return () => {
+      if (highlightLayerRef.current) {
+        map.removeLayer(highlightLayerRef.current);
+        highlightLayerRef.current = null;
+      }
+    };
+  }, [hoveredBarangayName, geoJsonData, map]);
+  return null;
+}
 
 function SelectedBarangayHighlighter({
   geoJsonData,
@@ -239,6 +307,11 @@ function SelectedBarangayHighlighter({
 
       highlightLayer.addTo(map);
       highlightLayerRef.current = highlightLayer;
+
+      const bounds = highlightLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+      }
     }
 
     return () => {
@@ -435,9 +508,8 @@ export default function WeatherMapView({
   const [selectedBarangay, setSelectedBarangay] =
     useState<BarangayWeather | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [highlightedClusterId, setHighlightedClusterId] = useState<
-    number | null
-  >(null);
+  const [highlightedClusterId, setHighlightedClusterId] = useState<number | null>(null);
+  const [hoveredBarangayName, setHoveredBarangayName] = useState<string | null>(null);
   const [shouldFitClusterBounds, setShouldFitClusterBounds] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
   const [showStatusInfo, setShowStatusInfo] = useState(false);
@@ -719,7 +791,6 @@ export default function WeatherMapView({
 
   // --- Legend Data ---
   const legendItems = useMemo(() => {
-
     if (colorMode === "severity") {
       let severe = 0;
       let advisory = 0;
@@ -771,9 +842,9 @@ export default function WeatherMapView({
       }
 
       return [
-        { label: `High (${high})`, color: "#ef4444" },
+        { label: `High (${high})`, color: "#b91c1c" },
         { label: `Elevated (${elevated})`, color: "#f97316" },
-        { label: `Moderate (${moderate})`, color: "#f59e0b" },
+        { label: `Moderate (${moderate})`, color: "#facc15" },
         { label: `Low (${low})`, color: "#10b981" },
         { label: `No Data (${noDataCount})`, color: "#e5e7eb" },
       ];
@@ -871,8 +942,6 @@ export default function WeatherMapView({
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-
-
       {/* Map + Detail/Legend Panel Container */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
         {/* Map Container */}
@@ -963,12 +1032,20 @@ export default function WeatherMapView({
               geoJsonData={geoJsonData}
               selectedBarangay={selectedBarangay}
             />
+            <HoverBarangayHighlighter
+              geoJsonData={geoJsonData}
+              hoveredBarangayName={hoveredBarangayName}
+            />
+            <MapResetController
+              activeClusterFilter={activeClusterFilter}
+              selectedBarangay={selectedBarangay}
+            />
           </MapContainer>
         </div>
 
         {/* Right Panel */}
         {!isFullScreen && (
-          <div className="w-full lg:w-[360px] shrink-0 flex flex-col min-h-0 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
+          <div className="w-full lg:w-[380px] shrink-0 flex flex-col min-h-0 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
             {/* Selection Tabs at the Top */}
             <div className="p-3 border-b border-gray-100 bg-white shrink-0">
               <div className="inline-flex p-1 bg-gray-100 rounded-lg w-full">
@@ -996,7 +1073,7 @@ export default function WeatherMapView({
             </div>
 
             {/* Statuses Summary (Inline Legend) */}
-            <div className="px-3 py-2 border-b border-gray-100 bg-gray-50 shrink-0 flex items-center justify-between">
+            <div className="px-3 pt-4 pb-8 border-b border-gray-100 bg-gray-50 shrink-0 flex items-center justify-between">
               <div className="flex items-center gap-2 flex-wrap">
                 {legendItems.map((item) => (
                   <div key={item.label} className="flex items-center gap-1.5">
@@ -1004,12 +1081,14 @@ export default function WeatherMapView({
                       className="w-2.5 h-2.5 rounded-sm border border-gray-300 shadow-sm"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-[11px] font-medium text-gray-600 tracking-wide">{item.label}</span>
+                    <span className="text-[11px] font-medium text-gray-600 tracking-wide">
+                      {item.label}
+                    </span>
                   </div>
                 ))}
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setShowStatusInfo(true)}
                 className="p-1 text-gray-400 hover:text-primary transition-colors bg-white border border-gray-200 rounded shadow-sm hover:shadow"
                 title="Status Information"
@@ -1038,6 +1117,7 @@ export default function WeatherMapView({
                   onBarangaySelect={(w) => {
                     setSelectedBarangay(w);
                   }}
+                  onBarangayHover={(name) => setHoveredBarangayName(name)}
                   activeTab={colorMode as "severity" | "flood_risk"}
                 />
               ) : (
@@ -1055,7 +1135,12 @@ export default function WeatherMapView({
           </div>
         )}
       </div>
-      {showStatusInfo && <StatusInfoDialog onClose={() => setShowStatusInfo(false)} activeTab={colorMode} />}
+      {showStatusInfo && (
+        <StatusInfoDialog
+          onClose={() => setShowStatusInfo(false)}
+          activeTab={colorMode}
+        />
+      )}
     </div>
   );
 }

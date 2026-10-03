@@ -38,6 +38,7 @@ interface ClusterDetailPanelProps {
   onBack: () => void;
   /** Called when the user clicks a specific barangay card to see its full detail */
   onBarangaySelect: (weather: BarangayWeather) => void;
+  onBarangayHover?: (name: string | null) => void;
   /** Active tab to pass down to compact card */
   activeTab?: "severity" | "flood_risk";
 }
@@ -48,6 +49,7 @@ export default function ClusterDetailPanel({
   weatherByName,
   onBack,
   onBarangaySelect,
+  onBarangayHover,
   activeTab = "flood_risk",
 }: ClusterDetailPanelProps) {
   // Compute cluster-level summary stats
@@ -112,6 +114,8 @@ export default function ClusterDetailPanel({
             key={w.id}
             className="cursor-pointer transition-all duration-200 hover:scale-[1.01] rounded-lg hover:shadow-sm hover:ring-2 hover:ring-blue-500/20"
             onClick={() => onBarangaySelect(w)}
+            onMouseEnter={() => onBarangayHover?.(w.name)}
+            onMouseLeave={() => onBarangayHover?.(null)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
