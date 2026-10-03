@@ -4,9 +4,6 @@ import { LogsService } from './logs.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
 
 describe('Logs Integration Tests (Controller -> Service -> DB -> WS)', () => {
-  let controller: LogsController;
-  let service: LogsService;
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LogsController],
@@ -20,9 +17,6 @@ describe('Logs Integration Tests (Controller -> Service -> DB -> WS)', () => {
         },
       ],
     }).compile();
-
-    controller = module.get<LogsController>(LogsController);
-    service = module.get<LogsService>(LogsService);
   });
 
   it('TC-I-01: Create Emergency Log (DB + WS Emit)', async () => {

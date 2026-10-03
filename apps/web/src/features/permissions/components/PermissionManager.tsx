@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { FiArrowLeft, FiPlus, FiAlertCircle } from "react-icons/fi";
 import { Role, Permission } from "../types/permissions.types";
@@ -24,8 +24,7 @@ export function PermissionManager() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRoleLoading, setIsRoleLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(
     null,

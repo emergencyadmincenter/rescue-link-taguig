@@ -82,8 +82,7 @@ export function HeroSection({ onRequestAssistance }: HeroSectionProps) {
         </div>
       </div>
 
-      {/* --- CONTENT LAYER --- */}
-      <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
+            <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
         <div className="flex flex-col lg:flex-row items-center justify-between">
           <div className="w-full md:w-[70%] lg:w-[60%] xl:w-[55%]">
             <h1 className="text-shadow-sm font-outfit font-bold text-4xl md:text-6xl lg:text-[4.5rem] text-gray-900 mb-8 leading-[1.05] tracking-tight animate-in slide-in-from-bottom-4 duration-500">

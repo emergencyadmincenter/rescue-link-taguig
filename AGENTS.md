@@ -147,3 +147,12 @@ To maintain a polished, professional, and production-ready interface, strictly a
 - Do **not** use `max-w-*` as a default styling pattern or as a quick fix for layout issues. If a layout appears incorrect, fix the layout itself instead of masking the problem by constraining widths.
 
 - Prefer responsive layouts using flexbox, grid, spacing tokens, and the project's design system so components naturally adapt across mobile, tablet, and desktop viewports without unnecessary width constraints.
+
+16. **Backend Architecture (NestJS & Prisma)**
+    - **Separation of Concerns:** Keep Controllers thin (handling only HTTP request parsing and response formatting) and Services fat (handling business logic). 
+    - **Response Formatting:** Always return responses using the standard ApiResponse interceptor/DTO pattern ({ success, data, error }). Do not return raw data objects from controllers.
+    - **Error Handling:** Use standard NestJS HTTP Exceptions (BadRequestException, NotFoundException, InternalServerErrorException). Let the global exception filter format them into the standard API response structure.
+    - **Validation:** Use class-validator and class-transformer in DTOs for strict input validation. Avoid manual validation inside controllers or services where possible.
+    - **Authorization:** Rely on centralized guards (ResidentOrJwtAuthGuard, RolesGuard) and decorators (@Roles(), @Permissions(), @CurrentUser()) on controller methods rather than writing inline permission checks inside services.
+    - **Database Access:** All database operations must go through the Prisma Client injected via PrismaService. 
+    - **Logging:** Use the built-in NestJS Logger class instead of native console.log or console.error for proper formatting and log level controls.

@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api-client';
-import { Role, Permission, CreatePermissionPayload, UpdatePermissionPayload } from '../types/permissions.types';
+import { CreatePermissionPayload, UpdatePermissionPayload } from '../types/permissions.types';
 
 export const permissionsApi = {
   // Roles

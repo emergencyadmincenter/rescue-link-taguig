@@ -181,8 +181,7 @@ export default function ActivatePageView({ token }: { token: string }) {
           </form>
         </div>
 
-        {/* Footer */}
-        <p className="body-small text-gray-400 mt-8 text-center ml-2">
+                <p className="body-small text-gray-400 mt-8 text-center ml-2">
           &copy; {new Date().getFullYear()} RescueLink Taguig. All rights
           reserved.
         </p>

@@ -8,7 +8,7 @@
  * flood risk tier, or Emergency Command Center cluster assignment, reusing the
  * same color tokens and logic from the existing card/list view.
  *
- * TODO: BACKEND — This component pulls weather data from the same shared data
+ * TODO: This component pulls weather data from the same shared data
  * source (passed via props from WeatherPageView) that the list view uses.
  * When wiring to a real API, ensure both views use the same hook/data source
  * so they always stay in sync.
@@ -24,20 +24,16 @@ import "leaflet/dist/leaflet.css";
 import type { BarangayWeather } from "../types/weather.types";
 import {
   calculateFloodRisk,
-  getFloodRiskConfig,
   type FloodRiskLevel,
 } from "../utils/flood-risk";
 import {
   CLUSTERS,
-  getClusterForBarangay,
-  type ClusterConfig,
+  getClusterForBarangay
 } from "../data/clusters";
-import WeatherCard from "./WeatherCard";
 import ClusterLegendPanel from "./ClusterLegendPanel";
 import { BarangayDetailPanel } from "./BarangayDetailPanel";
 import ClusterDetailPanel from "./ClusterDetailPanel";
 
-// --- Types ---
 
 export type MapColorMode = "severity" | "flood_risk";
 
@@ -54,18 +50,16 @@ interface WeatherMapViewProps {
   onSearchClear: () => void;
 }
 
-// --- Constants ---
 
 /** Center of Taguig City (approximate) */
 const TAGUIG_CENTER: L.LatLngExpression = [14.5176, 121.0509];
 const DEFAULT_ZOOM = 13;
 
-// --- GeoJSON Name → Mock Data Name Mapping ---
 
 /**
  * Maps GeoJSON `properties.name` to mock data `name` where they differ.
  *
- * TODO: BACKEND — These mismatches need to be reconciled with the real API's
+ * TODO: These mismatches need to be reconciled with the real API's
  * naming convention. The GeoJSON uses official barangay names while the mock
  * data may use colloquial or hyphenated forms. When wiring to a live source,
  * ensure a single canonical name mapping is maintained server-side.
@@ -75,7 +69,6 @@ const GEOJSON_TO_DATA_NAME: Record<string, string> = {
   Palingon: "Palingon-Tipas",
 };
 
-// --- Severity Color Helpers ---
 
 /**
  * Returns polygon fill color based on weather severity.
@@ -108,17 +101,7 @@ function getFloodRiskFillColor(level: FloodRiskLevel): string {
   }
 }
 
-const CONDITION_LABELS: Record<string, string> = {
-  sunny: "Sunny",
-  partly_cloudy: "Partly Cloudy",
-  cloudy: "Cloudy",
-  overcast: "Overcast",
-  light_rain: "Light Rain",
-  heavy_rain: "Heavy Rain",
-  thunderstorm: "Thunderstorm",
-};
 
-// --- Sub-components ---
 
 function MapResizer({ isFullScreen }: { isFullScreen?: boolean }) {
   const map = useMap();
@@ -145,7 +128,6 @@ function MapResizer({ isFullScreen }: { isFullScreen?: boolean }) {
   return null;
 }
 
-// --- Sub-component: Map Updater (handles search → pan/zoom) ---
 
 function MapSearchHandler({
   searchQuery,
@@ -196,7 +178,6 @@ function MapSearchHandler({
   return null;
 }
 
-// --- Sub-component: Selected Barangay Highlighter ---
 
 function MapResetController({
   activeClusterFilter,
@@ -325,7 +306,6 @@ function SelectedBarangayHighlighter({
   return null;
 }
 
-// --- Sub-component: Cluster Boundary Outlines ---
 
 /**
  * Renders thicker outlines around each cluster's combined barangay group
@@ -402,7 +382,6 @@ function ClusterBoundaryOutlines({
   return null;
 }
 
-// --- Sub-component: Cluster Highlight (from legend hover/click) ---
 
 function ClusterHighlighter({
   geoJsonData,
@@ -491,7 +470,6 @@ function ClusterHighlighter({
   return null;
 }
 
-// --- Main Component ---
 
 export default function WeatherMapView({
   weatherData,
@@ -558,8 +536,7 @@ export default function WeatherMapView({
     }
   };
 
-  // --- Build lookup: barangay name → weather data ---
-  // TODO: BACKEND — This lookup matches GeoJSON feature names to weather data.
+    // TODO: This lookup matches GeoJSON feature names to weather data.
   // Both views (list + map) pull from the same weatherData prop, keeping them in sync.
   const weatherDataByName = useMemo(() => {
     const map = new Map<string, BarangayWeather>();
@@ -581,8 +558,7 @@ export default function WeatherMapView({
     [weatherDataByName],
   );
 
-  // --- Load GeoJSON ---
-  useEffect(() => {
+    useEffect(() => {
     let cancelled = false;
 
     async function loadGeoJson() {
@@ -590,7 +566,7 @@ export default function WeatherMapView({
         setGeoJsonLoading(true);
         setGeoJsonError(null);
 
-        // TODO: BACKEND — When wired to a real source, the GeoJSON could come
+        // TODO: When wired to a real source, the GeoJSON could come
         // from an API endpoint instead of a static file. Add error handling
         // for network failures and stale cache scenarios.
         const response = await fetch("/geojsons/taguig-barangays.geojson");
@@ -629,9 +605,9 @@ export default function WeatherMapView({
   // Users should be able to filter by a cluster AND view it in any coloring mode
   // (severity, flood_risk, or cluster). No useEffect coupling these two states.
 
-  // --- Sync activeClusterFilter from parent toolbar/tiles to map bounds & highlights ---
-  useEffect(() => {
+    useEffect(() => {
     if (activeClusterFilter !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedClusterId(activeClusterFilter);
       setShouldFitClusterBounds(true);
       setSelectedBarangay(null);
@@ -640,8 +616,7 @@ export default function WeatherMapView({
     }
   }, [activeClusterFilter]);
 
-  // --- Helper: check if a barangay belongs to the active cluster filter ---
-  const isBarangayInActiveFilters = useCallback(
+    const isBarangayInActiveFilters = useCallback(
     (barangayName: string): boolean => {
       if (activeClusterFilter === null) return true; // no filter = everything visible
       const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
@@ -654,8 +629,7 @@ export default function WeatherMapView({
     [activeClusterFilter],
   );
 
-  // --- GeoJSON Style Function ---
-  const getFeatureStyle = useCallback(
+    const getFeatureStyle = useCallback(
     (feature: GeoJSON.Feature | undefined): L.PathOptions => {
       if (!feature?.properties?.name) {
         return {
@@ -667,16 +641,15 @@ export default function WeatherMapView({
       }
 
       const featureName: string = feature.properties.name;
-      const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       const weather = findWeatherForFeature(featureName);
 
-      // --- Cluster filter: dim polygons that don't match active filters ---
+      const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       const matchesFilter = isBarangayInActiveFilters(dataName);
 
       let fillColor: string;
-      let borderColor = "#6b7280"; // gray-500 default border
-      let weight = 1.5;
-      let fillOpacity = matchesFilter ? 0.55 : 0.1;
+      const borderColor = "#6b7280"; // gray-500 default border
+      const weight = 1.5;
+      const fillOpacity = matchesFilter ? 0.55 : 0.1;
 
       if (!matchesFilter) {
         // Dimmed style for filtered-out barangays
@@ -690,7 +663,7 @@ export default function WeatherMapView({
       }
 
       if (colorMode === "flood_risk") {
-        // TODO: BACKEND -- Flood risk data comes from the same shared weather
+        // TODO: Flood risk data comes from the same shared weather
         // data source via calculateFloodRisk(). When real API data is available,
         // ensure the flood risk calculation uses live precipitation data.
         if (weather) {
@@ -714,18 +687,14 @@ export default function WeatherMapView({
     [colorMode, findWeatherForFeature, isBarangayInActiveFilters],
   );
 
-  // --- Feature Interaction Handlers ---
-  const onEachFeature = useCallback(
+    const onEachFeature = useCallback(
     (feature: GeoJSON.Feature, layer: L.Layer) => {
       if (!feature.properties?.name) return;
 
       const featureName: string = feature.properties.name;
       const weather = findWeatherForFeature(featureName);
-      const dataName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
-      const cluster = getClusterForBarangay(dataName);
 
-      // --- Permanent White Text Label on Polygon Center ---
-      const displayName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
+            const displayName = GEOJSON_TO_DATA_NAME[featureName] || featureName;
       const matchesFilter = isBarangayInActiveFilters(displayName);
       const isFilteredOut = activeClusterFilter !== null && !matchesFilter;
 
@@ -748,8 +717,7 @@ export default function WeatherMapView({
         });
       }
 
-      // --- Hover Highlight ---
-      const pathLayer = layer as L.Path;
+            const pathLayer = layer as L.Path;
 
       pathLayer.on({
         mouseover: () => {
@@ -789,8 +757,7 @@ export default function WeatherMapView({
     ],
   );
 
-  // --- Legend Data ---
-  const legendItems = useMemo(() => {
+    const legendItems = useMemo(() => {
     if (colorMode === "severity") {
       let severe = 0;
       let advisory = 0;
@@ -851,8 +818,7 @@ export default function WeatherMapView({
     }
   }, [colorMode, geoJsonData, findWeatherForFeature]);
 
-  // --- Cluster Legend Handlers ---
-  const handleClusterHover = useCallback((clusterId: number | null) => {
+    const handleClusterHover = useCallback((clusterId: number | null) => {
     setHighlightedClusterId(clusterId);
   }, []);
 
@@ -868,14 +834,12 @@ export default function WeatherMapView({
     setShouldFitClusterBounds(false);
   }, []);
 
-  // --- Determine the cluster for the selected barangay (for detail panel) ---
-  const selectedBarangayCluster = useMemo(() => {
+    const selectedBarangayCluster = useMemo(() => {
     if (!selectedBarangay) return null;
     return getClusterForBarangay(selectedBarangay.name) ?? null;
   }, [selectedBarangay]);
 
-  // --- Get the cluster config and its barangay weather data for the cluster list panel ---
-  const selectedClusterConfig = useMemo(() => {
+    const selectedClusterConfig = useMemo(() => {
     if (activeClusterFilter === null) return null;
     return CLUSTERS.find((c) => c.id === activeClusterFilter) ?? null;
   }, [activeClusterFilter]);
@@ -891,8 +855,7 @@ export default function WeatherMapView({
       });
   }, [selectedClusterConfig, weatherDataByName]);
 
-  // --- Loading State ---
-  if (geoJsonLoading) {
+    if (geoJsonLoading) {
     return (
       <div className="flex-1 flex flex-col min-h-0">
         <div className="flex items-center justify-between mb-3 shrink-0 flex-wrap gap-2">
@@ -906,8 +869,7 @@ export default function WeatherMapView({
     );
   }
 
-  // --- Error State ---
-  // TODO: BACKEND — Ready for real error handling once wired to a live source.
+    // TODO: Ready for real error handling once wired to a live source.
   // Currently handles static file load failures; will need retry logic and
   // user-friendly messaging for API failures.
   if (geoJsonError) {

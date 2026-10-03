@@ -91,28 +91,44 @@ export class LogsService {
         { reference_no: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
-        { assigned_coordinator: { name: { contains: search, mode: 'insensitive' } } },
+        {
+          assigned_coordinator: {
+            name: { contains: search, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
     if (source) where.source = source;
-    if (assigned_coordinator_id) where.assigned_coordinator_id = assigned_coordinator_id;
+    if (assigned_coordinator_id)
+      where.assigned_coordinator_id = assigned_coordinator_id;
     if (barangay) where.barangay = barangay;
     if (incident_category_id) where.incident_category_id = incident_category_id;
 
     if (date_from || date_to) {
       where.created_at = {};
-      if (date_from) where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
-      if (date_to) where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
+      if (date_from)
+        where.created_at.gte = new Date(`${date_from}T00:00:00+08:00`);
+      if (date_to)
+        where.created_at.lte = new Date(`${date_to}T23:59:59.999+08:00`);
     }
 
     const activeBans = await this.prisma.shadowBan.findMany({
-      where: { active: true, OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }] },
+      where: {
+        active: true,
+        OR: [{ expires_at: null }, { expires_at: { gt: new Date() } }],
+      },
     });
 
-    const bannedDeviceUuids = Array.from(new Set(activeBans.map((b) => b.device_uuid).filter(Boolean))) as string[];
-    const bannedHashes = Array.from(new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean))) as string[];
-    const bannedIps = Array.from(new Set(activeBans.map((b) => b.client_ip).filter(Boolean))) as string[];
+    const bannedDeviceUuids = Array.from(
+      new Set(activeBans.map((b) => b.device_uuid).filter(Boolean)),
+    ) as string[];
+    const bannedHashes = Array.from(
+      new Set(activeBans.map((b) => b.fingerprint_hash).filter(Boolean)),
+    ) as string[];
+    const bannedIps = Array.from(
+      new Set(activeBans.map((b) => b.client_ip).filter(Boolean)),
+    ) as string[];
 
     if (query.is_shadow_banned === 'true') {
       where.fraud_assessments = {
@@ -159,7 +175,8 @@ export class LogsService {
       sort_order = 'desc',
     } = query;
 
-    const { where, bannedDeviceUuids, bannedHashes, bannedIps } = await this.buildBaseWhereClause(query);
+    const { where, bannedDeviceUuids, bannedHashes, bannedIps } =
+      await this.buildBaseWhereClause(query);
 
     if (status) where.status = status;
 
@@ -958,8 +975,6 @@ export class LogsService {
     });
   }
 
-  // ─── Public Share Link Revocation ─────────────────────────────
-
   async revokePublicShareLink(logId: string) {
     const log = await this.prisma.log.findUnique({ where: { id: logId } });
     if (!log) throw new NotFoundException('Log not found');
@@ -972,8 +987,6 @@ export class LogsService {
       },
     });
   }
-
-  // ─── Agency Token Validation & Updates ────────────────────────
 
   async validateAgencyToken(shareToken: string, agencyToken: string) {
     const log = await this.prisma.log.findUnique({
@@ -1020,8 +1033,6 @@ export class LogsService {
       coordination_updates: updates,
     };
   }
-
-  // ─── Coordination Updates (Live Chat) ─────────────────────────
 
   async submitExternalUpdate(
     shareToken: string,

@@ -173,8 +173,7 @@ export default function ChatView({
 
   return (
     <div className="flex flex-col h-full bg-background border-r border-background-subtle relative">
-      {/* Header */}
-      <div className="px-lg py-sm border-b border-background-subtle shrink-0 flex items-center justify-between">
+            <div className="px-lg py-sm border-b border-background-subtle shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isEnded ? "bg-background-subtle" : "bg-danger/10"}`}

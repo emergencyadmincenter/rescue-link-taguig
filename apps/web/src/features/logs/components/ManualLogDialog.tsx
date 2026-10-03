@@ -71,7 +71,6 @@ function resolveGeoJsonName(geoName: string): string[] {
   return GEOJSON_NAME_VARIANTS[geoName] ?? [geoName];
 }
 
-// ── Inner: Handles map clicks and resizes ────────────────────────
 function LocationPickerMap({ 
   position, 
   setPosition 
@@ -86,7 +85,6 @@ function LocationPickerMap({
   return position === null ? null : <Marker position={position} />;
 }
 
-// ── Inner: handles ResizeObserver so map tiles don't grey-out ─────────────
 function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
   const map = useMap();
   useEffect(() => {
@@ -103,7 +101,6 @@ function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
   return null;
 }
 
-// ── Inner: pans/zooms to the selected barangay polygon ────────────────────
 function BarangayFocusHandler({
   selectedBarangay,
   geoJsonData}: {

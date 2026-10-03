@@ -151,7 +151,6 @@ function timeAgo(dateString: string) {
   return `${diffInDays}d ago`;
 }
 
-// --- Administrator Dashboard Component ---
 function AdminDashboard({
   statusCounts,
   recentLogs,
@@ -310,7 +309,6 @@ function AdminDashboard({
   );
 }
 
-// --- Coordinator Dashboard Component ---
 function CoordinatorDashboard({
   statusCounts,
   assignedLogs,

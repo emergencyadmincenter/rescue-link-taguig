@@ -611,13 +611,6 @@ export class CommunicationsService
     this.server.to(`call_${callId}`).emit('call_ended', { callId, endedBy });
   }
 
-  getDebugState() {
-    return {
-      coordinators: Array.from(this.coordinators.values()),
-      activeRoutings: Array.from(this.activeRoutings.values()),
-    };
-  }
-
   async getCallDetails(callId: string) {
     return this.prisma.call.findUnique({ where: { id: callId } });
   }

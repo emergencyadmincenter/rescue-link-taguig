@@ -15,8 +15,6 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnApplicationShutdown
 {
-  private readonly logger = new Logger(PrismaService.name);
-
   constructor() {
     const connectionString = process.env.DATABASE_URL ?? '';
     const isProduction = process.env.NODE_ENV === 'production';

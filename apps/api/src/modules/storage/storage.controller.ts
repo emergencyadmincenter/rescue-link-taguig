@@ -11,7 +11,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
 import { ResidentOrJwtAuthGuard } from '../../common/guards/resident-or-jwt-auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ApiResponse } from '../../common/dto/api-response.dto';
 
 @Controller('storage')
@@ -21,10 +20,7 @@ export class StorageController {
 
   @Post('private/upload')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadPrivateFile(
-    @CurrentUser() user: any,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async uploadPrivateFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File is required');
     }
@@ -41,7 +37,7 @@ export class StorageController {
   }
 
   @Get('private/access')
-  async getPrivateAccess(@CurrentUser() user: any, @Query('key') key: string) {
+  async getPrivateAccess(@Query('key') key: string) {
     if (!key) {
       throw new BadRequestException('S3 object key is required');
     }

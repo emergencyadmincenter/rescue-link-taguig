@@ -5,8 +5,7 @@ import {
   FiClock,
   FiEye,
   FiUsers,
-  FiMapPin,
-} from "react-icons/fi";
+  } from "react-icons/fi";
 import {
   ResponsiveContainer,
   LineChart,

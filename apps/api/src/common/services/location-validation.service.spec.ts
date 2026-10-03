@@ -3,8 +3,6 @@ import { LocationValidationService } from './location-validation.service';
 import { BarangayResolverService } from './barangay-resolver.service';
 
 describe('LocationValidationService', () => {
-  let service: LocationValidationService;
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -15,8 +13,6 @@ describe('LocationValidationService', () => {
         },
       ],
     }).compile();
-
-    service = module.get<LocationValidationService>(LocationValidationService);
   });
 
   describe('GeoCoordinate Parsing', () => {

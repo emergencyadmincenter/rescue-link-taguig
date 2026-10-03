@@ -15,12 +15,7 @@
 import { useMemo } from "react";
 import {
   FiArrowLeft,
-  FiUsers,
-  FiMapPin,
-  FiThermometer,
-  FiAlertTriangle,
 } from "react-icons/fi";
-import { WiFlood } from "react-icons/wi";
 import type { BarangayWeather } from "../types/weather.types";
 import { type ClusterConfig } from "../data/clusters";
 import { computeClusterStats } from "../utils/cluster-stats";
@@ -70,9 +65,6 @@ export default function ClusterDetailPanel({
     return worst;
   }, [barangayWeather]);
 
-  const highestFloodRiskConfig = highestFloodRisk
-    ? getFloodRiskConfig(highestFloodRisk.level as any)
-    : null;
 
   // Build severity summary label
   const severitySummaryParts: string[] = [];
@@ -101,8 +93,7 @@ export default function ClusterDetailPanel({
         <span className="body-xsmall text-gray-400">· {cluster.area}</span>
       </div>
 
-      {/* ── Per-Barangay Breakdown ── */}
-      <div className="border-t border-gray-100 pt-2 mb-2 shrink-0">
+            <div className="border-t border-gray-100 pt-2 mb-2 shrink-0">
         <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
           Barangays ({barangayWeather.length})
         </span>

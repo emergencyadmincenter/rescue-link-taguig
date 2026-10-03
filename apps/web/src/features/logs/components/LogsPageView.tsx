@@ -10,7 +10,7 @@ import DateRangeDialog from "./DateRangeDialog";
 import ManualLogDialog from "./ManualLogDialog";
 import { useLogs } from "../hooks/useLogs";
 import { logsApi } from "../api/logs.api";
-import { LogStatus, Resource } from "../types/logs.types";
+import { Resource } from "../types/logs.types";
 import { useAuth } from "@/providers/AuthProvider";
 import { FiX } from "react-icons/fi";
 
@@ -60,8 +60,7 @@ export default function LogsPageView() {
 
   return (
     <div className="bg-white h-full rounded-xl w-full px-5 py-6 flex flex-col">
-      {/* Header */}
-      <div className="mb-4 shrink-0 flex flex-col gap-2">
+            <div className="mb-4 shrink-0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <div className="w-max">
             <h1 className="display-small text-gray-900 inline-block">

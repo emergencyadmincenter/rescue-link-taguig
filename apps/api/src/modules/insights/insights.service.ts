@@ -21,8 +21,6 @@ function parsePhDateEnd(d: string): Date {
 
 @Injectable()
 export class InsightsService {
-  private readonly logger = new Logger(InsightsService.name);
-
   // Caching removed to support real-time WebSocket dashboard updates
 
   constructor(private prisma: PrismaService) {}

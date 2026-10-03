@@ -8,7 +8,12 @@ import { LogsGateway } from './logs.gateway';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [PrismaModule, AuthModule, forwardRef(() => CommunicationsModule), JwtModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    forwardRef(() => CommunicationsModule),
+    JwtModule,
+  ],
   controllers: [LogsController],
   providers: [LogsService, LogsGateway],
   exports: [LogsService],

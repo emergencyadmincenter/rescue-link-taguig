@@ -8,8 +8,6 @@ import {
   FiAlertTriangle,
   FiList,
   FiMap,
-  FiX,
-  FiChevronDown,
   FiMapPin,
 } from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
@@ -23,7 +21,6 @@ import { ExportReportButton } from "./ExportReportButton";
 import type {
   BarangayWeather,
   WeatherFilterTab,
-  WeatherSummary,
 } from "../types/weather.types";
 
 // Dynamically import the map view — Leaflet requires browser `window` object
@@ -46,16 +43,6 @@ const WeatherMapView = dynamic(() => import("./WeatherMapView"), {
 type ViewMode = "list" | "map";
 
 // --- Filter Tabs Config ---
-const FILTER_TABS: {
-  label: string;
-  value: WeatherFilterTab;
-  icon?: React.ElementType;
-}[] = [
-  { label: "All", value: "all" },
-  { label: "Severe", value: "severe" },
-  { label: "Advisory", value: "advisory" },
-  { label: "Flood Risk", value: "flood_risk", icon: WiFlood },
-];
 
 export default function WeatherPageView() {
   const [weatherData, setWeatherData] = useState<BarangayWeather[]>([]);
@@ -153,6 +140,7 @@ export default function WeatherPageView() {
 
   // Initial load
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadWeatherData();
   }, [loadWeatherData]);
 
@@ -165,6 +153,7 @@ export default function WeatherPageView() {
   // Manual refresh
   const handleRefresh = () => {
     setIsRefreshing(true);
+     
     loadWeatherData();
   };
 
@@ -284,7 +273,7 @@ export default function WeatherPageView() {
   };
 
   // Cluster badge for list view cards (shown when a cluster filter is active)
-  const renderClusterBadge = (weather: BarangayWeather) => {
+  const renderClusterBadge = (_weather: BarangayWeather) => {
     return null; // Disabled to prevent inconsistent card layout
   };
 

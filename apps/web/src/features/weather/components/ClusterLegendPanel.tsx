@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { FiAlertTriangle, FiMapPin, FiUsers, FiShield } from "react-icons/fi";
-import { WiFlood } from "react-icons/wi";
 import type { BarangayWeather } from "../types/weather.types";
 import { CLUSTERS, type ClusterConfig } from "../data/clusters";
 import { computeClusterStats } from "../utils/cluster-stats";

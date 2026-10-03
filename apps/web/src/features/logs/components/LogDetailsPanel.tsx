@@ -393,8 +393,7 @@ export default function LogDetailsPanel({
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-background-subtle/50 shrink-0">
+            <div className="flex items-center justify-between p-6 border-b border-background-subtle/50 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -434,8 +433,7 @@ export default function LogDetailsPanel({
         }}
       />
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
+            <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar pt-6">
         {shadowBan && (
           <section className="mb-6 overflow-hidden rounded-xl border-2 border-danger/30 bg-danger/5 text-danger shadow-sm">
             <div className="flex items-start gap-3 border-b border-danger/20 bg-danger/10 px-5 py-4">

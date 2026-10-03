@@ -3,7 +3,6 @@ import {
   Get,
   Query,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 
@@ -203,8 +202,6 @@ const TAGUIG_BARANGAYS = [
 
 @Controller('weather')
 export class WeatherController {
-  private readonly logger = new Logger(WeatherController.name);
-
   constructor(private readonly weatherService: WeatherService) {}
 
   /**

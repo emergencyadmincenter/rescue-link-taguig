@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { isAxiosError } from "axios";
 import { FiShieldOff, FiShield } from "react-icons/fi";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
@@ -101,8 +101,8 @@ export function ShadowBanAction({
   const selectedSeverity = selectedCategory?.severity ?? severity;
   const selectedDuration = SEVERITY_DURATIONS[selectedSeverity];
 
-  // Requirement: Administrators must not be able to shadow ban or remove a shadow ban.
-  // Requirement: Only the coordinator who owns the active communication session may perform this action.
+  // Administrators must not be able to shadow ban or remove a shadow ban.
+  // Only the coordinator who owns the active communication session may perform this action.
   const canPerformAction = isOwner && !isAdmin;
 
   useEffect(() => {

@@ -10,7 +10,6 @@ import {
   UseGuards,
   UsePipes,
   Req,
-  UnauthorizedException,
   ValidationPipe,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,7 +20,10 @@ import { CreateLogDto } from './dto/create-log.dto';
 import { UpdateLogDto } from './dto/update-log.dto';
 import { UpdateCoordinationDto } from './dto/update-coordination.dto';
 import { CreateRecipientDto } from './dto/create-recipient.dto';
-import { CreateCoordinationUpdateDto, SubmitExternalUpdateDto } from './dto/create-coordination-update.dto';
+import {
+  CreateCoordinationUpdateDto,
+  SubmitExternalUpdateDto,
+} from './dto/create-coordination-update.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -50,7 +52,10 @@ export class LogsController {
   @Get('status-counts')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
-  async getStatusCounts(@Query() query: QueryLogsDto, @CurrentUser() user: any) {
+  async getStatusCounts(
+    @Query() query: QueryLogsDto,
+    @CurrentUser() user: any,
+  ) {
     const result = await this.logsService.getStatusCounts(user.sub, query);
     return ApiResponse.success(result);
   }
@@ -174,8 +179,6 @@ export class LogsController {
     return ApiResponse.success(result);
   }
 
-  // ─── Public Share Link Revocation ─────────────────────────────
-
   @Patch(':id/share/revoke')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'coordinator')
@@ -183,8 +186,6 @@ export class LogsController {
     const result = await this.logsService.revokePublicShareLink(id);
     return ApiResponse.success(result);
   }
-
-  // ─── Agency Token Validation & Updates ────────────────────────
 
   @Get('public/:token/agency/:agencyToken')
   async validateAgencyToken(
@@ -206,8 +207,6 @@ export class LogsController {
     const result = await this.logsService.submitExternalUpdate(shareToken, dto);
     return ApiResponse.success(result);
   }
-
-  // ─── Coordination Updates ─────────────────────────────────────
 
   @Get(':id/coordination-updates')
   @UseGuards(JwtAuthGuard, RolesGuard)

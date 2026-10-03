@@ -115,6 +115,7 @@ export function ExportReportButton({ weatherData }: ExportReportButtonProps) {
 
       // Barangay Detail Table
       autoTable(doc, {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
         startY: (doc as any).lastAutoTable.finalY + 15,
         head: [['Barangay', 'Cluster', 'Temp (C)', 'Condition', 'Severity', 'Rain Chance (%)', 'Precip (mm)', 'Flood Risk', 'Wind']],
         body: tableData,
@@ -136,6 +137,7 @@ export function ExportReportButton({ weatherData }: ExportReportButtonProps) {
       });
       
       // Footer with page numbers and disclaimer
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pageCount = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);

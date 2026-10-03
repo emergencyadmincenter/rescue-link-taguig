@@ -10,11 +10,10 @@ import {
   WiCloudyGusts,
   WiRainWind,
 } from "react-icons/wi";
-import { FiAlertTriangle, FiInfo } from "react-icons/fi";
+import { FiInfo } from "react-icons/fi";
 import type { BarangayWeather, WeatherCondition } from "../types/weather.types";
 import { calculateFloodRisk, getFloodRiskConfig } from "../utils/flood-risk";
 
-// --- Weather Condition Icon Mapping ---
 const WEATHER_ICONS: Record<WeatherCondition, React.ElementType> = {
   sunny: WiDaySunny,
   partly_cloudy: WiDayCloudy,
@@ -45,7 +44,6 @@ const ICON_COLORS: Record<WeatherCondition, string> = {
   thunderstorm: "text-purple-600",
 };
 
-// --- Relative Time Helper ---
 function getRelativeTime(isoString: string): string {
   const now = Date.now();
   const then = new Date(isoString).getTime();
@@ -76,7 +74,7 @@ interface WeatherCardProps {
 
 export default function WeatherCard({ weather }: WeatherCardProps) {
   const Icon = WEATHER_ICONS[weather.condition];
-  const iconColor = "text-gray-400"; // consistent dull gray
+  const iconColor = 'text-gray-400';
   const label = WEATHER_LABELS[weather.condition];
 
   const isSevere = weather.severity === "severe";
@@ -204,7 +202,6 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
   );
 }
 
-// --- Flood Risk Section (sub-component) ---
 
 function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -260,7 +257,6 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
   );
 }
 
-// --- Compact Weather Card ---
 
 export function CompactWeatherCard({
   weather,
@@ -268,8 +264,7 @@ export function CompactWeatherCard({
   activeTab = "flood_risk",
 }: WeatherCardProps & { clusterColor?: string; activeTab?: "severity" | "flood_risk" }) {
   const Icon = WEATHER_ICONS[weather.condition];
-  const iconColor = ICON_COLORS[weather.condition];
-
+  
   const isSevere = weather.severity === "severe";
   const isAdvisory =
     weather.severity === "advisory" || weather.severity === "warning";
