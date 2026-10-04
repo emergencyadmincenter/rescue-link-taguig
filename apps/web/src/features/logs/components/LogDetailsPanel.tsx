@@ -760,6 +760,8 @@ export default function LogDetailsPanel({
                     onChange={(e) =>
                       handleChange("caller_name", e.target.value)
                     }
+                    onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="e.g. John Doe"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -781,6 +783,8 @@ export default function LogDetailsPanel({
                     onChange={(e) =>
                       handleChange("caller_contact", e.target.value)
                     }
+                    onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="e.g. 09123456789"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -810,6 +814,8 @@ export default function LogDetailsPanel({
                   <textarea
                     value={formData.address}
                     onChange={(e) => handleChange("address", e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="Exact location..."
                     rows={2}
@@ -826,6 +832,8 @@ export default function LogDetailsPanel({
                   rows={5}
                   value={formData.description}
                   onChange={(e) => handleChange("description", e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  onBlur={() => immediateSave({})}
                   disabled={isReadOnly}
                   placeholder="Provide any additional context or details..."
                   className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none hover:border-foreground/20 leading-relaxed disabled:opacity-70"
