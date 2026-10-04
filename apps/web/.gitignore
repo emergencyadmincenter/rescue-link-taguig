@@ -1,0 +1,5 @@
+# Next.js / web-specific artifacts
+/.next/
+/out/
+.vercel/
+next-env.d.ts

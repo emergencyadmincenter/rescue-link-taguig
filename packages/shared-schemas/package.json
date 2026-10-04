@@ -1,0 +1,12 @@
+{
+  "name": "shared-schemas",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.ts"
+  },
+  "dependencies": {
+    "zod": "^3.25.67"
+  }
+}

@@ -1,0 +1,7 @@
+:root {
+  --stroke-subtle: 0.0625rem;
+  --stroke-default: 0.0625rem;
+  --stroke-medium: 0.125rem;
+  --stroke-strong: 0.25rem;
+  --stroke-heavy: 0.375rem;
+}
