@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LogsController } from './logs.controller';
 import { LogsService } from './logs.service';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { CommunicationsService } from '../communications/communications.service';
+import { LogsGateway } from './logs.gateway';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 describe('Logs Integration Tests (Controller -> Service -> DB -> WS)', () => {
   beforeEach(async () => {
@@ -15,6 +19,10 @@ describe('Logs Integration Tests (Controller -> Service -> DB -> WS)', () => {
             log: { create: jest.fn(), findMany: jest.fn(), update: jest.fn() },
           },
         },
+        { provide: CommunicationsService, useValue: {} },
+        { provide: LogsGateway, useValue: {} },
+        { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
     }).compile();
   });
