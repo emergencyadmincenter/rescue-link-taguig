@@ -232,7 +232,6 @@ export default function VoiceCallView({
             ref={videoCallbackRef}
             autoPlay
             playsInline
-            muted
             className="absolute inset-0 w-full h-full object-cover"
           />
 

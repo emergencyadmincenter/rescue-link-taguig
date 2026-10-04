@@ -87,6 +87,7 @@ export default function ActiveSOSView({
       if (remoteStream) {
         audioRef.current.srcObject = null;
         audioRef.current.srcObject = remoteStream;
+        audioRef.current.play().catch(e => console.error("Resident audio play error:", e));
       } else {
         audioRef.current.srcObject = null;
       }
@@ -196,7 +197,7 @@ export default function ActiveSOSView({
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden animate-in fade-in">
-      <audio key={callId} ref={audioRef} autoPlay />
+      <audio ref={audioRef} autoPlay />
 
       {/* Main Video Area (Resident Camera Fullscreen) */}
       <div className="absolute inset-0 z-0 bg-gray-900">

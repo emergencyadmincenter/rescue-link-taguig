@@ -63,7 +63,8 @@ export function IncomingCallProvider({
 
   useEffect(() => {
     if (globalAudioRef.current) {
-      if (webrtc?.remoteStream && activeCallMethod === "voice") {
+      // Only play through global audio if there's no video tag currently handling it.
+      if (webrtc?.remoteStream && activeCallMethod === "voice" && !webrtc.hasRemoteVideo) {
         globalAudioRef.current.srcObject = null;
         globalAudioRef.current.srcObject = webrtc.remoteStream;
         globalAudioRef.current
@@ -73,7 +74,7 @@ export function IncomingCallProvider({
         globalAudioRef.current.srcObject = null;
       }
     }
-  }, [webrtc?.remoteStream, activeCallMethod]);
+  }, [webrtc?.remoteStream, webrtc?.hasRemoteVideo, activeCallMethod]);
 
   // Synchronize activeCallId with localStorage and verify its state
   useEffect(() => {
@@ -327,7 +328,7 @@ export function IncomingCallProvider({
       }}
     >
       {/* Global persistent audio element to prevent autoplay dropouts */}
-      <audio key={activeCallId || "idle"} ref={globalAudioRef} autoPlay />
+      <audio ref={globalAudioRef} autoPlay />
       {children}
 
       {activeCallId && !pathname?.startsWith(`/calls/${activeCallId}`) && (
@@ -573,7 +574,6 @@ const FloatingCallWindow = ({
             ref={videoCallbackRef}
             autoPlay
             playsInline
-            muted
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
