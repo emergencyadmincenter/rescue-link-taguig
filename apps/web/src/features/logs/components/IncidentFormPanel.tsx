@@ -47,7 +47,7 @@ export default function IncidentFormPanel({
     description: "",
   });
 
-  const { debouncedSave, isSaving } = useAutoSave({
+  const { debouncedSave, immediateSave, isSaving } = useAutoSave({
     onSave: async (dataToSave) => {
       if (!log || isReadOnly) return;
       try {
@@ -221,6 +221,7 @@ export default function IncidentFormPanel({
                     value={formData.caller_name}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="e.g. Juan Dela Cruz"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -242,6 +243,7 @@ export default function IncidentFormPanel({
                     value={formData.caller_contact}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="e.g. 09123456789"
                     className="w-full bg-background border border-background-subtle rounded-lg pl-8 pr-3 py-2 text-xs text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 disabled:opacity-70"
@@ -273,6 +275,7 @@ export default function IncidentFormPanel({
                     value={formData.address}
                     onChange={handleChange}
                     onFocus={(e) => e.target.select()}
+                    onBlur={() => immediateSave({})}
                     disabled={isReadOnly}
                     placeholder="e.g. 123 Quezon St..."
                     rows={5}
@@ -290,6 +293,7 @@ export default function IncidentFormPanel({
                   value={formData.description}
                   onChange={handleChange}
                   onFocus={(e) => e.target.select()}
+                  onBlur={() => immediateSave({})}
                   disabled={isReadOnly}
                   placeholder="Describe the emergency situation..."
                   rows={5}

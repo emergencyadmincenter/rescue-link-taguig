@@ -333,7 +333,7 @@ export default function ManualLogDialog({
                       setName(e.target.value);
                       setErrors((p) => ({ ...p, name: "" }));
                     }}
-                    className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
+                    onFocus={(e) => e.target.select()} className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
                   />
                   {errors.name && <p className="text-danger body-xsmall mt-1">{errors.name}</p>}
                 </div>
@@ -347,7 +347,7 @@ export default function ManualLogDialog({
                       setContact(e.target.value);
                       setErrors((p) => ({ ...p, contact: "" }));
                     }}
-                    className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
+                    onFocus={(e) => e.target.select()} className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
                   />
                   {errors.contact && <p className="text-danger body-xsmall mt-1">{errors.contact}</p>}
                 </div>
@@ -362,7 +362,7 @@ export default function ManualLogDialog({
                     setAddress(e.target.value);
                     setErrors((p) => ({ ...p, address: "" }));
                   }}
-                  className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
+                  onFocus={(e) => e.target.select()} className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent transition-colors"
                 />
                 {errors.address && <p className="text-danger body-xsmall mt-1">{errors.address}</p>}
               </div>
@@ -459,7 +459,7 @@ export default function ManualLogDialog({
                   placeholder="Emergency description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent resize-none transition-colors"
+                  onFocus={(e) => e.target.select()} className="w-full px-0 py-2 body-small text-gray-900 placeholder:text-gray-400 border-0 border-b border-gray-300 focus:border-gray-900 focus:ring-0 outline-none bg-transparent resize-none transition-colors"
                 />
               </div>
 
