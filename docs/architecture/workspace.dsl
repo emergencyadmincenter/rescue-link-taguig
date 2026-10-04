@@ -51,8 +51,9 @@ workspace "RescueLink Taguig" "Emergency response, incident logging, and civilia
             deploymentNode "Amazon Web Services (AWS)" "Cloud Infrastructure" "AWS Cloud" {
                 alb = infrastructureNode "Application Load Balancer" "Routes external incoming traffic to the backend API containers." "AWS ALB"
                 
-                deploymentNode "Elastic Container Service" "Serverless Container Execution" "AWS Fargate" {
+                deploymentNode "Elastic Container Service" "Serverless Auto-Scaling Cluster" "AWS Fargate" {
                     deploymentNode "api-container" "Docker Container pulled from ECR" "Docker" {
+                        instances 3
                         prodApiInstance = containerInstance api
                     }
                 }
@@ -87,16 +88,13 @@ workspace "RescueLink Taguig" "Emergency response, incident logging, and civilia
         
         deployment rescueLink "Development" "DevelopmentDeployment" {
             include *
-            # Explicitly include the persons to ensure consistency across views
-            include resident agency commandCenter weatherAPI
             autoLayout tb
             description "Development deployment diagram showing Docker and local Node.js integration."
         }
         
         deployment rescueLink "Production" "ProductionDeployment" {
             include *
-            # Explicitly include the persons to ensure consistency across views
-            include resident agency commandCenter weatherAPI
+            exclude "prodWebAppInstance -> prodApiInstance"
             autoLayout tb
             description "Production deployment diagram showing AWS ECS, RDS, S3, ALB, and Vercel edge deployment."
         }
