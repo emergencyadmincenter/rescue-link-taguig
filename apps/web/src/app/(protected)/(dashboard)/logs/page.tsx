@@ -2,7 +2,7 @@ import LogsPageView from "@/features/logs/components/LogsPageView";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Emergency Logs | Rescue Link Taguig",
+  title: "Emergency Logs | RescueLink Taguig",
   description: "Centralized record of logged emergency requests.",
 };
 

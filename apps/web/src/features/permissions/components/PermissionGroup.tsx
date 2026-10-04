@@ -1,4 +1,3 @@
-import React from 'react';
 import { Permission } from '../types/permissions.types';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 

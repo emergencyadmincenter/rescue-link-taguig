@@ -59,7 +59,6 @@ const ICONS = {
 const getIcon = (status: string) =>
   ICONS[status as keyof typeof ICONS] ?? ICONS.default;
 
-// ── Inner: captures map ref without DOM output ─────────────────────────────
 function MapController({
   mapRef,
 }: {
@@ -72,7 +71,6 @@ function MapController({
   return null;
 }
 
-// ── Inner: handles ResizeObserver so map tiles don't grey-out ─────────────
 function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
   const map = useMap();
   useEffect(() => {
@@ -105,7 +103,6 @@ function MapResizer({ isFullScreen }: { isFullScreen: boolean }) {
   return null;
 }
 
-// ── Inner: pans/zooms to the selected barangay polygon ────────────────────
 function BarangayFocusHandler({
   selectedBarangay,
   geoJsonData,
@@ -167,7 +164,6 @@ function BarangayFocusHandler({
   return null;
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
 export function IncidentMapView({ incidents, isLoading, selectedBarangay = "" }: Props) {
   const [mounted, setMounted] = useState(false);
   const [geoJsonData, setGeoJsonData] = useState<GeoJSON.FeatureCollection | null>(null);

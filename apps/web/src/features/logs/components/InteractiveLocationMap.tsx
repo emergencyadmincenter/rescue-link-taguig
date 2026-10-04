@@ -29,7 +29,6 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
-// --- Leaflet Icon Fixes ---
 const residentIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl:
@@ -56,7 +55,6 @@ const facilityIcon = new L.Icon({
   className: "facility-marker",
 });
 
-// --- Types ---
 type FacilityType =
   "Fire Station" | "Hospital" | "Police Station" | "Evacuation Center";
 
@@ -133,7 +131,6 @@ const getRelevantFacilityTypes = (channels?: string[]): FacilityType[] => {
     : ["Police Station", "Fire Station", "Hospital", "Evacuation Center"];
 };
 
-// --- Helper Components ---
 const MapBoundsFitter = ({
   residentLat,
   residentLng,
@@ -264,8 +261,7 @@ const StreetViewOverlay = ({
   };
 
   useEffect(() => {
-    // Keep UI visible always as requested
-    return () => {};
+        return () => {};
   }, []);
 
   return (
@@ -684,7 +680,7 @@ export default function InteractiveLocationMap({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-xl overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-white rounded-xl overflow-hidden relative z-0">
       {/* Action Bar (Top) */}
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 bg-white z-10">
         <div className="flex flex-col">

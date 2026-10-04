@@ -2,6 +2,7 @@ import { seedRoles } from './seeds/roleSeed';
 import { seedPermissions } from './seeds/permissionSeed';
 import { seedUsers } from './seeds/userSeed';
 import { seedUserRoles } from './seeds/userRoleSeed';
+import { seedAgencies } from './seeds/agencySeed';
 import { PrismaService } from '../src/database/prisma/prisma.service';
 
 const prisma = new PrismaService();
@@ -12,6 +13,7 @@ async function main() {
   await seedPermissions(prisma);
   await seedUsers(prisma);
   await seedUserRoles(prisma);
+  await seedAgencies(prisma);
   console.log('✅ Seed completed successfully.');
 }
 

@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { CommunicationsGateway } from './communications.gateway';
 import { CommunicationsService } from './communications.service';
 import { CommunicationsController } from './communications.controller';
-import { CommunicationsDebugController } from './communications-debug.controller';
 import { PrismaModule } from '../../database/prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { LocationValidationService } from '../../common/services/location-validation.service';
@@ -19,7 +18,7 @@ import { ShadowBansModule } from '../shadow-bans/shadow-bans.module';
     FraudDetectionService,
     BarangayResolverService,
   ],
-  controllers: [CommunicationsController, CommunicationsDebugController],
+  controllers: [CommunicationsController],
   exports: [CommunicationsService],
 })
 export class CommunicationsModule {}

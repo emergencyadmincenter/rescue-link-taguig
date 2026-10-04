@@ -14,15 +14,10 @@ export type WeatherCondition =
 
 export type SeverityLevel = "normal" | "advisory" | "warning" | "severe";
 
-export type WindDirection =
-  | "N"
-  | "NE"
-  | "E"
-  | "SE"
-  | "S"
-  | "SW"
-  | "W"
-  | "NW";
+export type RainDurationStatus =
+  "observed" | "not_raining" | "insufficient_history";
+
+export type WindDirection = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
 // --- Main Types ---
 
@@ -54,12 +49,17 @@ export interface BarangayWeather {
   precipitationChance: number; // TODO: BACKEND - From Open-Meteo hourly.precipitation_probability
   /** Current precipitation in mm */
   precipitation: number; // TODO: BACKEND - From Open-Meteo hourly.precipitation
+  /** Minutes of consecutive rain in the available provider history */
+  rainDurationMinutes?: number | null;
+  /** Explains whether a duration is supported by the available observations */
+  rainDurationStatus?: RainDurationStatus;
   /** ISO timestamp of last data update */
   lastUpdated: string; // TODO: BACKEND - From API response timestamp
 }
 
 /** Filter options for the weather page */
-export type WeatherFilterTab = "all" | "severe" | "advisory" | "flood_risk" | "cluster";
+export type WeatherFilterTab =
+  "all" | "severe" | "advisory" | "flood_risk" | "cluster";
 
 /** Summary statistics for the weather overview */
 export interface WeatherSummary {

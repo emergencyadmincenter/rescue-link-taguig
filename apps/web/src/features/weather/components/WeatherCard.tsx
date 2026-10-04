@@ -9,16 +9,11 @@ import {
   WiStormShowers,
   WiCloudyGusts,
   WiRainWind,
-  WiFlood,
 } from "react-icons/wi";
-import { FiAlertTriangle, FiInfo } from "react-icons/fi";
+import { FiInfo } from "react-icons/fi";
 import type { BarangayWeather, WeatherCondition } from "../types/weather.types";
-import {
-  calculateFloodRisk,
-  getFloodRiskConfig,
-} from "../utils/flood-risk";
+import { calculateFloodRisk, getFloodRiskConfig } from "../utils/flood-risk";
 
-// --- Weather Condition Icon Mapping ---
 const WEATHER_ICONS: Record<WeatherCondition, React.ElementType> = {
   sunny: WiDaySunny,
   partly_cloudy: WiDayCloudy,
@@ -49,7 +44,6 @@ const ICON_COLORS: Record<WeatherCondition, string> = {
   thunderstorm: "text-purple-600",
 };
 
-// --- Relative Time Helper ---
 function getRelativeTime(isoString: string): string {
   const now = Date.now();
   const then = new Date(isoString).getTime();
@@ -65,53 +59,42 @@ function getRelativeTime(isoString: string): string {
   return `${Math.floor(diffHr / 24)}d ago`;
 }
 
+function formatRainDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return remainingMinutes === 0
+    ? `${hours}h`
+    : `${hours}h ${remainingMinutes}m`;
+}
+
 interface WeatherCardProps {
   weather: BarangayWeather;
 }
 
 export default function WeatherCard({ weather }: WeatherCardProps) {
   const Icon = WEATHER_ICONS[weather.condition];
-  const iconColor = ICON_COLORS[weather.condition];
+  const iconColor = 'text-gray-400';
   const label = WEATHER_LABELS[weather.condition];
 
   const isSevere = weather.severity === "severe";
-  const isAdvisory = weather.severity === "advisory" || weather.severity === "warning";
+  const isAdvisory =
+    weather.severity === "advisory" || weather.severity === "warning";
 
   // Card border/background based on severity
-  const cardStyles = isSevere
-    ? "border-danger/40 bg-red-50/30"
-    : isAdvisory
-      ? "border-warning/40 bg-yellow-50/30"
-      : "border-gray-100";
+  const cardStyles = "border-gray-100 bg-white";
 
   return (
     <div
-      className={`bg-white rounded-xl border shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 ease-in-out relative ${cardStyles}`}
+      className={`flex-1 bg-white rounded-xl border shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-gray-200 transition-all duration-200 ease-in-out relative ${cardStyles}`}
     >
       {/* Severity Badge */}
-      {(isSevere || isAdvisory) && (
-        <div
-          className={`absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full body-xsmall font-semibold ${
-            isSevere
-              ? "bg-danger/10 text-danger"
-              : "bg-warning/10 text-warning"
-          }`}
-        >
-          <FiAlertTriangle className="w-3 h-3" />
-          {isSevere ? "Severe" : "Advisory"}
-        </div>
-      )}
+      
 
       {/* Header: Barangay Name + Condition */}
       <div className="flex items-start gap-3">
         <div
-          className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
-            isSevere
-              ? "bg-danger/10"
-              : isAdvisory
-                ? "bg-warning/10"
-                : "bg-gray-50"
-          }`}
+          className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0 bg-gray-50/50"
         >
           <Icon className={`w-7 h-7 ${iconColor}`} />
         </div>
@@ -128,6 +111,13 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
             {weather.name}
           </h3>
           <p className="body-xsmall text-gray-500">{label}</p>
+        </div>
+        <div className="text-right">
+          <span className={`body-xsmall capitalize font-bold ${
+            isSevere ? "text-red-700" : isAdvisory ? "text-yellow-600" : "text-emerald-700"
+          }`}>
+            {weather.severity === "warning" ? "Advisory" : weather.severity}
+          </span>
         </div>
       </div>
 
@@ -177,6 +167,26 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
             {weather.precipitation} mm
           </span>
         </div>
+
+        {weather.rainDurationStatus && (
+          <div className="flex flex-col col-span-2">
+            <span className="body-xsmall text-gray-400">
+              Rain observation duration
+            </span>
+            <span className="body-small text-gray-700 font-medium">
+              {weather.rainDurationStatus === "observed" &&
+              weather.rainDurationMinutes !== null &&
+              weather.rainDurationMinutes !== undefined
+                ? `${formatRainDuration(weather.rainDurationMinutes)} so far`
+                : weather.rainDurationStatus === "insufficient_history"
+                  ? "Insufficient recent observations"
+                  : "No rain currently observed"}
+            </span>
+            <span className="body-xsmall text-gray-400">
+              Based on the available Taguig hourly history
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Flood Risk Estimate Section */}
@@ -192,7 +202,6 @@ export default function WeatherCard({ weather }: WeatherCardProps) {
   );
 }
 
-// --- Flood Risk Section (sub-component) ---
 
 function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -204,7 +213,6 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
       {/* Section Header with Info Tooltip */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
-          
           <span className="body-xsmall font-semibold text-gray-600 uppercase tracking-wide">
             Flood Risk Estimate
           </span>
@@ -249,50 +257,41 @@ function FloodRiskSection({ weather }: { weather: BarangayWeather }) {
   );
 }
 
-// --- Compact Weather Card ---
 
-export function CompactWeatherCard({ weather, clusterColor }: WeatherCardProps & { clusterColor?: string }) {
+export function CompactWeatherCard({
+  weather,
+  clusterColor,
+  activeTab = "flood_risk",
+}: WeatherCardProps & { clusterColor?: string; activeTab?: "severity" | "flood_risk" }) {
   const Icon = WEATHER_ICONS[weather.condition];
-  const iconColor = ICON_COLORS[weather.condition];
   
   const isSevere = weather.severity === "severe";
-  const isAdvisory = weather.severity === "advisory" || weather.severity === "warning";
+  const isAdvisory =
+    weather.severity === "advisory" || weather.severity === "warning";
 
-  let cardStyles = "";
+  let cardStyles = "border-gray-100 bg-white hover:bg-gray-50/50";
   if (clusterColor) {
-    cardStyles = isSevere 
-      ? "border-danger/40 hover:opacity-80"
-      : isAdvisory
-        ? "border-warning/40 hover:opacity-80"
-        : "border-transparent hover:opacity-80";
-  } else {
-    cardStyles = isSevere
-      ? "border-danger/40 bg-red-50/30"
-      : isAdvisory
-        ? "border-warning/40 bg-yellow-50/30"
-        : "border-gray-100 bg-white hover:bg-gray-50/50";
+    cardStyles = "border-transparent hover:opacity-80";
   }
 
   const risk = calculateFloodRisk(weather);
   const config = getFloodRiskConfig(risk.level);
 
-  const inlineStyle = clusterColor 
+  const inlineStyle = clusterColor
     ? { backgroundColor: `${clusterColor}15` } // 15 = ~8% opacity for a very subtle highlight
     : {};
 
   return (
-    <div 
+    <div
       className={`rounded-lg border p-3 flex items-center gap-3 transition-all duration-200 ${cardStyles}`}
       style={inlineStyle}
     >
       <div
-        className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
-          isSevere ? "bg-danger/10" : isAdvisory ? "bg-warning/10" : "bg-gray-100"
-        }`}
+        className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-gray-50/50"
       >
-        <Icon className={`w-6 h-6 ${iconColor}`} />
+        <Icon className="w-6 h-6 text-gray-400" />
       </div>
-      
+
       <div className="flex-1 min-w-0">
         <h4 className="body-small font-semibold text-gray-900 truncate">
           {weather.name}
@@ -301,15 +300,28 @@ export function CompactWeatherCard({ weather, clusterColor }: WeatherCardProps &
           <span className="body-xsmall text-gray-500 font-medium">
             {weather.temperature}°C
           </span>
-          <span className={`body-xsmall font-medium ${config.textColor} truncate`}>
-            {config.label} Risk
-          </span>
+          {activeTab === "flood_risk" ? (
+            <span
+              className={`body-xsmall font-medium ${config.textColor} truncate`}
+            >
+              {config.label} Risk
+            </span>
+          ) : (
+            <span
+              className={`body-xsmall font-medium ${
+                isSevere
+                  ? "text-red-700"
+                  : isAdvisory
+                    ? "text-yellow-700"
+                    : "text-emerald-700"
+              } truncate capitalize`}
+            >
+              {weather.severity === "warning" ? "Advisory" : weather.severity} Severity
+            </span>
+          )}
         </div>
       </div>
       
-      {(isSevere || isAdvisory) && (
-        <FiAlertTriangle className={`w-4 h-4 shrink-0 ${isSevere ? "text-danger" : "text-warning"}`} />
-      )}
     </div>
   );
 }

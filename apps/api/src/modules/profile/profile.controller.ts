@@ -28,10 +28,7 @@ export class ProfileController {
   }
 
   @Patch()
-  async updateProfile(
-    @CurrentUser() user: any,
-    @Body() dto: UpdateProfileDto,
-  ) {
+  async updateProfile(@CurrentUser() user: any, @Body() dto: UpdateProfileDto) {
     const updated = await this.profileService.updateProfile(user.sub, dto);
     return ApiResponse.success(updated);
   }

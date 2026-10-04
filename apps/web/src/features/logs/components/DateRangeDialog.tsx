@@ -77,8 +77,7 @@ export default function DateRangeDialog({ isOpen, onClose, onApply, currentLabel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[360px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-2">
             <FiCalendar className="w-5 h-5 text-gray-700" />
             <h2 className="title-small text-gray-900">Date Range</h2>
@@ -135,8 +134,7 @@ export default function DateRangeDialog({ isOpen, onClose, onApply, currentLabel
           </div>
         )}
 
-        {/* Footer */}
-        <div className="px-6 pb-4 pt-2">
+                <div className="px-6 pb-4 pt-2">
           <button
             onClick={handleClear}
             className="w-full py-2 rounded-md text-gray-500 font-medium body-small hover:text-gray-700 hover:bg-gray-50 transition-colors border border-transparent"

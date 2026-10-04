@@ -5,7 +5,7 @@ import { FiTrendingUp, FiTrendingDown, FiMinus } from "react-icons/fi";
 export interface MetricCardProps {
   title: string;
   value: string | number;
-  icon: ReactNode;
+  icon?: ReactNode;
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   href?: string;
@@ -29,22 +29,26 @@ export function MetricCard({
         <h3 className="text-gray-500 font-medium body-small uppercase tracking-wider">
           {title}
         </h3>
-        <div className="p-xs bg-background-subtle rounded-md text-primary">
-          {icon}
-        </div>
+        {icon && (
+          <div className="p-xs bg-background-subtle rounded-md text-primary">
+            {icon}
+          </div>
+        )}
       </div>
 
       <div className="flex items-baseline gap-sm">
-        <span className="display-medium text-foreground tracking-tight">{value}</span>
-        
+        <span className="display-medium text-foreground tracking-tight">
+          {value}
+        </span>
+
         {trend && trendValue && (
           <div
             className={`flex items-center gap-xs body-xsmall font-medium px-2 py-0.5 rounded-full ${
               trend === "up"
                 ? "bg-success/10 text-success"
                 : trend === "down"
-                ? "bg-danger/10 text-danger"
-                : "bg-gray-100 text-gray-500"
+                  ? "bg-danger/10 text-danger"
+                  : "bg-gray-100 text-gray-500"
             }`}
           >
             {trend === "up" && <FiTrendingUp className="w-3 h-3" />}

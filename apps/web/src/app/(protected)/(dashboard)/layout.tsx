@@ -10,8 +10,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <InternalMessagingProvider>
         <div className="h-screen bg-background-subtle font-inter text-foreground flex flex-col overflow-hidden">
-        {/* ===== Top Navbar ===== */}
-        <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-50 relative shrink-0">
+                <header className="bg-white border-b border-gray-100 h-[60px] flex items-center justify-between px-6 z-50 relative shrink-0">
           <div className="flex items-center">
             <Link href="/">
               <Image
@@ -29,11 +28,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </header>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* ===== Sidebar ===== */}
-          <Sidebar />
+                    <Sidebar />
 
-          {/* ===== Main Content Area ===== */}
-          <main className="px-5 py-5 flex-1 overflow-y-auto">{children}</main>
+                    <main className="px-5 py-5 flex-1 overflow-y-auto">{children}</main>
         </div>
         
         <FloatingInternalChat />

@@ -48,12 +48,10 @@ export interface ClusterConfig {
    * // TODO: BACKEND — Replace with real assignment from the backend.
    * // Should support dynamic reassignment during operations.
    */
-  assignedTeam: string;
   /**
    * Mock command post location for this cluster.
    * // TODO: BACKEND — Replace with real command post data.
    */
-  commandPost: string;
 }
 
 // --- Cluster Color Palette ---
@@ -62,53 +60,15 @@ export interface ClusterConfig {
 // Each cluster gets a fill color (for polygons), a darker border color
 // (for cluster outlines), and Tailwind classes for legend badges.
 
-const CLUSTER_COLORS = [
-  {
-    // Cluster 1 — Teal
-    color: "#0d9488",      // teal-600
-    borderColor: "#0f766e", // teal-700
-    bgClass: "bg-teal-100",
-    textClass: "text-teal-700",
-    dotClass: "bg-teal-500",
-    borderClass: "border-teal-200",
-  },
-  {
-    // Cluster 2 — Indigo
-    color: "#4f46e5",      // indigo-600
-    borderColor: "#4338ca", // indigo-700
-    bgClass: "bg-indigo-100",
-    textClass: "text-indigo-700",
-    dotClass: "bg-indigo-500",
-    borderClass: "border-indigo-200",
-  },
-  {
-    // Cluster 3 — Amber/Orange
-    color: "#d97706",      // amber-600
-    borderColor: "#b45309", // amber-700
-    bgClass: "bg-amber-100",
-    textClass: "text-amber-700",
-    dotClass: "bg-amber-500",
-    borderClass: "border-amber-200",
-  },
-  {
-    // Cluster 4 — Rose
-    color: "#e11d48",      // rose-600
-    borderColor: "#be123c", // rose-700
-    bgClass: "bg-rose-100",
-    textClass: "text-rose-700",
-    dotClass: "bg-rose-500",
-    borderClass: "border-rose-200",
-  },
-  {
-    // Cluster 5 — Violet
-    color: "#7c3aed",      // violet-600
-    borderColor: "#6d28d9", // violet-700
-    bgClass: "bg-violet-100",
-    textClass: "text-violet-700",
-    dotClass: "bg-violet-500",
-    borderClass: "border-violet-200",
-  },
-] as const;
+const DULL_GRAY = {
+  color: '#6b7280',
+  borderColor: '#4b5563',
+  bgClass: 'bg-gray-100',
+  textClass: 'text-gray-700',
+  dotClass: 'bg-gray-500',
+  borderClass: 'border-gray-200'
+};
+const CLUSTER_COLORS = [DULL_GRAY, DULL_GRAY, DULL_GRAY, DULL_GRAY, DULL_GRAY] as const;
 
 // --- Cluster Definitions ---
 
@@ -138,8 +98,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Tuktukan",
       "Ususan",
     ],
-    assignedTeam: "Rescue Unit Alpha-1",
-    commandPost: "Tipas Emergency Station",
     ...CLUSTER_COLORS[0],
   },
   {
@@ -155,8 +113,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "New Lower Bicutan",
       "Bagumbayan",
     ],
-    assignedTeam: "Rescue Unit Bravo-2",
-    commandPost: "Lower Bicutan Command Center",
     ...CLUSTER_COLORS[1],
   },
   {
@@ -172,8 +128,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Central Signal Village",
       "South Signal Village",
     ],
-    assignedTeam: "Rescue Unit Charlie-3",
-    commandPost: "Western Bicutan Fire Station",
     ...CLUSTER_COLORS[2],
   },
   {
@@ -188,8 +142,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "North Daang Hari",
       "Tanyag",
     ],
-    assignedTeam: "Rescue Unit Delta-4",
-    commandPost: "Upper Bicutan Barangay Hall",
     ...CLUSTER_COLORS[3],
   },
   {
@@ -208,8 +160,6 @@ export const CLUSTERS: ClusterConfig[] = [
       "Pitogo",
       "Comembo",
     ],
-    assignedTeam: "Rescue Unit Echo-5",
-    commandPost: "Pembo Community Center",
     ...CLUSTER_COLORS[4],
   },
 ];

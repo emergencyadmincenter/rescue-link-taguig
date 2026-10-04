@@ -22,8 +22,10 @@ export const logsApi = {
   updateLog: (id: string, data: UpdateLogPayload): Promise<Log> =>
     apiClient.patch(`/logs/${id}`, data).then((res) => res.data.data),
 
-  getStatusCounts: (): Promise<StatusCounts> =>
-    apiClient.get("/logs/status-counts").then((res) => res.data.data),
+  getStatusCounts: (params?: LogsQueryParams): Promise<StatusCounts> =>
+    apiClient
+      .get("/logs/status-counts", { params })
+      .then((res) => res.data.data),
 
   getResources: (): Promise<Resource[]> =>
     apiClient.get("/logs/resources").then((res) => res.data.data),
@@ -78,4 +80,58 @@ export const logsApi = {
 
   getResidentMyLogs: (): Promise<any> =>
     apiClient.get("/logs/resident/my-logs").then((res) => res.data.data),
+
+  getAgencies: (): Promise<any[]> =>
+    apiClient.get("/agencies").then((res) => res.data.data),
+
+  getLogCoordinations: (
+    id: string,
+  ): Promise<{ recommendedAgencies: any[]; coordinations: any[] }> =>
+    apiClient.get(`/logs/${id}/coordinations`).then((res) => res.data.data),
+
+  updateLogCoordination: (
+    id: string,
+    agencyId: string,
+    data: { status: string; remarks?: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/${id}/coordinations/${agencyId}`, data)
+      .then((res) => res.data.data),
+
+  deleteLogCoordination: (id: string, agencyId: string): Promise<any> =>
+    apiClient
+      .delete(`/logs/${id}/coordinations/${agencyId}`)
+      .then((res) => res.data.data),
+
+  // Public Link Revocation
+  revokePublicShareLink: (id: string): Promise<any> =>
+    apiClient.patch(`/logs/${id}/share/revoke`).then((res) => res.data.data),
+
+  // Coordination Updates
+  getCoordinationUpdates: (id: string): Promise<any[]> =>
+    apiClient
+      .get(`/logs/${id}/coordination-updates`)
+      .then((res) => res.data.data),
+
+  createInternalCoordinationUpdate: (
+    id: string,
+    data: { message: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/${id}/coordination-updates`, data)
+      .then((res) => res.data.data),
+
+  // Public/External Endpoints
+  validateAgencyToken: (token: string, agencyToken: string): Promise<any> =>
+    apiClient
+      .get(`/logs/public/${token}/agency/${agencyToken}`)
+      .then((res) => res.data.data),
+
+  submitExternalUpdate: (
+    token: string,
+    data: { agency_token: string; message: string },
+  ): Promise<any> =>
+    apiClient
+      .post(`/logs/public/${token}/updates`, data)
+      .then((res) => res.data.data),
 };

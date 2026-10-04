@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { logsApi } from "../api/logs.api";
 import { Log, LogsQueryParams, StatusCounts } from "../types/logs.types";
-import { toast } from "react-hot-toast";
 
 const logsCache: Record<string, any> = {};
 
@@ -65,14 +64,27 @@ export function useLogs(initialParams?: LogsQueryParams) {
     [params],
   );
 
-  const fetchStatusCounts = useCallback(async () => {
-    try {
-      const counts = await logsApi.getStatusCounts();
-      setStatusCounts(counts);
-    } catch (error) {
-      // Silent fail for counts
-    }
-  }, []);
+    const fetchStatusCounts = useCallback(
+      async (currentParams?: LogsQueryParams) => {
+        try {
+          const p = currentParams || params;
+          const cleanParams = Object.fromEntries(
+            Object.entries(p).filter(
+              ([k, v]) =>
+                v !== undefined &&
+                v !== "" &&
+                v !== "all" &&
+                k !== "status" &&
+                k !== "page" &&
+                k !== "limit",
+            ),
+          );
+          const counts = await logsApi.getStatusCounts(cleanParams);
+          setStatusCounts(counts);
+        } catch (error) {
+          // Silent fail for counts
+        }
+  }, [params]);
 
   const updateParams = useCallback((newParams: Partial<LogsQueryParams>) => {
     setParams((prev) => {

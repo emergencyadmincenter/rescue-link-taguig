@@ -60,8 +60,7 @@ export default function SelectorDialog({
         onClick={(e) => e.stopPropagation()}
         style={{ height: "85vh" }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
           <h2 className="title-small text-gray-900">{title}</h2>
           <button
             onClick={onClose}

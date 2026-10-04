@@ -1,31 +1,108 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { isAxiosError } from "axios";
 import { FiShieldOff, FiShield } from "react-icons/fi";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { toast } from "react-hot-toast";
-import { shadowBansApi } from "../api/shadow-bans.api";
+import {
+  shadowBansApi,
+  ShadowBanSeverity,
+  ShadowBanViolationCategory,
+} from "../api/shadow-bans.api";
 
 interface ShadowBanActionProps {
   callId: string;
   isOwner: boolean;
   isAdmin: boolean;
+  onActionSuccess?: () => void;
 }
+
+const CATEGORY_OPTIONS: {
+  value: ShadowBanViolationCategory;
+  label: string;
+  severity?: ShadowBanSeverity;
+  duration: string;
+}[] = [
+  {
+    value: "fake_rescue_call",
+    label: "Fake emergency or rescue call",
+    severity: "high",
+    duration: "7 days",
+  },
+  {
+    value: "spam",
+    label: "Spam or repeated unnecessary requests",
+    severity: "low",
+    duration: "24 hours",
+  },
+  {
+    value: "fraudulent_activity",
+    label: "Fraudulent activity",
+    severity: "critical",
+    duration: "Indefinite",
+  },
+  {
+    value: "abusive_malicious_use",
+    label: "Abusive or malicious use",
+    severity: "high",
+    duration: "7 days",
+  },
+  {
+    value: "impersonation_identity_misuse",
+    label: "Impersonation or identity misuse",
+    severity: "high",
+    duration: "7 days",
+  },
+  {
+    value: "coordinated_system_abuse",
+    label: "Coordinated system abuse",
+    severity: "critical",
+    duration: "Indefinite",
+  },
+  {
+    value: "other",
+    label: "Other policy violation",
+    duration: "Choose severity",
+  },
+];
+
+const SEVERITY_OPTIONS: { value: ShadowBanSeverity; label: string }[] = [
+  { value: "low", label: "Low: temporary restriction" },
+  { value: "high", label: "High: longer restriction" },
+  { value: "critical", label: "Critical: indefinite restriction" },
+];
+
+const SEVERITY_DURATIONS: Record<ShadowBanSeverity, string> = {
+  low: "24 hours",
+  high: "7 days",
+  critical: "Indefinite",
+};
 
 export function ShadowBanAction({
   callId,
   isOwner,
   isAdmin,
+  onActionSuccess,
 }: ShadowBanActionProps) {
   const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [duration, setDuration] = useState<string>("permanent");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [historyCount, setHistoryCount] = useState(0);
+  const [category, setCategory] = useState<ShadowBanViolationCategory>("other");
+  const [severity, setSeverity] = useState<ShadowBanSeverity>("low");
+  const [details, setDetails] = useState("");
 
-  // Requirement: Administrators must not be able to shadow ban or remove a shadow ban.
-  // Requirement: Only the coordinator who owns the active communication session may perform this action.
+  const selectedCategory = CATEGORY_OPTIONS.find(
+    (option) => option.value === category,
+  );
+  const selectedSeverity = selectedCategory?.severity ?? severity;
+  const selectedDuration = SEVERITY_DURATIONS[selectedSeverity];
+
+  // Administrators must not be able to shadow ban or remove a shadow ban.
+  // Only the coordinator who owns the active communication session may perform this action.
   const canPerformAction = isOwner && !isAdmin;
 
   useEffect(() => {
@@ -34,7 +111,8 @@ export function ShadowBanAction({
     shadowBansApi
       .getStatus(callId)
       .then((status) => {
-        setIsBanned(status);
+        setIsBanned(status.isBanned);
+        setHistoryCount(status.history.length);
         setLoading(false);
       })
       .catch((err) => {
@@ -54,9 +132,14 @@ export function ShadowBanAction({
     setIsSubmitting(true);
     try {
       const action = isBanned ? "unban" : "ban";
-      const durationMs =
-        duration === "permanent" ? null : parseInt(duration, 10);
-      await shadowBansApi.toggleBan(callId, action, reason, durationMs);
+      await shadowBansApi.toggleBan(
+        callId,
+        action,
+        reason,
+        category,
+        severity,
+        details,
+      );
 
       toast.success(
         isBanned
@@ -66,11 +149,13 @@ export function ShadowBanAction({
       setIsBanned(!isBanned);
       setDialogOpen(false);
       setReason("");
-      setDuration("permanent");
-    } catch (error: any) {
-      const msg =
-        error.response?.data?.message || "Failed to update shadow ban status.";
-      toast.error(msg);
+      setDetails("");
+      if (onActionSuccess) onActionSuccess();
+    } catch (error: unknown) {
+      const msg = isAxiosError(error)
+        ? error.response?.data?.message
+        : undefined;
+      toast.error(msg || "Failed to update shadow ban status.");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,7 +188,7 @@ export function ShadowBanAction({
         message={
           isBanned
             ? "Are you sure you want to remove the shadow ban for this resident? They will be able to make legitimate emergency requests again."
-            : "Are you sure you want to silently shadow ban this resident? Future emergency requests from this device will be quarantined and hidden from all coordinators and dispatchers."
+            : `This will quarantine future emergency requests from the matching device or network for ${selectedDuration}. ${SEVERITY_OPTIONS.find((option) => option.value === selectedSeverity)?.label}.`
         }
         confirmLabel={
           isBanned
@@ -144,27 +229,100 @@ export function ShadowBanAction({
           </div>
 
           {!isBanned && (
-            <div>
-              <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
-                Ban Duration
-              </label>
-              <select
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 cursor-pointer"
-              >
-                <option value="300000">5 minutes</option>
-                <option value="900000">15 minutes</option>
-                <option value="1800000">30 minutes</option>
-                <option value="3600000">1 hour</option>
-                <option value="21600000">6 hours</option>
-                <option value="43200000">12 hours</option>
-                <option value="86400000">24 hours</option>
-                <option value="604800000">7 days</option>
-                <option value="2592000000">30 days</option>
-                <option value="permanent">Permanent</option>
-              </select>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+                  Violation category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    const nextCategory = e.target
+                      .value as ShadowBanViolationCategory;
+                    const nextOption = CATEGORY_OPTIONS.find(
+                      (option) => option.value === nextCategory,
+                    );
+                    setCategory(nextCategory);
+                    if (nextOption?.severity) setSeverity(nextOption.severity);
+                  }}
+                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 cursor-pointer"
+                >
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label} ({option.duration})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rounded-lg border border-background-subtle bg-background-subtle/30 px-3 py-2">
+                <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+                  Policy severity
+                </label>
+                {selectedCategory?.severity ? (
+                  <p className="text-sm text-foreground">
+                    {
+                      SEVERITY_OPTIONS.find(
+                        (option) => option.value === selectedSeverity,
+                      )?.label
+                    }
+                  </p>
+                ) : (
+                  <select
+                    value={severity}
+                    onChange={(e) =>
+                      setSeverity(e.target.value as ShadowBanSeverity)
+                    }
+                    className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all hover:border-foreground/20 cursor-pointer"
+                  >
+                    {SEVERITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} ({SEVERITY_DURATIONS[option.value]})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-background-subtle bg-background-subtle/30 px-3 py-2">
+                <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+                  Restriction duration (derived)
+                </label>
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedDuration}
+                </p>
+                <p className="text-xs text-foreground/60 mt-1">
+                  Based on the RescueLink progressive enforcement policy.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/70 uppercase tracking-wider mb-2">
+                  Additional details (Optional)
+                </label>
+                <textarea
+                  value={details}
+                  onChange={(e) => setDetails(e.target.value)}
+                  placeholder="Add relevant context from the request or session."
+                  rows={2}
+                  className="w-full bg-background border border-background-subtle rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all resize-none"
+                />
+              </div>
             </div>
+          )}
+
+          {!isBanned && historyCount > 0 && (
+            <p className="text-xs text-foreground/60">
+              This resident has {historyCount} previous enforcement record
+              {historyCount === 1 ? "" : "s"}.
+            </p>
+          )}
+          {!isBanned && (
+            <p className="text-xs text-foreground/60">
+              Durations are an internal, proportionate safety policy based on
+              intent, repetition, operational impact, and risk to emergency
+              response.
+            </p>
           )}
         </div>
       </ConfirmationDialog>

@@ -17,7 +17,13 @@ export class LocationValidationService implements OnModuleInit {
       const candidatePaths = [
         path.join(__dirname, '..', 'data', 'taguig-boundary.geojson'),
         // Fallback for local development when Nest CLI does not copy assets to dist
-        path.join(process.cwd(), 'src', 'common', 'data', 'taguig-boundary.geojson'),
+        path.join(
+          process.cwd(),
+          'src',
+          'common',
+          'data',
+          'taguig-boundary.geojson',
+        ),
       ];
 
       let geojsonPath: string | null = null;

@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { StorageService } from '../storage/storage.service';
@@ -25,9 +30,9 @@ export class ProfileService {
         user_roles: {
           include: {
             role: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -62,9 +67,9 @@ export class ProfileService {
         user_roles: {
           include: {
             role: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     return updatedUser;
@@ -75,9 +80,16 @@ export class ProfileService {
       throw new BadRequestException('No file provided');
     }
 
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg',
+      'image/webp',
+    ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Unsupported file format. Please upload JPG, PNG, or WEBP.');
+      throw new BadRequestException(
+        'Unsupported file format. Please upload JPG, PNG, or WEBP.',
+      );
     }
 
     // 5MB limit
@@ -86,7 +98,11 @@ export class ProfileService {
     }
 
     try {
-      const baseAvatarUrl = await this.storageService.uploadFile(file, 'avatars', userId);
+      const baseAvatarUrl = await this.storageService.uploadFile(
+        file,
+        'avatars',
+        userId,
+      );
       const avatarUrl = `${baseAvatarUrl}?v=${Date.now()}`;
 
       // Persist to user

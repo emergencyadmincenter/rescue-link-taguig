@@ -36,23 +36,19 @@ export default function AddPersonnelForm({
   onCancel,
   onSuccess,
 }: AddPersonnelFormProps) {
-  // ── Form state ──────────────────────────────────────────────────────────
-  const [name, setName] = useState("");
+    const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [roleId, setRoleId] = useState("");
 
-  // ── Roles dropdown ───────────────────────────────────────────────────────
-  const [roles, setRoles] = useState<RoleOption[]>([]);
+    const [roles, setRoles] = useState<RoleOption[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [rolesError, setRolesError] = useState<string | null>(null);
 
-  // ── Submission state ─────────────────────────────────────────────────────
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  // ── Load roles on mount ──────────────────────────────────────────────────
-  useEffect(() => {
+    useEffect(() => {
     let active = true;
 
     getRoles()
@@ -74,8 +70,7 @@ export default function AddPersonnelForm({
     };
   }, []);
 
-  // ── Client-side validation ───────────────────────────────────────────────
-  const validate = (): boolean => {
+    const validate = (): boolean => {
     const errors: Record<string, string> = {};
     if (!name.trim()) errors.name = "Name is required.";
     if (!email.trim()) errors.email = "Email is required.";
@@ -86,8 +81,7 @@ export default function AddPersonnelForm({
     return Object.keys(errors).length === 0;
   };
 
-  // ── Submit handler ───────────────────────────────────────────────────────
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
@@ -116,8 +110,7 @@ export default function AddPersonnelForm({
     }
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
-  return (
+    return (
     <div className="bg-white rounded-lg shadow-lg w-full max-w-[360px]">
       <div className="px-6 pt-6 pb-5">
         {/* Title */}

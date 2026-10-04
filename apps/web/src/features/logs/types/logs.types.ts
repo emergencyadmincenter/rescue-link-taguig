@@ -73,6 +73,15 @@ export interface Message {
   created_at: string;
 }
 
+export interface LogStatusHistory {
+  id: string;
+  previous_status: LogStatus | null;
+  new_status: LogStatus;
+  changed_at: string;
+  changed_by: User | null;
+  remarks: string | null;
+}
+
 export interface Log {
   id: string;
   reference_no: string;
@@ -101,15 +110,34 @@ export interface Log {
   created_by_coordinator: User | null;
   calls: Call[];
   messages: Message[];
+  status_history?: LogStatusHistory[];
   resource_assignments: LogResourceAssignment[];
   fraud_assessments?: FraudAssessment[];
   _count?: { messages: number };
   is_shadow_banned?: boolean;
   shadow_ban_details?: {
     reason: string;
+    violation_category?: string;
+    severity?: string;
+    details?: string | null;
     created_at: string;
     expires_at: string | null;
     coordinator: User | null;
+    history_count?: number;
+    security_context?: {
+      client_ip: string;
+      device_uuid: string | null;
+      device_uuid_full?: string | null;
+      fingerprint_hash: string | null;
+      fingerprint_hash_full?: string | null;
+      risk_classification: "low_risk" | "high_fraud_risk";
+      is_vpn: boolean;
+      is_proxy: boolean;
+      is_hosting: boolean;
+      distance_km: number | null;
+      location_permission_granted: boolean;
+      assessed_at: string;
+    } | null;
   } | null;
   public_token?: string | null;
 }
@@ -170,6 +198,7 @@ export interface UpdateLogPayload {
   latitude?: number;
   longitude?: number;
   cancellation_reason?: string;
+  status_remarks?: string;
   resource_ids?: string[];
   channels?: string[];
   assigned_coordinator_id?: string;

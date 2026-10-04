@@ -15,12 +15,12 @@ export function LandingFooter() {
                 href="https://www.taguig.gov.ph/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-max bg-[#efefef] rounded-full px-3 block"
+                className="w-max bg-gray-500 rounded-lg px-3 block"
               >
                 <div className="relative w-40 md:w-48 h-12 flex-shrink-0">
                   <Image
                     src="/images/logos/rlt-main-logo.png"
-                    alt="Rescue Link Logo"
+                    alt="RescueLink Logo"
                     fill
                     className="object-contain object-left"
                   />
@@ -32,9 +32,13 @@ export function LandingFooter() {
               response coordination.
               <br />
               <br />
-              📍 Taguig City Hall, Gen. Antonio Luna St., Tuktukan, Taguig City
+              <span className="text-sm">
+                Taguig City Hall, Gen. Antonio Luna St., Tuktukan
+              </span>
               <br />
-              📍 Taguig CDRRMO, G349+C36, New Lower Bicutan, Taguig
+              <span className="text-sm">
+                Taguig CDRRMO, New Lower Bicutan, Taguig
+              </span>
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -103,7 +107,7 @@ export function LandingFooter() {
             <ul className="space-y-4">
               <li>
                 <a
-                  href="#"
+                  href="/privacy-policy"
                   className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
                 >
                   Privacy Policy
@@ -111,18 +115,10 @@ export function LandingFooter() {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/terms-of-service"
                   className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
                 >
                   Terms of Service
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors text-base md:text-lg"
-                >
-                  Cookie Policy
                 </a>
               </li>
             </ul>
@@ -131,12 +127,8 @@ export function LandingFooter() {
 
         <div className="mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-base text-gray-500">
           <p>
-            © {currentYear} Rescue Link Taguig Command Center. All rights
+            © {currentYear} RescueLink Taguig Command Center. All rights
             reserved.
-          </p>
-          <p className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-            RescueLink Taguig is online
           </p>
         </div>
       </div>

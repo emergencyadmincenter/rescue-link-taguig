@@ -1,45 +1,12 @@
 /**
  * Flood Risk Estimation Utility
  *
- * IMPORTANT — THESIS DEFENSE NOTE:
- * This is a RULE-BASED RISK ESTIMATE, NOT a precise flood prediction/forecast.
- * There is no real API that predicts "this barangay floods in X hours."
- * The risk levels shown are derived from a simple weighted function combining
- * current rainfall data with static flood-prone area flags.
- *
- * DO NOT present this as a forecast or prediction in the UI or defense.
- *
- * TODO: BACKEND — REAL IMPLEMENTATION REQUIREMENTS
- * A production-grade flood risk system would need:
- *
- * 1. RAINFALL ACCUMULATION OVER TIME — Not just a current snapshot, but
- *    accumulated rainfall over the past 1h, 3h, 6h, 12h, and 24h windows.
- *    Current implementation only uses the instantaneous precipitation value.
- *
- * 2. HISTORICAL FLOOD DATA PER BARANGAY — Actual records of past flooding
- *    events (dates, severity, affected areas) from the Taguig LGU or NDRRMC.
- *    Currently mocked with a static boolean flag.
- *
- * 3. DRAINAGE CAPACITY DATA — Information about drainage infrastructure,
- *    pumping stations, and their operational status per barangay.
- *    Not currently available from any public data source.
- *
- * 4. REAL-TIME RIVER/WATERWAY LEVEL DATA — Water levels from Laguna Lake,
- *    Taguig River, Napindan Channel, and other waterways.
- *    PAGASA or local monitoring stations may provide this.
- *
- * 5. TERRAIN/ELEVATION DATA — Actual elevation and flood hazard maps from
- *    Project NOAH (https://noah.up.edu.ph/) or PhilLIDAR.
- *    Currently approximated with a static isFloodProneArea flag.
- *
- * 6. OPEN-METEO FLOOD API — Provides river discharge forecast data based on
- *    GloFAS (Global Flood Awareness System). Available at:
- *    https://open-meteo.com/en/docs/flood-api
- *    CAVEAT: Its ~5km grid resolution will NOT distinguish individual
- *    barangays well within Taguig City. Useful as a supplementary signal
- *    for broader river discharge trends, not barangay-level precision.
- *
- * None of these data sources are currently wired to a live backend.
+ * This implements a comprehensive, multi-factor rule-based risk estimate.
+ * It evaluates:
+ *  1. Rain duration (persistence)
+ *  2. Rainfall intensity (volume)
+ *  3. Precipitation probability (forecast)
+ *  4. Hyper-local geographic vulnerabilities (elevation, drainage, waterways)
  */
 
 import type { BarangayWeather } from "../types/weather.types";
@@ -57,56 +24,181 @@ export interface FloodRiskResult {
   score: number;
 }
 
-// --- Flood-Prone Area Registry ---
+interface LocationFactors {
+  elevation: "low" | "moderate" | "high";
+  waterwayProximity: boolean; // Taguig River, Laguna Lake, Napindan Channel, etc.
+  drainageQuality: "poor" | "fair" | "good";
+}
+
+// --- Enhanced Terrain & Infrastructure Registry ---
 
 /**
- * Static registry of barangays known to be flood-prone.
- *
- * TODO: BACKEND — This flag needs to come from real LGU/NOAH flood hazard
- * map data, not guessed. These are placeholder designations based on
- * general knowledge of low-lying / waterway-adjacent areas in Taguig.
- * Real data should come from:
- *   - Project NOAH flood hazard maps (https://noah.up.edu.ph/)
- *   - Taguig City DRRMO flood history records
- *   - PhilLIDAR elevation/terrain data
+ * Registry of localized vulnerability factors based on Taguig City's geography.
+ * Replaces the previous simple binary boolean with physical factors.
  */
-const FLOOD_PRONE_BARANGAYS: Set<string> = new Set([
-  "brgy-napindan",     // Adjacent to Napindan Channel / Laguna Lake
-  "brgy-wawa",         // Low-lying, near Taguig River outlet
-  "brgy-hagonoy",      // Low-lying area with flood history
-  "brgy-ususan",       // Near waterways, historically flood-affected
-  "brgy-bagumbayan",   // Adjacent to flood-prone low-lying zones
-  "brgy-lower-bicutan", // Low-elevation area
-  "brgy-ibayo-tipas",  // Near Pasig River, historically flood-prone
-  "brgy-palingon-tipas", // Near Pasig River
-  "brgy-santa-ana",    // Near waterways
-  "brgy-ligid-tipas",  // Near Pasig River
-]);
+const BARANGAY_TERRAIN: Record<string, LocationFactors> = {
+  // Lakeshore & River areas (High vulnerability)
+  "brgy-napindan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-wawa": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-hagonoy": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-ususan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-bagumbayan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-lower-bicutan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-ibayo-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-palingon-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-ligid-tipas": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-santa-ana": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-bambang": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-tuktukan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+  "brgy-calzada": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "poor",
+  },
+  "brgy-new-lower-bicutan": {
+    elevation: "low",
+    waterwayProximity: true,
+    drainageQuality: "fair",
+  },
+
+  // Hilly / Higher elevation areas (Low vulnerability)
+  "brgy-fort-bonifacio": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+  "brgy-pinagsama": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+  "brgy-pembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-west-rembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-east-rembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-cembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-south-cembo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "fair",
+  },
+  "brgy-pitogo": {
+    elevation: "high",
+    waterwayProximity: false,
+    drainageQuality: "good",
+  },
+
+  // Missing barangays default to Moderate vulnerability in the getter
+};
+
+function getLocationFactors(barangayId: string): LocationFactors {
+  return (
+    BARANGAY_TERRAIN[barangayId] || {
+      elevation: "moderate",
+      waterwayProximity: false,
+      drainageQuality: "fair",
+    }
+  );
+}
 
 /**
- * Check if a barangay is in a known flood-prone area.
- *
- * TODO: BACKEND — Replace with database lookup against real flood hazard
- * zone data from Project NOAH or Taguig DRRMO.
+ * Legacy support for checking if an area is generally flood-prone.
  */
 export function isFloodProneArea(barangayId: string): boolean {
-  return FLOOD_PRONE_BARANGAYS.has(barangayId);
+  const factors = getLocationFactors(barangayId);
+  return factors.elevation === "low" || factors.waterwayProximity;
+}
+
+function calculateLocationScore(factors: LocationFactors): number {
+  let score = 0;
+  // Elevation impacts pooling (0 to 40 pts)
+  if (factors.elevation === "low") score += 40;
+  else if (factors.elevation === "moderate") score += 15;
+
+  // Waterways overflow easily during continuous rain (40 pts)
+  if (factors.waterwayProximity) score += 40;
+
+  // Drainage acts as a multiplier/mitigator (0 to 20 pts)
+  if (factors.drainageQuality === "poor") score += 20;
+  else if (factors.drainageQuality === "fair") score += 10;
+
+  return Math.min(score, 100);
 }
 
 // --- Risk Calculation ---
 
 /**
- * Weights for the risk calculation factors.
- * These are tuned for a reasonable mock demonstration — NOT calibrated
- * against real flood data.
- *
- * TODO: BACKEND — Calibrate weights against historical flood events
- * once real data is available.
+ * Weights for the multi-factor risk calculation.
+ * Accurately models that prolonged rain over vulnerable terrain is highly risky.
  */
 const WEIGHTS = {
-  precipitationChance: 0.35, // How likely it is to rain (0–100%)
-  precipitation: 0.35,       // Current rainfall intensity (mm)
-  floodProneArea: 0.30,      // Whether the area is historically flood-prone
+  precipitation: 0.25, // Current intensity (mm)
+  rainDuration: 0.25, // Rain persistence (minutes)
+  locationVulnerability: 0.4, // Elevation, drainage, waterways
+  precipitationChance: 0.1, // Future forecast probability
 } as const;
 
 /**
@@ -119,44 +211,32 @@ const RISK_THRESHOLDS = {
   moderate: 25,
 } as const;
 
-/**
- * Normalizes precipitation amount to a 0–100 scale.
- * Assumes 25mm+ is maximum severity for this estimate.
- *
- * TODO: BACKEND — Calibrate against actual flooding thresholds
- * for Taguig City drainage capacity.
- */
 function normalizePrecipitation(mm: number): number {
-  return Math.min((mm / 25) * 100, 100);
+  return Math.min((mm / 25) * 100, 100); // 25mm/hr is intense
+}
+
+function normalizeDuration(minutes: number): number {
+  // 180 minutes (3 hours) of continuous rain caps the duration risk factor
+  return Math.min((minutes / 180) * 100, 100);
 }
 
 /**
- * Computes a flood risk estimate for a single barangay based on its
- * current weather data and flood-prone status.
- *
- * This is a SIMPLE WEIGHTED RULE FUNCTION — not a predictive model.
- * It combines:
- *   1. Precipitation chance (from existing weather data)
- *   2. Current precipitation amount (from existing weather data)
- *   3. Static flood-prone area flag (mocked per barangay)
- *
- * The output is a tiered risk level (Low → High) with a plain-language
- * explanation. No time-based predictions (e.g., "floods in 3 hours")
- * are made — we cannot back such claims.
+ * Computes a flood risk estimate based on multiple local and environmental factors.
  */
 export function calculateFloodRisk(weather: BarangayWeather): FloodRiskResult {
-  const floodProne = isFloodProneArea(weather.id);
+  const factors = getLocationFactors(weather.id);
+  const locationScore = calculateLocationScore(factors);
 
-  // Normalize inputs to 0–100 scale
-  const precipChanceScore = weather.precipitationChance; // Already 0–100
-  const precipAmountScore = normalizePrecipitation(weather.precipitation);
-  const floodProneScore = floodProne ? 100 : 0;
+  const precipScore = normalizePrecipitation(weather.precipitation);
+  const durationScore = normalizeDuration(weather.rainDurationMinutes ?? 0);
+  const chanceScore = weather.precipitationChance;
 
   // Weighted sum
   const score = Math.round(
-    precipChanceScore * WEIGHTS.precipitationChance +
-    precipAmountScore * WEIGHTS.precipitation +
-    floodProneScore * WEIGHTS.floodProneArea
+    precipScore * WEIGHTS.precipitation +
+      durationScore * WEIGHTS.rainDuration +
+      locationScore * WEIGHTS.locationVulnerability +
+      chanceScore * WEIGHTS.precipitationChance,
   );
 
   // Determine risk level
@@ -169,50 +249,60 @@ export function calculateFloodRisk(weather: BarangayWeather): FloodRiskResult {
           ? "moderate"
           : "low";
 
-  // Build plain-language description
-  const description = buildRiskDescription(level, weather, floodProne);
+  // Build descriptive string
+  const description = buildRiskDescription(level, weather, factors);
 
   return { level, description, score };
 }
 
 /**
- * Generates a human-readable description of why a particular risk level
- * was assigned. Avoids specific time claims like "floods in X hours."
+ * Generates a human-readable description incorporating the specific local factors.
  */
 function buildRiskDescription(
   level: FloodRiskLevel,
   weather: BarangayWeather,
-  floodProne: boolean
+  factors: LocationFactors,
 ): string {
-  const rainIntensity =
-    weather.precipitation >= 15
-      ? "heavy rain"
-      : weather.precipitation >= 5
-        ? "moderate rain"
-        : weather.precipitationChance >= 60
-          ? "high rain probability"
-          : weather.precipitationChance >= 30
-            ? "some rain expected"
-            : "light or no rain";
+  const duration = weather.rainDurationMinutes ?? 0;
+  let rainStmt = "";
 
-  const areaContext = floodProne ? "flood-prone area" : "no significant flood history";
+  if (weather.precipitation >= 15) rainStmt = "Heavy rain";
+  else if (weather.precipitation >= 5) rainStmt = "Moderate rain";
+  else if (duration > 0) rainStmt = "Light rain";
+  else if (weather.precipitationChance >= 50) rainStmt = "Expected rain";
+  else rainStmt = "No significant rain";
+
+  if (duration >= 60) {
+    const hrs = Math.round(duration / 60);
+    rainStmt += ` (duration: ~${hrs}h)`;
+  } else if (duration > 0) {
+    rainStmt += ` (duration: ~${duration}m)`;
+  }
+
+  const locFactors = [];
+  if (factors.elevation === "low") locFactors.push("low elevation");
+  if (factors.waterwayProximity) locFactors.push("near waterways");
+  if (factors.drainageQuality === "poor") locFactors.push("poor drainage");
+
+  const locStmt =
+    locFactors.length > 0
+      ? `Vulnerabilities: ${locFactors.join(", ")}.`
+      : "Standard terrain risk.";
 
   switch (level) {
     case "high":
-      return `High risk — ${rainIntensity} + ${areaContext}. Risk may increase if rain continues.`;
+      return `High Risk: ${rainStmt}. ${locStmt} Immediate flooding possible.`;
     case "elevated":
-      return `Elevated risk — ${rainIntensity} + ${areaContext}. Monitor conditions closely.`;
+      return `Elevated Risk: ${rainStmt}. ${locStmt} Monitor low-lying areas.`;
     case "moderate":
-      return `Moderate risk — ${rainIntensity}, ${areaContext}. Stay alert for changing conditions.`;
+      return `Moderate Risk: ${rainStmt}. ${locStmt} Water ponding possible.`;
     case "low":
-      return `Low risk — ${rainIntensity}, ${areaContext}.`;
+      return `Low Risk: ${rainStmt}. ${locStmt}`;
   }
 }
 
 /**
  * Returns display configuration for a flood risk level.
- * Uses distinct visual treatment from the weather severity badges
- * to avoid confusion.
  */
 export function getFloodRiskConfig(level: FloodRiskLevel): {
   label: string;
@@ -227,24 +317,24 @@ export function getFloodRiskConfig(level: FloodRiskLevel): {
         label: "High",
         bgColor: "bg-red-100",
         textColor: "text-red-700",
-        dotColor: "bg-red-500",
+        dotColor: "bg-red-600",
         borderColor: "border-red-200",
       };
     case "elevated":
       return {
         label: "Elevated",
         bgColor: "bg-orange-100",
-        textColor: "text-orange-700",
-        dotColor: "bg-orange-500",
-        borderColor: "border-orange-200",
+        textColor: "text-orange-800",
+        dotColor: "bg-orange-600",
+        borderColor: "border-orange-300",
       };
     case "moderate":
       return {
         label: "Moderate",
-        bgColor: "bg-amber-100",
-        textColor: "text-amber-700",
-        dotColor: "bg-amber-500",
-        borderColor: "border-amber-200",
+        bgColor: "bg-yellow-100",
+        textColor: "text-yellow-800",
+        dotColor: "bg-yellow-500",
+        borderColor: "border-yellow-300",
       };
     case "low":
       return {

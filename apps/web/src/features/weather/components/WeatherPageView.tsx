@@ -8,8 +8,6 @@ import {
   FiAlertTriangle,
   FiList,
   FiMap,
-  FiX,
-  FiChevronDown,
   FiMapPin,
 } from "react-icons/fi";
 import { WiFlood } from "react-icons/wi";
@@ -18,12 +16,11 @@ import WeatherCardSkeleton from "./WeatherCardSkeleton";
 import { fetchWeatherData } from "../data/weather.mock";
 import { calculateFloodRisk } from "../utils/flood-risk";
 import { CLUSTERS, getClusterForBarangay } from "../data/clusters";
-import ClusterSummaryTiles from "./ClusterSummaryTiles";
+
 import { ExportReportButton } from "./ExportReportButton";
 import type {
   BarangayWeather,
   WeatherFilterTab,
-  WeatherSummary,
 } from "../types/weather.types";
 
 // Dynamically import the map view — Leaflet requires browser `window` object
@@ -46,23 +43,16 @@ const WeatherMapView = dynamic(() => import("./WeatherMapView"), {
 type ViewMode = "list" | "map";
 
 // --- Filter Tabs Config ---
-const FILTER_TABS: {
-  label: string;
-  value: WeatherFilterTab;
-  icon?: React.ElementType;
-}[] = [
-  { label: "All", value: "all" },
-  { label: "Severe", value: "severe" },
-  { label: "Advisory", value: "advisory" },
-  { label: "Flood Risk", value: "flood_risk", icon: WiFlood },
-];
 
 export default function WeatherPageView() {
   const [weatherData, setWeatherData] = useState<BarangayWeather[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<WeatherFilterTab>("all");
+  const [severityFilters, setSeverityFilters] = useState<string[]>([]);
+  const [floodRiskFilters, setFloodRiskFilters] = useState<string[]>([]);
+  const [clusterFilters, setClusterFilters] = useState<number[]>([]);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("map");
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -150,6 +140,7 @@ export default function WeatherPageView() {
 
   // Initial load
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadWeatherData();
   }, [loadWeatherData]);
 
@@ -162,13 +153,12 @@ export default function WeatherPageView() {
   // Manual refresh
   const handleRefresh = () => {
     setIsRefreshing(true);
+     
     loadWeatherData();
   };
 
   // --- Handle tab change ---
-  const handleTabChange = useCallback((tab: WeatherFilterTab) => {
-    setActiveTab(tab);
-  }, []);
+  
 
   // --- Handle cluster filter select (single-select: click to select, click again to deselect) ---
   const handleClusterSelect = useCallback((clusterId: number | null) => {
@@ -191,59 +181,48 @@ export default function WeatherPageView() {
   );
 
   const filteredData = searchFilteredData.filter((item) => {
-    // Tab-based severity/flood filter
-    let matchesTab = true;
-    if (activeTab === "severe") {
-      matchesTab = item.severity === "severe";
-    } else if (activeTab === "advisory") {
-      matchesTab = item.severity === "advisory" || item.severity === "warning";
-    } else if (activeTab === "flood_risk") {
+    let matchesSeverity = true;
+    if (severityFilters.length > 0) {
+      matchesSeverity = severityFilters.some(filter => {
+        if (filter === "advisory") return item.severity === "advisory" || item.severity === "warning";
+        return item.severity === filter;
+      });
+    }
+
+    let matchesFloodRisk = true;
+    if (floodRiskFilters.length > 0) {
       const risk = calculateFloodRisk(item);
-      matchesTab = risk.level === "elevated" || risk.level === "high";
-    } else if (activeTab === "cluster") {
-      if (activeClusterFilter !== null) {
-        const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-        matchesTab =
-          cluster?.barangays.some(
-            (b) => b.toLowerCase() === item.name.toLowerCase(),
-          ) ?? false;
-      }
+      matchesFloodRisk = floodRiskFilters.includes(risk.level);
     }
 
-    // Cluster filter (independent of tab)
     let matchesCluster = true;
-    if (activeClusterFilter !== null) {
-      const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
-      matchesCluster =
-        cluster?.barangays.some(
-          (b) => b.toLowerCase() === item.name.toLowerCase(),
-        ) ?? false;
+    if (clusterFilters.length > 0) {
+      const clusterId = getClusterForBarangay(item.name)?.id;
+      matchesCluster = clusterId ? clusterFilters.includes(clusterId) : false;
     }
 
-    return matchesTab && matchesCluster;
+    // Map view compatibility (so we can still filter map view by clicking cluster)
+    let matchesMapCluster = true;
+    if (viewMode === "map" && activeClusterFilter !== null) {
+      const cluster = CLUSTERS.find((c) => c.id === activeClusterFilter);
+      matchesMapCluster = cluster?.barangays.some((b) => b.toLowerCase() === item.name.toLowerCase()) ?? false;
+    }
+
+    return matchesSeverity && matchesFloodRisk && matchesCluster && matchesMapCluster;
   });
 
-  // Sort: severe first, then advisory, then normal
-  // When flood_risk tab is active, sort by flood risk score descending
   const sortedData = [...filteredData].sort((a, b) => {
-    if (activeTab === "flood_risk") {
-      const riskA = calculateFloodRisk(a);
-      const riskB = calculateFloodRisk(b);
-      return riskB.score - riskA.score;
-    }
-    // In cluster mode, group by cluster number
-    if (activeTab === "cluster") {
-      const clusterA = getClusterForBarangay(a.name);
-      const clusterB = getClusterForBarangay(b.name);
-      const idA = clusterA?.id ?? 999;
-      const idB = clusterB?.id ?? 999;
-      if (idA !== idB) return idA - idB;
-      // Within same cluster, sort severe first
-      const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
-      return severityOrder[a.severity] - severityOrder[b.severity];
-    }
+    // Primary sort: Severity
     const severityOrder = { severe: 0, warning: 1, advisory: 1, normal: 2 };
-    return severityOrder[a.severity] - severityOrder[b.severity];
+    const sevDiff = severityOrder[a.severity] - severityOrder[b.severity];
+    if (sevDiff !== 0) return sevDiff;
+    
+    // Secondary sort: Flood Risk Score
+    const riskA = calculateFloodRisk(a);
+    const riskB = calculateFloodRisk(b);
+    if (riskA.score !== riskB.score) return riskB.score - riskA.score;
+
+    return a.name.localeCompare(b.name);
   });
 
   // Base data for tab counts: apply cluster filter first so tab counts reflect the filtered subset
@@ -294,21 +273,8 @@ export default function WeatherPageView() {
   };
 
   // Cluster badge for list view cards (shown when a cluster filter is active)
-  const renderClusterBadge = (weather: BarangayWeather) => {
-    if (activeClusterFilter === null) return null;
-    const cluster = getClusterForBarangay(weather.name);
-    if (!cluster) return null;
-    return (
-      <div
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${cluster.bgClass} ${cluster.borderClass} mb-2`}
-      >
-        <div className={`w-2 h-2 rounded-sm ${cluster.dotClass}`} />
-        <span className={`body-xsmall font-medium ${cluster.textClass}`}>
-          {cluster.label}
-        </span>
-        <span className="body-xsmall text-gray-400">· {cluster.area}</span>
-      </div>
-    );
+  const renderClusterBadge = (_weather: BarangayWeather) => {
+    return null; // Disabled to prevent inconsistent card layout
   };
 
   return (
@@ -433,47 +399,115 @@ export default function WeatherPageView() {
           </button>
         </div>
 
-        {/* Filter Tabs */}
+                {/* List View Combined Filters */}
         {viewMode === "list" && (
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="inline-flex p-1 bg-gray-100 rounded-lg">
-              {FILTER_TABS.map((tab) => {
-                const isActive = activeTab === tab.value;
-                const count = tabCounts[tab.value];
-                return (
-                  <button
-                    key={tab.value}
-                    onClick={() => handleTabChange(tab.value)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                    }`}
+          <div className="flex items-center justify-end w-full mt-2 relative">
+            <button
+              onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 shadow-sm"
+            >
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="body-small font-medium">Filters</span>
+              {(severityFilters.length > 0 || floodRiskFilters.length > 0 || clusterFilters.length > 0) && (
+                <span className="bg-primary text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ml-1">
+                  {severityFilters.length + floodRiskFilters.length + clusterFilters.length}
+                </span>
+              )}
+            </button>
+
+            {isFilterMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="body-small font-semibold text-gray-900">Filters</h3>
+                  <button 
+                    onClick={() => {
+                      setSeverityFilters([]);
+                      setFloodRiskFilters([]);
+                      setClusterFilters([]);
+                    }}
+                    className="text-xs font-medium text-primary hover:text-primary-hover"
                   >
-                    {tab.label}
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "bg-gray-200 text-gray-500"
-                      }`}
-                    >
-                      {count}
-                    </span>
+                    Clear All
                   </button>
-                );
-              })}
-            </div>
+                </div>
+                
+                {/* Severity */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Severity</h4>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'severe', label: 'Severe' },
+                      { id: 'advisory', label: 'Advisory' },
+                      { id: 'normal', label: 'Normal' }
+                    ].map(opt => (
+                      <label key={opt.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={severityFilters.includes(opt.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSeverityFilters([...severityFilters, opt.id]);
+                            else setSeverityFilters(severityFilters.filter(id => id !== opt.id));
+                          }}
+                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                        />
+                        <span className="body-small text-gray-700">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Flood Risk */}
+                <div className="mb-4">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Flood Risk</h4>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'high', label: 'High Risk' },
+                      { id: 'elevated', label: 'Elevated Risk' },
+                      { id: 'moderate', label: 'Moderate Risk' },
+                      { id: 'low', label: 'Low Risk' }
+                    ].map(opt => (
+                      <label key={opt.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={floodRiskFilters.includes(opt.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setFloodRiskFilters([...floodRiskFilters, opt.id]);
+                            else setFloodRiskFilters(floodRiskFilters.filter(id => id !== opt.id));
+                          }}
+                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                        />
+                        <span className="body-small text-gray-700">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clusters */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Clusters</h4>
+                  <div className="space-y-2">
+                    {CLUSTERS.map(cluster => (
+                      <label key={cluster.id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={clusterFilters.includes(cluster.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setClusterFilters([...clusterFilters, cluster.id]);
+                            else setClusterFilters(clusterFilters.filter(id => id !== cluster.id));
+                          }}
+                          className="rounded border-gray-300 text-primary focus:ring-primary cursor-pointer w-4 h-4"
+                        />
+                        <span className="body-small text-gray-700">{cluster.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
-      </div>
-
-      <div className="mb-4">
-        <ClusterSummaryTiles
-          weatherData={weatherData}
-          activeClusterFilter={activeClusterFilter}
-          onClusterSelect={handleClusterSelect}
-        />
       </div>
 
       {/* Main Content Area */}
@@ -547,7 +581,7 @@ export default function WeatherPageView() {
             {sortedData.length > 0 && (
               <div className="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
                 {sortedData.map((weather) => (
-                  <div key={weather.id}>
+                  <div key={weather.id} className="h-full flex flex-col">
                     {renderClusterBadge(weather)}
                     <WeatherCard weather={weather} />
                   </div>
