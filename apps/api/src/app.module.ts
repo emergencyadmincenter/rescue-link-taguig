@@ -20,6 +20,7 @@ import { ShadowBansModule } from './modules/shadow-bans/shadow-bans.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { InternalMessagingModule } from './modules/internal-messaging/internal-messaging.module';
+import { AgenciesModule } from './modules/agencies/agencies.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { InternalMessagingModule } from './modules/internal-messaging/internal-m
     StorageModule,
     ProfileModule,
     InternalMessagingModule,
+    AgenciesModule,
   ],
   controllers: [AppController],
   providers: [

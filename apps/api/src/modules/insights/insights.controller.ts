@@ -34,7 +34,12 @@ export class InsightsController {
     @Query('barangay') barangay?: string,
     @Query('incident_category_id') incidentCategoryId?: string,
   ) {
-    const data = await this.insightsService.getResponseTimesByBarangay({ dateFrom, dateTo, barangay, incidentCategoryId });
+    const data = await this.insightsService.getResponseTimesByBarangay({
+      dateFrom,
+      dateTo,
+      barangay,
+      incidentCategoryId,
+    });
     return ApiResponse.success(data);
   }
 
@@ -45,7 +50,12 @@ export class InsightsController {
     @Query('barangay') barangay?: string,
     @Query('incident_category_id') incidentCategoryId?: string,
   ) {
-    const data = await this.insightsService.getCoordinatorWorkload({ dateFrom, dateTo, barangay, incidentCategoryId });
+    const data = await this.insightsService.getCoordinatorWorkload({
+      dateFrom,
+      dateTo,
+      barangay,
+      incidentCategoryId,
+    });
     return ApiResponse.success(data);
   }
 
@@ -56,7 +66,12 @@ export class InsightsController {
     @Query('barangay') barangay?: string,
     @Query('incident_category_id') incidentCategoryId?: string,
   ) {
-    const data = await this.insightsService.getPeakTimes({ dateFrom, dateTo, barangay, incidentCategoryId });
+    const data = await this.insightsService.getPeakTimes({
+      dateFrom,
+      dateTo,
+      barangay,
+      incidentCategoryId,
+    });
     return ApiResponse.success(data);
   }
 

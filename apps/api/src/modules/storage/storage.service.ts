@@ -1,5 +1,13 @@
-import { Injectable, InternalServerErrorException, BadRequestException, NotFoundException } from '@nestjs/common';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  Injectable,
+  InternalServerErrorException,
+  BadRequestException,
+} from '@nestjs/common';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { extname } from 'path';
 import * as crypto from 'crypto';
@@ -15,7 +23,7 @@ export class StorageService {
     this.bucketName = process.env.AWS_S3_BUCKET_NAME || '';
     this.privateBucketName = process.env.AWS_S3_PRIVATE_BUCKET_NAME || '';
     this.region = process.env.AWS_REGION || 'ap-southeast-1';
-    
+
     this.s3Client = new S3Client({
       region: this.region,
       credentials: {
@@ -32,13 +40,19 @@ export class StorageService {
    * @param customFilename Optional custom filename (without extension). If not provided, a UUID will be used.
    * @returns The public URL of the uploaded file
    */
-  async uploadFile(file: Express.Multer.File, folder: string = 'general', customFilename?: string): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'general',
+    customFilename?: string,
+  ): Promise<string> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
     const extension = extname(file.originalname);
-    const filename = customFilename ? `${customFilename}${extension}` : `${crypto.randomUUID()}${extension}`;
+    const filename = customFilename
+      ? `${customFilename}${extension}`
+      : `${crypto.randomUUID()}${extension}`;
     const key = `${folder}/${filename}`;
 
     try {
@@ -54,7 +68,9 @@ export class StorageService {
       return `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${key}`;
     } catch (error) {
       console.error('Failed to upload file to S3', error);
-      throw new InternalServerErrorException('Failed to upload file to storage');
+      throw new InternalServerErrorException(
+        'Failed to upload file to storage',
+      );
     }
   }
 
@@ -65,17 +81,25 @@ export class StorageService {
    * @param customFilename Optional custom filename
    * @returns The permanent S3 object key
    */
-  async uploadPrivateFile(file: Express.Multer.File, folder: string = 'private-general', customFilename?: string): Promise<string> {
+  async uploadPrivateFile(
+    file: Express.Multer.File,
+    folder: string = 'private-general',
+    customFilename?: string,
+  ): Promise<string> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
     if (!this.privateBucketName) {
-      throw new InternalServerErrorException('Private S3 bucket is not configured');
+      throw new InternalServerErrorException(
+        'Private S3 bucket is not configured',
+      );
     }
 
     const extension = extname(file.originalname);
-    const filename = customFilename ? `${customFilename}${extension}` : `${crypto.randomUUID()}${extension}`;
+    const filename = customFilename
+      ? `${customFilename}${extension}`
+      : `${crypto.randomUUID()}${extension}`;
     const key = `${folder}/${filename}`;
 
     try {
@@ -91,7 +115,9 @@ export class StorageService {
       return key; // Only return the key, never the URL
     } catch (error) {
       console.error('Failed to upload private file to S3', error);
-      throw new InternalServerErrorException('Failed to upload private file to storage');
+      throw new InternalServerErrorException(
+        'Failed to upload private file to storage',
+      );
     }
   }
 
@@ -107,7 +133,9 @@ export class StorageService {
     }
 
     if (!this.privateBucketName) {
-      throw new InternalServerErrorException('Private S3 bucket is not configured');
+      throw new InternalServerErrorException(
+        'Private S3 bucket is not configured',
+      );
     }
 
     try {

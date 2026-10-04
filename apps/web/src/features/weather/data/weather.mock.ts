@@ -41,8 +41,7 @@ function minutesAgo(n: number): string {
  * Coordinates are approximate centroids — verify with official geodata before production use.
  */
 const MOCK_WEATHER_DATA: BarangayWeather[] = [
-  // --- SEVERE WEATHER (3 barangays) ---
-  {
+    {
     id: "brgy-lower-bicutan",
     name: "Lower Bicutan",
     latitude: 14.4893, // APPROXIMATE - verify with official geodata
@@ -91,8 +90,7 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
     lastUpdated: minutesAgo(1),
   },
 
-  // --- ADVISORY WEATHER (4 barangays) ---
-  {
+    {
     id: "brgy-ibayo-tipas",
     name: "Ibayo-Tipas",
     latitude: 14.5306, // APPROXIMATE - verify with official geodata
@@ -157,8 +155,7 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
     lastUpdated: minutesAgo(5),
   },
 
-  // --- NORMAL WEATHER (remaining 30 barangays) ---
-  {
+    {
     id: "brgy-bagumbayan",
     name: "Bagumbayan",
     latitude: 14.5176, // APPROXIMATE - verify with official geodata
@@ -656,7 +653,7 @@ const MOCK_WEATHER_DATA: BarangayWeather[] = [
   },
 ];
 
-// TODO: BACKEND - WebSocket support for real-time severe weather alerts can be added here
+// TODO: WebSocket support for real-time severe weather alerts can be added here
 
 /**
  * Simple string-to-number hash for deterministic per-barangay variation.
@@ -677,7 +674,7 @@ function hashString(str: string): number {
  * all 38 Taguig barangays (~5km spread) fall within the same ~25km
  * Open-Meteo grid cell.
  *
- * // TODO: BACKEND — This check will be unnecessary once the backend
+ * // TODO: This check will be unnecessary once the backend
  * // uses a higher-resolution weather data source that can distinguish
  * // individual barangays (e.g. hyperlocal sensors, PAGASA stations,
  * // or a finer-grid weather API).
@@ -702,7 +699,7 @@ function hasUniformData(data: BarangayWeather[]): boolean {
  * Variation is seeded by barangay name so it's consistent across renders
  * but different between barangays.
  *
- * // TODO: BACKEND — This mock variation will be replaced by real
+ * // TODO: This mock variation will be replaced by real
  * // per-barangay API calls once a higher-resolution data source
  * // or local weather stations are integrated.
  */
@@ -761,7 +758,7 @@ function applyPerBarangayVariation(
  *
  * Falls back to MOCK_WEATHER_DATA if the backend is unavailable (dev only).
  *
- * // TODO: BACKEND - The backend already applies per-barangay variation to
+ * // TODO: The backend already applies per-barangay variation to
  * // compensate for Open-Meteo's coarse grid. The hasUniformData() check
  * // below is a defensive fallback in case an older backend version is
  * // running that doesn't yet include the variation logic. Remove this

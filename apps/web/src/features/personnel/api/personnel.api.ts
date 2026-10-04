@@ -12,9 +12,7 @@
  *   GET  /api/roles             — fetch available roles for the create-form dropdown
  */
 
-// ---------------------------------------------------------------------------
 // Base URL helper
-// ---------------------------------------------------------------------------
 
 function apiBase(): string {
   const raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
@@ -22,9 +20,7 @@ function apiBase(): string {
   return raw.replace(/\/api\/?$/, "") + "/api";
 }
 
-// ---------------------------------------------------------------------------
 // Shared types
-// ---------------------------------------------------------------------------
 
 export type PersonnelStatus = "active" | "pending_activation" | "inactive";
 
@@ -79,9 +75,7 @@ export interface RoleOption {
   name: string;
 }
 
-// ---------------------------------------------------------------------------
 // GET /api/personnel
-// ---------------------------------------------------------------------------
 
 /**
  * Fetch the personnel list grouped by role.
@@ -131,9 +125,7 @@ export async function getPersonnel(
   return { groups };
 }
 
-// ---------------------------------------------------------------------------
 // POST /api/personnel
-// ---------------------------------------------------------------------------
 
 /**
  * Create a new personnel account.
@@ -172,9 +164,7 @@ export async function createPersonnel(
   return json?.data ?? json;
 }
 
-// ---------------------------------------------------------------------------
 // GET /api/roles
-// ---------------------------------------------------------------------------
 
 /**
  * Fetch available roles for the "Add Personnel" form dropdown.
@@ -198,9 +188,7 @@ export async function getRoles(): Promise<RoleOption[]> {
   return json?.data ?? json ?? [];
 }
 
-// ---------------------------------------------------------------------------
 // POST /api/personnel/activate
-// ---------------------------------------------------------------------------
 
 /**
  * Activate a personnel account by consuming a token and setting a password.
@@ -225,9 +213,7 @@ export async function activateAccount(payload: { token: string; password: string
   return json?.data ?? json;
 }
 
-// ---------------------------------------------------------------------------
 // NEW METHODS
-// ---------------------------------------------------------------------------
 
 export async function resendActivationEmail(id: string) {
   const res = await fetch(`${apiBase()}/personnel/${id}/resend-activation`, {

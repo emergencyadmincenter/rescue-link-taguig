@@ -4,23 +4,23 @@ import Image from "next/image";
 const steps = [
   {
     num: "01",
-    title: "Trigger Taguig SOS",
-    desc: "Tap the Request Emergency button. No account required. The system automatically acquires your coordinates.",
+    title: "Request Assistance",
+    desc: "Tap the emergency button to immediately start the reporting process. No account registration is needed.",
   },
   {
     num: "02",
-    title: "Location & IP Validation",
-    desc: "Our system instantly verifies if your GPS and IP address are within Taguig City bounds to prevent spam.",
+    title: "Provide Details",
+    desc: "Briefly share your basic contact information and specify the type of emergency you are experiencing.",
   },
   {
     num: "03",
-    title: "Real-time Connection",
-    desc: "Establish a live video, voice, or chat connection directly with the Taguig Command Center.",
+    title: "Communicate",
+    desc: "Establish a direct live connection via voice or chat with the Command Center to explain your situation.",
   },
   {
     num: "04",
-    title: "Immediate Dispatch",
-    desc: "The Command Center accurately drops a pin on your location and deploys nearby resources immediately.",
+    title: "Immediate Response",
+    desc: "The Command Center reviews your situation and dispatches the nearest rescue unit to help you.",
   },
 ];
 
@@ -36,7 +36,7 @@ export function HowItWorksSection() {
             <div className="absolute inset-0 bg-blue-500/10 rounded-full blur-3xl"></div>
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white">
               <Image
-                src="/images/how-it-works.jpg"
+                src="/images/how-it-works.png"
                 alt="Emergency App Interface"
                 width={1000}
                 height={750}

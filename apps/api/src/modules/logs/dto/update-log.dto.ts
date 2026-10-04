@@ -41,6 +41,10 @@ export class UpdateLogDto {
   cancellation_reason?: string;
 
   @IsOptional()
+  @IsString()
+  status_remarks?: string;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   resource_ids?: string[];

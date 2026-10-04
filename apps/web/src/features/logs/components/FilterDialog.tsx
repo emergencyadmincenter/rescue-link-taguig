@@ -38,8 +38,7 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[360px] flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 shrink-0">
           <h2 className="title-small text-gray-900">Filters</h2>
           <button
             onClick={onClose}
@@ -49,8 +48,7 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
           {/* Status Filter */}
           <div className="mb-6">
             <p className="body-small font-semibold text-gray-900 mb-3">Status</p>
@@ -62,12 +60,13 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
                   <button
                     key={s}
                     onClick={() => setFilters((p) => ({ ...p, status: p.status === s ? undefined : s }))}
-                    className={`px-3 py-1.5 rounded-md border text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm font-medium transition-all ${
                       isActive
                         ? `${config.borderClass} ${config.textClass} bg-opacity-5 border-2`
                         : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${config.dotClass}`} aria-hidden="true" />
                     {config.label}
                   </button>
                 );
@@ -117,8 +116,7 @@ export default function FilterDialog({ isOpen, onClose, onApply, initialFilters 
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 shrink-0">
+                <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 shrink-0">
           <button
             onClick={handleClear}
             className="px-4 py-2 body-small font-medium text-gray-500 hover:text-gray-700 transition-colors"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { InternalConversation, InternalMessage } from '../features/internal-messaging/types';
 import apiClient from '../lib/api-client';
 import { io, Socket } from 'socket.io-client';

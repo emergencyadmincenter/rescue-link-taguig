@@ -19,7 +19,7 @@ export function WhyChooseUsSection() {
           <div className="lg:pr-8">
             <h2 className="title-large text-primary mb-3">Community First</h2>
             <h3 className="font-outfit font-bold text-4xl md:text-5xl text-gray-900 mb-6 leading-tight">
-              Why Choose Rescue Link
+              Why Choose Rescue<span className="text-primary">Link</span>
             </h3>
             <p className="text-lg md:text-xl text-gray-600 mb-10 leading-relaxed">
               We bridge the gap between residents and emergency services,
@@ -43,7 +43,7 @@ export function WhyChooseUsSection() {
             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-white p-2">
               <div className="rounded-xl overflow-hidden">
                 <Image
-                  src="/images/community-safety.jpg"
+                  src="/images/cc-taguig-building.jpg"
                   alt="Safe Community"
                   width={1000}
                   height={750}

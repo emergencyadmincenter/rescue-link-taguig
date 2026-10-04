@@ -55,7 +55,7 @@ export class PermissionsService {
         where: { id },
         data,
       });
-    } catch (e) {
+    } catch (_e) {
       throw new NotFoundException({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Permission not found' },
@@ -69,7 +69,7 @@ export class PermissionsService {
         where: { id },
       });
       return { success: true };
-    } catch (e) {
+    } catch (_e) {
       throw new NotFoundException({
         success: false,
         error: { code: 'NOT_FOUND', message: 'Permission not found' },

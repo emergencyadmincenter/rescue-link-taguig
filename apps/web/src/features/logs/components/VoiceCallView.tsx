@@ -13,7 +13,7 @@ import {
 import { Call, Log } from "../types/logs.types";
 import { CALL_STATUS_CONFIG } from "../constants/logs.constants";
 import { Socket } from "socket.io-client";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useIncomingCall } from "@/providers/IncomingCallProvider";
@@ -40,7 +40,6 @@ function formatDuration(
 
 export default function VoiceCallView({
   call,
-  logId,
   log,
   socket,
 }: VoiceCallViewProps) {

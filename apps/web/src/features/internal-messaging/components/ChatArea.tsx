@@ -128,8 +128,7 @@ export function ChatArea({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center gap-3 shrink-0">
+            <div className="p-4 border-b border-gray-100 flex items-center gap-3 shrink-0">
         <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center overflow-hidden shrink-0">
           {isGroup ? (
             <FiUsers className="w-5 h-5" />

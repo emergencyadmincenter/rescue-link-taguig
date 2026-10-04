@@ -14,7 +14,7 @@ import { Injectable, Logger } from '@nestjs/common';
  * per-barangay variation so each barangay shows distinct (but realistic)
  * weather values.
  *
- * // TODO: BACKEND - When hyperlocal weather data becomes available
+ * // TODO: When hyperlocal weather data becomes available
  * // (e.g. PAGASA stations, IoT sensors, or a finer-grid API), replace
  * // the single-fetch-plus-variation approach with real per-barangay calls.
  *
@@ -22,7 +22,6 @@ import { Injectable, Logger } from '@nestjs/common';
  * API when multiple users load the weather page simultaneously.
  */
 
-// ─── WMO Weather Code → app condition mapping ───────────────────────────────
 // WMO codes: https://open-meteo.com/en/docs#weathervariables
 // Frontend WeatherCondition type: sunny | partly_cloudy | cloudy | overcast |
 //                                 light_rain | heavy_rain | thunderstorm
@@ -98,14 +97,12 @@ function mapWmoCode(code: number): {
   return { condition: 'cloudy', label: 'Unknown', severity: 'normal' };
 }
 
-// ─── Wind-degrees → compass direction ────────────────────────────────────────
 function degreesToCompass(degrees: number): string {
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const index = Math.round((degrees % 360) / 45) % 8;
   return directions[index];
 }
 
-// ─── Open-Meteo response shape (only what we use) ────────────────────────────
 interface OpenMeteoResponse {
   current: {
     time: string;
@@ -120,11 +117,42 @@ interface OpenMeteoResponse {
   };
   hourly: {
     time: string[];
+    temperature_2m: number[];
+    relative_humidity_2m: number[];
+    precipitation: number[];
+    rain: number[];
+    weather_code: number[];
+    wind_speed_10m: number[];
+    wind_direction_10m: number[];
     precipitation_probability: number[];
   };
 }
 
-// ─── Shape returned to the frontend ──────────────────────────────────────────
+export type RainDurationStatus =
+  'observed' | 'not_raining' | 'insufficient_history';
+
+export interface HistoricalWeatherObservation {
+  timestamp: string;
+  temperature: number;
+  humidity: number;
+  precipitation: number;
+  rain: number;
+  condition: string;
+  conditionLabel: string;
+  windSpeed: number;
+  windDirection: string;
+}
+
+export interface HistoricalWeatherResult {
+  location: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  observations: HistoricalWeatherObservation[];
+  rainDurationMinutes: number | null;
+  rainDurationStatus: RainDurationStatus;
+}
+
 export interface BarangayWeatherResult {
   id: string;
   name: string;
@@ -140,21 +168,24 @@ export interface BarangayWeatherResult {
   windDirection: string;
   precipitationChance: number;
   precipitation: number;
+  rainDurationMinutes: number | null;
+  rainDurationStatus: RainDurationStatus;
   lastUpdated: string;
 }
 
-// ─── Simple in-process cache ──────────────────────────────────────────────────
 interface CacheEntry {
   data: BarangayWeatherResult[];
   expiresAt: number;
 }
 
+interface SourceCacheEntry {
+  data: OpenMeteoResponse;
+  expiresAt: number;
+}
+
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
-// ─── Taguig City centroid for single Open-Meteo fetch ─────────────────────────
 const TAGUIG_CENTROID = { latitude: 14.5176, longitude: 121.0509 };
-
-// ─── Deterministic per-barangay variation ─────────────────────────────────────
 
 /**
  * Simple string hash producing a value in [0, 1).
@@ -187,7 +218,7 @@ function seededOffset(
  * Ordered list of all condition types by severity, used to assign
  * varied conditions based on the base weather code + barangay hash.
  *
- * // TODO: BACKEND - Once real per-barangay data is available from
+ * // TODO: Once real per-barangay data is available from
  * // hyperlocal sources, remove this variation logic entirely.
  */
 const CONDITION_SEVERITY_ORDER = [
@@ -260,6 +291,7 @@ function variedCondition(
 export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
   private cache: CacheEntry | null = null;
+  private sourceCache: SourceCacheEntry | null = null;
 
   /**
    * Return weather for all barangays. Results are cached for 10 minutes.
@@ -268,7 +300,7 @@ export class WeatherService {
    * same grid-cell data), this fetches ONCE from the Taguig centroid and
    * distributes varied values per barangay using deterministic offsets.
    *
-   * // TODO: BACKEND - Replace single-fetch-plus-variation with real
+   * // TODO: Replace single-fetch-plus-variation with real
    * // per-barangay API calls once a higher-resolution data source is
    * // available (PAGASA stations, IoT sensors, finer-grid API).
    *
@@ -316,17 +348,48 @@ export class WeatherService {
   }
 
   /**
+   * Return actual hourly observations from the provider's available history.
+   * Open-Meteo supplies the previous day through the forecast endpoint, so no
+   * local database is required for this bounded operational history view.
+   */
+  async getHistoricalWeather(hours = 24): Promise<HistoricalWeatherResult> {
+    const source = await this.fetchCentroidWeather();
+
+    if (!source) {
+      throw new Error('Historical weather is unavailable');
+    }
+
+    const observations = this.getHistoricalObservations(source, hours);
+    const rainDuration = this.calculateRainDuration(observations);
+
+    return {
+      location: 'Taguig City observation area',
+      latitude: TAGUIG_CENTROID.latitude,
+      longitude: TAGUIG_CENTROID.longitude,
+      timezone: 'Asia/Manila',
+      observations,
+      ...rainDuration,
+    };
+  }
+
+  /**
    * Fetch current weather for the Taguig City centroid from Open-Meteo.
    * One request covers all 38 barangays since they share the same grid cell.
    */
   private async fetchCentroidWeather(): Promise<OpenMeteoResponse | null> {
+    if (this.sourceCache && this.sourceCache.expiresAt > Date.now()) {
+      return this.sourceCache.data;
+    }
+
     const params = new URLSearchParams({
       latitude: String(TAGUIG_CENTROID.latitude),
       longitude: String(TAGUIG_CENTROID.longitude),
       current:
         'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,rain,weather_code',
-      hourly: 'precipitation_probability',
+      hourly:
+        'temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,precipitation_probability',
       timezone: 'Asia/Manila',
+      past_days: '1',
       forecast_days: '1',
     });
 
@@ -337,11 +400,103 @@ export class WeatherService {
       if (!res.ok) {
         throw new Error(`Open-Meteo responded ${res.status}`);
       }
-      return await res.json();
+      const data = (await res.json()) as OpenMeteoResponse;
+      this.sourceCache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
+      return data;
     } catch (err) {
       this.logger.error(`Open-Meteo fetch failed: ${err}`);
       return null;
     }
+  }
+
+  private getHistoricalObservations(
+    source: OpenMeteoResponse,
+    hours: number,
+  ): HistoricalWeatherObservation[] {
+    const currentTime = source.current.time;
+    const lastHistoricalIndex = source.hourly.time.findIndex(
+      (time) => time > currentTime,
+    );
+    const endIndex =
+      lastHistoricalIndex === -1
+        ? source.hourly.time.length
+        : lastHistoricalIndex;
+    const startIndex = Math.max(0, endIndex - hours);
+
+    return source.hourly.time
+      .slice(startIndex, endIndex)
+      .map((timestamp, index) => {
+        const sourceIndex = startIndex + index;
+        const weatherCode = source.hourly.weather_code[sourceIndex] ?? 0;
+        const rain = source.hourly.rain[sourceIndex] ?? 0;
+        const precipitation = source.hourly.precipitation[sourceIndex] ?? rain;
+        const condition = mapWmoCode(weatherCode);
+
+        return {
+          timestamp,
+          temperature: source.hourly.temperature_2m[sourceIndex] ?? 0,
+          humidity: source.hourly.relative_humidity_2m[sourceIndex] ?? 0,
+          precipitation,
+          rain,
+          condition: condition.condition,
+          conditionLabel: condition.label,
+          windSpeed: source.hourly.wind_speed_10m[sourceIndex] ?? 0,
+          windDirection: degreesToCompass(
+            source.hourly.wind_direction_10m[sourceIndex] ?? 0,
+          ),
+        };
+      });
+  }
+
+  private calculateRainDuration(
+    observations: HistoricalWeatherObservation[],
+  ): Pick<
+    HistoricalWeatherResult,
+    'rainDurationMinutes' | 'rainDurationStatus'
+  > {
+    const latest = observations.at(-1);
+    if (!latest || !this.isRainObservation(latest)) {
+      return { rainDurationMinutes: null, rainDurationStatus: 'not_raining' };
+    }
+
+    let firstRainIndex = observations.length - 1;
+    while (
+      firstRainIndex > 0 &&
+      this.isRainObservation(observations[firstRainIndex - 1])
+    ) {
+      firstRainIndex -= 1;
+    }
+
+    const firstTime = Date.parse(
+      `${observations[firstRainIndex].timestamp}:00+08:00`,
+    );
+    const latestTime = Date.parse(`${latest.timestamp}:00+08:00`);
+    let durationMinutes = Math.max(
+      0,
+      Math.round((latestTime - firstTime) / 60000),
+    );
+
+    // Improve accuracy: Add the minutes elapsed in the current hour to the duration.
+    // This fixes the issue where rain starting in the current hour was dropped.
+    const now = new Date();
+    durationMinutes += now.getMinutes();
+
+    return {
+      rainDurationMinutes: durationMinutes,
+      rainDurationStatus: 'observed',
+    };
+  }
+
+  private isRainObservation(
+    observation: HistoricalWeatherObservation,
+  ): boolean {
+    return (
+      observation.rain > 0 ||
+      observation.precipitation > 0 ||
+      observation.condition === 'light_rain' ||
+      observation.condition === 'heavy_rain' ||
+      observation.condition === 'thunderstorm'
+    );
   }
 
   /**
@@ -358,7 +513,7 @@ export class WeatherService {
    *   - Precip chance:  +/- 15%  (clamped 0-100)
    *   - Condition:      +/- 2 steps on the severity scale
    *
-   * // TODO: BACKEND - Remove this variation logic when real per-barangay
+   * // TODO: Remove this variation logic when real per-barangay
    * // data is available from hyperlocal weather sources.
    */
   private applyBarangayVariation(
@@ -372,8 +527,9 @@ export class WeatherService {
   ): BarangayWeatherResult {
     const current = base.current;
     const name = barangay.name;
+    const historicalObservations = this.getHistoricalObservations(base, 24);
+    const rainDuration = this.calculateRainDuration(historicalObservations);
 
-    // --- Per-barangay offsets ---
     const tempOffset = seededOffset(name, 'temp', -3, 3);
     const humidityOffset = seededOffset(name, 'humidity', -10, 10);
     const windSpeedOffset = seededOffset(name, 'wind', -8, 8);
@@ -381,13 +537,9 @@ export class WeatherService {
     const precipScale = seededOffset(name, 'precip', 0.5, 1.5);
     const chanceOffset = seededOffset(name, 'chance', -15, 15);
 
-    // --- Apply offsets ---
     const temperature = Math.round(current.temperature_2m + tempOffset);
     const humidity = Math.round(
-      Math.max(
-        0,
-        Math.min(100, current.relative_humidity_2m + humidityOffset),
-      ),
+      Math.max(0, Math.min(100, current.relative_humidity_2m + humidityOffset)),
     );
     const feelsLike = Math.round(
       current.apparent_temperature + tempOffset + humidityOffset * 0.1,
@@ -440,6 +592,7 @@ export class WeatherService {
       windDirection,
       precipitationChance,
       precipitation,
+      ...rainDuration,
       lastUpdated: current.time,
     };
   }

@@ -1,69 +1,45 @@
-import React from "react";
-import Image from "next/image";
-import {
-  SirenIllustration,
-  PoliceIllustration,
-  FireIllustration,
-  AmbulanceIllustration,
-  DisasterIllustration,
-  CoastGuardIllustration,
-  HotlinesHeroIllustration,
-} from "./HotlineIllustrations";
-
 const hotlines = [
   {
-    icon: <SirenIllustration />,
     name: "Taguig Command Center",
     description: "Taguig City centralized emergency response",
-    number: "0919-079-9286 / (02) 8789-3200",
+    number: "0919-079-9286\n(02) 8789-3200",
+    image: "/images/cc-taguig-building.jpg",
     is247: true,
-    bgClass: "bg-danger/5",
-    borderClass: "border-danger/10",
   },
   {
-    icon: <PoliceIllustration />,
     name: "PNP Taguig",
     description: "Taguig Police Station assistance",
-    number: "(02) 8642-3582 / 0998-598-7932",
+    number: "(02) 8642-3582\n0998-598-7932",
+    image: "/images/pnp-taguig.jpg",
     is247: true,
-    bgClass: "bg-blue-600/5",
-    borderClass: "border-blue-600/10",
   },
   {
-    icon: <FireIllustration />,
     name: "BFP Taguig",
     description: "Taguig Fire Station",
-    number: "(02) 8837-0740 / 0906-211-0919",
+    number: "(02) 8837-0740\n0906-211-0919",
+    image: "/images/bfp-taguig.jpg",
     is247: true,
-    bgClass: "bg-orange-500/5",
-    borderClass: "border-orange-500/10",
   },
   {
-    icon: <AmbulanceIllustration />,
     name: "Taguig Rescue",
     description: "Medical emergencies and ambulance",
-    number: "0919-070-3112 / 0919-079-9112",
+    number: "0919-070-3112\n0919-079-9112",
+    image: "/images/rescue-taguig.jpg",
     is247: true,
-    bgClass: "bg-rose-500/5",
-    borderClass: "border-rose-500/10",
   },
   {
-    icon: <DisasterIllustration />,
     name: "Taguig CDRRMO",
     description: "Taguig Disaster Risk Reduction",
-    number: "(02) 7795-9932 / 0919-070-3112",
+    number: "(02) 7795-9932\n0919-070-3112",
+    image: "/images/cdrrmo-taguig.jpg",
     is247: true,
-    bgClass: "bg-emerald-600/5",
-    borderClass: "border-emerald-600/10",
   },
   {
-    icon: <CoastGuardIllustration />,
     name: "R.E.A.C.T.",
     description: "Roadside Emergency Assistance",
-    number: "(02) 8640-7006 / 0929-631-5924",
+    number: "(02) 8640-7006\n0929-631-5924",
+    image: "/images/taguig-react.jpg",
     is247: true,
-    bgClass: "bg-cyan-600/5",
-    borderClass: "border-cyan-600/10",
   },
 ];
 
@@ -73,13 +49,8 @@ export function EmergencyHotlinesSection() {
       id="hotlines"
       className="py-12 bg-white relative overflow-hidden border-b border-gray-100 lg:py-24"
     >
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -translate-y-1/3 translate-x-1/3"></div>
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-danger/5 rounded-full blur-[80px] pointer-events-none translate-y-1/3 -translate-x-1/3"></div>
-
       <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
-          {/* Header Side */}
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-20">
           <div className="w-full lg:w-[35%] lg:sticky lg:top-32 h-fit">
             <h2 className="title-large text-primary mb-3">
               Emergency Directory
@@ -92,44 +63,43 @@ export function EmergencyHotlinesSection() {
               assistance is needed. Keep these numbers handy for critical
               situations.
             </p>
-            <HotlinesHeroIllustration />
           </div>
 
-          {/* List Side */}
-          <div className="w-full lg:w-[65%] flex flex-col gap-4">
-            {hotlines.map((hotline, index) => (
+          <div className="w-full lg:w-[65%] grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5">
+            {hotlines.map((hotline) => (
               <div
-                key={index}
-                className={`flex flex-col md:flex-row md:items-center justify-between p-6 md:p-8 rounded-2xl border ${hotline.bgClass} ${hotline.borderClass}`}
+                key={hotline.name}
+                className="flex flex-col justify-between rounded-2xl bg-cover bg-center bg-no-repeat p-6"
+                style={{
+                  backgroundImage: `linear-gradient(to right, rgba(220, 38, 38, 0.95) 70%, rgba(220, 38, 38, 0.5)), url("${hotline.image}")`,
+                }}
               >
-                <div className="flex items-center gap-6 mb-4 md:mb-0">
-                  <div className="flex-shrink-0 bg-white rounded-2xl shadow-sm border border-white/50 p-2">
-                    {hotline.icon}
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="title-medium text-info-foreground text-shadow-lg">
+                      {hotline.name}
+                    </h4>
+                    {hotline.is247 && (
+                      <span className="px-2.5 py-1 bg-white text-gray-600 text-[10px] font-bold rounded-full uppercase tracking-wider shadow-sm border border-gray-100">
+                        24/7
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h4 className="title-small lg:title-large text-gray-900">
-                        {hotline.name}
-                      </h4>
-                      {hotline.is247 && (
-                        <span className="px-2.5 py-0.5 bg-white text-gray-600 text-[10px] font-bold rounded-full uppercase tracking-wider shadow-sm border border-gray-100">
-                          24/7
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-600 hidden md:block">
-                      {hotline.description}
-                    </p>
-                    <p className="font-outfit text-lg sm:text-lg text-gray-900 tracking-tight mt-1 md:hidden">
-                      {hotline.number}
-                    </p>
-                  </div>
+                  <p className="text-sm text-info-foreground mb-6">
+                    {hotline.description}
+                  </p>
                 </div>
 
-                <div className="hidden md:block md:text-right">
-                  <span className="font-outfit font-bold text-xl text-gray-900 tracking-tight">
-                    {hotline.number}
-                  </span>
+                <div className="flex flex-col gap-1">
+                  {hotline.number.split("\n").map((num, i) => (
+                    <a
+                      key={i}
+                      href={`tel:${num.replace(/[^0-9]/g, "")}`}
+                      className="text-shadow-lg text-lg md:text-xl text-info-foreground tracking-tight hover:text-primary transition-colors"
+                    >
+                      {num}
+                    </a>
+                  ))}
                 </div>
               </div>
             ))}

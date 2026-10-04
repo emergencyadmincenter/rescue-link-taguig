@@ -15,12 +15,7 @@
 import { useMemo } from "react";
 import {
   FiArrowLeft,
-  FiUsers,
-  FiMapPin,
-  FiThermometer,
-  FiAlertTriangle,
 } from "react-icons/fi";
-import { WiFlood } from "react-icons/wi";
 import type { BarangayWeather } from "../types/weather.types";
 import { type ClusterConfig } from "../data/clusters";
 import { computeClusterStats } from "../utils/cluster-stats";
@@ -38,6 +33,9 @@ interface ClusterDetailPanelProps {
   onBack: () => void;
   /** Called when the user clicks a specific barangay card to see its full detail */
   onBarangaySelect: (weather: BarangayWeather) => void;
+  onBarangayHover?: (name: string | null) => void;
+  /** Active tab to pass down to compact card */
+  activeTab?: "severity" | "flood_risk";
 }
 
 export default function ClusterDetailPanel({
@@ -46,6 +44,8 @@ export default function ClusterDetailPanel({
   weatherByName,
   onBack,
   onBarangaySelect,
+  onBarangayHover,
+  activeTab = "flood_risk",
 }: ClusterDetailPanelProps) {
   // Compute cluster-level summary stats
   const stats = useMemo(
@@ -65,9 +65,6 @@ export default function ClusterDetailPanel({
     return worst;
   }, [barangayWeather]);
 
-  const highestFloodRiskConfig = highestFloodRisk
-    ? getFloodRiskConfig(highestFloodRisk.level as any)
-    : null;
 
   // Build severity summary label
   const severitySummaryParts: string[] = [];
@@ -96,97 +93,7 @@ export default function ClusterDetailPanel({
         <span className="body-xsmall text-gray-400">· {cluster.area}</span>
       </div>
 
-      {/* Cluster Meta */}
-      <div className="flex items-center gap-3 mb-3 px-1 shrink-0">
-        <div className="flex items-center gap-1 text-gray-400">
-          <FiUsers className="w-3 h-3" />
-          <span className="body-xsmall">{cluster.assignedTeam}</span>
-        </div>
-        <div className="flex items-center gap-1 text-gray-400">
-          <FiMapPin className="w-3 h-3" />
-          <span className="body-xsmall">{cluster.commandPost}</span>
-        </div>
-      </div>
-
-      {/* ── Cluster-Level Summary Stats ── */}
-      <div
-        className={`rounded-lg border p-3 mb-3 shrink-0 ${cluster.bgClass} ${cluster.borderClass}`}
-      >
-        <div className="flex items-center gap-1.5 mb-2">
-          <FiThermometer className={`w-3.5 h-3.5 ${cluster.textClass}`} />
-          <span
-            className={`body-xsmall font-semibold ${cluster.textClass} uppercase tracking-wide`}
-          >
-            Cluster Summary
-          </span>
-        </div>
-
-        {/* Summary Grid */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-          {/* Avg Temperature */}
-          <div className="flex flex-col">
-            <span className="body-xsmall text-gray-500">Avg Temp</span>
-            <span className="body-small font-semibold text-gray-800">
-              {stats.avgTemperature}°C
-            </span>
-          </div>
-
-          {/* Total Barangays */}
-          <div className="flex flex-col">
-            <span className="body-xsmall text-gray-500">Barangays</span>
-            <span className="body-small font-semibold text-gray-800">
-              {stats.totalBarangays}
-            </span>
-          </div>
-        </div>
-
-        {/* Severity Breakdown */}
-        <div className="mt-2 pt-2 border-t border-gray-200/50">
-          <div className="flex items-center gap-2 flex-wrap body-xsmall font-medium">
-            {stats.severeCount > 0 && (
-              <span className="flex items-center gap-1 text-red-600">
-                <FiAlertTriangle className="w-3 h-3" />
-                {stats.severeCount} Severe
-              </span>
-            )}
-            {stats.advisoryCount > 0 && (
-              <span className="text-amber-600">
-                {stats.advisoryCount} Advisory
-              </span>
-            )}
-            {stats.normalCount > 0 && (
-              <span className="text-emerald-600">
-                {stats.normalCount} Normal
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Highest Flood Risk */}
-        {highestFloodRisk && highestFloodRiskConfig && (
-          <div className="mt-2 pt-2 border-t border-gray-200/50">
-            <div className="flex items-center gap-1.5">
-              <WiFlood
-                className={`w-4 h-4 ${highestFloodRiskConfig.textColor}`}
-              />
-              <span className="body-xsmall text-gray-500">
-                Highest Flood Risk:
-              </span>
-              <span
-                className={`body-xsmall font-semibold ${highestFloodRiskConfig.textColor}`}
-              >
-                {highestFloodRiskConfig.label}
-              </span>
-              <span className="body-xsmall text-gray-400">
-                ({highestFloodRisk.name})
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Per-Barangay Breakdown ── */}
-      <div className="border-t border-gray-100 pt-2 mb-2 shrink-0">
+            <div className="border-t border-gray-100 pt-2 mb-2 shrink-0">
         <span className="body-xsmall text-gray-500 font-medium uppercase tracking-wide">
           Barangays ({barangayWeather.length})
         </span>
@@ -196,15 +103,21 @@ export default function ClusterDetailPanel({
         {barangayWeather.map((w) => (
           <div
             key={w.id}
-            className="cursor-pointer transition-transform duration-150 hover:scale-[1.01]"
+            className="cursor-pointer transition-all duration-200 hover:scale-[1.01] rounded-lg hover:shadow-sm hover:ring-2 hover:ring-blue-500/20"
             onClick={() => onBarangaySelect(w)}
+            onMouseEnter={() => onBarangayHover?.(w.name)}
+            onMouseLeave={() => onBarangayHover?.(null)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") onBarangaySelect(w);
             }}
           >
-            <CompactWeatherCard weather={w} clusterColor={cluster.color} />
+            <CompactWeatherCard
+              weather={w}
+              clusterColor={cluster.color}
+              activeTab={activeTab}
+            />
           </div>
         ))}
         {barangayWeather.length === 0 && (

@@ -43,9 +43,6 @@ export function EmergencyTipsSection() {
       <div className="max-w-[1400px] mx-auto px-6 md:px-8 lg:px-12 relative z-10">
         <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
           <div className="w-full lg:w-[40%] lg:sticky lg:top-32">
-            <div className="w-16 h-16 bg-danger/20 text-danger rounded-2xl flex items-center justify-center mb-6">
-              <FiAlertTriangle className="w-8 h-8" />
-            </div>
             <h2 className="title-large text-danger mb-2">Be Prepared</h2>
             <h3 className="font-outfit font-bold text-4xl md:text-5xl lg:text-6xl text-white mb-6 tracking-tight">
               Emergency Tips

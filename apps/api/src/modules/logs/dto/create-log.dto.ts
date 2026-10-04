@@ -4,7 +4,6 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
-  IsEnum,
 } from 'class-validator';
 
 export class CreateLogDto {

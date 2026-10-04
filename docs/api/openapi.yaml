@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: RescueLink Taguig API
+  description: >
+    Official API documentation for the RescueLink Taguig backend system. 
+    Handles emergency incident logs, WebSocket messaging, real-time weather data, 
+    personnel management, role-based access control, and AWS S3 storage integrations.
+  version: 1.0.0
+  contact:
+    name: RescueLink Team
+    email: admin@rescuelink-taguig.com
+
+servers:
+  - url: http://localhost:3001
+    description: Local Development Server
+  - url: https://api.rescuelink-taguig.com
+    description: Production Environment
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Unauthorized. Missing or invalid JWT token.
+    Forbidden:
+      description: Forbidden. User lacks required roles/permissions.
+    NotFound:
+      description: The requested resource was not found.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health/live:
+    get:
+      summary: Liveness Probe
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: OK
+
+  /auth/sign-in:
+    post:
+      summary: Authenticate User
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successfully authenticated. Returns JWT.
+        '401':
+          description: Invalid credentials.
+
+  /auth/me:
+    get:
+      summary: Get Current User
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Returns the currently authenticated user's profile and roles.
+
+  /calls/emergency:
+    post:
+      summary: Initiate an Emergency Call
+      tags:
+        - Emergency Calls
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                type:
+                  type: string
+      responses:
+        '201':
+          description: Call initiated successfully.
+
+  /logs:
+    get:
+      summary: Retrieve all Incident Logs
+      tags:
+        - Incident Logs
+      responses:
+        '200':
+          description: A list of emergency incident logs.
+    post:
+      summary: Create a manual incident log
+      tags:
+        - Incident Logs
+      responses:
+        '201':
+          description: Log created successfully.
+
+  /logs/{id}:
+    get:
+      summary: Get a specific log by ID
+      tags:
+        - Incident Logs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Incident log details.
+    patch:
+      summary: Update a specific log
+      tags:
+        - Incident Logs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Incident log updated.
+
+  /weather:
+    get:
+      summary: Get current weather & flood risk data
+      tags:
+        - Weather
+      responses:
+        '200':
+          description: Returns current active weather alerts, grid data, and cluster statuses.
+
+  /weather/history:
+    get:
+      summary: Get historical weather data
+      tags:
+        - Weather
+      responses:
+        '200':
+          description: Historical weather data.
+
+  /personnel:
+    get:
+      summary: Retrieve personnel list
+      tags:
+        - Personnel Management
+      responses:
+        '200':
+          description: List of registered personnel and coordinators.
+    post:
+      summary: Register a new personnel member
+      tags:
+        - Personnel Management
+      responses:
+        '201':
+          description: Personnel created.
+
+  /internal-messaging/conversations:
+    get:
+      summary: Get user's active conversations
+      tags:
+        - Internal Messaging
+      responses:
+        '200':
+          description: List of chat conversations.
+
+  /storage/private/upload:
+    post:
+      summary: Upload a private file securely
+      tags:
+        - Storage
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: File uploaded successfully, returns S3 Key.
+
+  /storage/private/access:
+    get:
+      summary: Get secure presigned URL for a private file
+      tags:
+        - Storage
+      parameters:
+        - in: query
+          name: key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Returns a temporary AWS S3 presigned URL.
+
+  /insights/incidents:
+    get:
+      summary: Get incident analytics and metrics
+      tags:
+        - Insights & Analytics
+      responses:
+        '200':
+          description: Analytics data for dashboard visualization.

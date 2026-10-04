@@ -1,0 +1,417 @@
+// RescueLink Taguig - Emergency Platform ERD
+// Generated for dbdiagram.io
+
+Enum AgencyType {
+  fire
+  medical
+  police
+  drrmo
+  other
+}
+
+Enum CoordinationStatus {
+  pending
+  contacted
+  completed
+}
+
+Enum UpdateSource {
+  external
+  internal
+}
+
+Enum UserStatus {
+  pending_activation
+  active
+  inactive
+  removed
+}
+
+Enum TokenType {
+  activation
+  password_reset
+}
+
+Enum TokenStatus {
+  active
+  used
+  revoked
+  expired
+}
+
+Enum LogStatus {
+  active
+  dispatched
+  resolved
+  cancelled
+}
+
+Enum LogSource {
+  manual
+  voice_call
+  chat
+}
+
+Enum CommunicationMethod {
+  voice
+  chat
+}
+
+Enum CallStatus {
+  ringing
+  active
+  ended
+  missed
+  rejected
+}
+
+Enum MessageSenderType {
+  resident
+  coordinator
+  system
+}
+
+Enum MessageType {
+  text
+  image
+  file
+}
+
+Enum ResourceCategory {
+  responder
+  medical
+  relief
+  utility
+}
+
+Enum FraudRiskClassification {
+  low_risk
+  high_fraud_risk
+}
+
+Enum ShadowBanViolationCategory {
+  fake_rescue_call
+  spam
+  fraudulent_activity
+  abusive_malicious_use
+  impersonation_identity_misuse
+  coordinated_system_abuse
+  other
+}
+
+Enum ShadowBanSeverity {
+  low
+  high
+  critical
+}
+
+Table users {
+  id String  [pk, default: 'uuid()']
+  name String 
+  email String  [unique]
+  password_hash String  [null]
+  status UserStatus 
+  avatar_url String  [null]
+  phone_number String  [null]
+  address String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+  removed_at DateTime  [null]
+  log_status_history LogStatusHistory 
+  created_group_chats InternalConversation 
+  internal_conversations InternalConversationParticipant 
+  sent_internal_messages InternalMessage 
+}
+
+Table roles {
+  id String  [pk, default: 'uuid()']
+  name String  [unique]
+  description String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table permissions {
+  id String  [pk, default: 'uuid()']
+  name String  [unique]
+  resource String 
+  action String 
+  description String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table user_roles {
+  user_id String 
+  role_id String 
+  assigned_at DateTime  [default: 'now()']
+}
+
+Table role_permissions {
+  role_id String 
+  permission_id String 
+}
+
+Table user_tokens {
+  id String  [pk, default: 'uuid()']
+  user_id String 
+  type TokenType 
+  token String  [unique]
+  status TokenStatus 
+  expires_at DateTime 
+  created_at DateTime  [default: 'now()']
+}
+
+Table logs {
+  id String  [pk, default: 'uuid()']
+  reference_no String  [unique]
+  assigned_coordinator_id String  [null]
+  created_by_coordinator_id String  [null]
+  status LogStatus 
+  source LogSource 
+  caller_name String  [null]
+  caller_contact String  [null]
+  address String  [null]
+  barangay String  [null]
+  latitude Decimal  [null]
+  longitude Decimal  [null]
+  location_accuracy Decimal  [null]
+  location_timestamp DateTime  [null]
+  location_status String  [null]
+  incident_category_id String  [null]
+  weather_condition String  [null]
+  description String  [null]
+  cancellation_reason String  [null]
+  last_activity_at DateTime  [null]
+  channels String  [default: '[]']
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+  resident_visible_until DateTime  [null]
+  resolved_at DateTime  [null]
+  status_history LogStatusHistory 
+  public_token String  [unique, null]
+  public_token_expires_at DateTime  [null]
+}
+
+Table log_status_history {
+  id String  [pk, default: 'uuid()']
+  log_id String 
+  previous_status LogStatus  [null]
+  new_status LogStatus 
+  changed_by_id String  [null]
+  remarks String  [null]
+  changed_at DateTime  [default: 'now()']
+}
+
+Table incident_categories {
+  id String  [pk, default: 'uuid()']
+  name String  [unique]
+  created_at DateTime  [default: 'now()']
+}
+
+Table resources {
+  id String  [pk, default: 'uuid()']
+  name String  [unique]
+  category ResourceCategory 
+  description String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table log_resource_assignments {
+  log_id String 
+  resource_id String 
+}
+
+Table calls {
+  id String  [pk, default: 'uuid()']
+  log_id String  [null]
+  coordinator_id String  [null]
+  communication_method CommunicationMethod 
+  status CallStatus 
+  latitude Decimal  [null]
+  longitude Decimal  [null]
+  location_accuracy Decimal  [null]
+  location_timestamp DateTime  [null]
+  location_status String  [null]
+  rejection_reason String  [null]
+  started_at DateTime  [default: 'now()']
+  answered_at DateTime  [null]
+  ended_at DateTime  [null]
+}
+
+Table messages {
+  id String  [pk, default: 'uuid()']
+  log_id String  [null]
+  call_id String  [null]
+  sender_type MessageSenderType 
+  type MessageType 
+  text String  [null]
+  attachment_url String  [null]
+  image_keys String 
+  created_at DateTime  [default: 'now()']
+}
+
+Table fraud_assessments {
+  id String  [pk, default: 'uuid()']
+  log_id String  [null]
+  call_id String  [null]
+  device_uuid String  [null]
+  fingerprint_hash String  [null]
+  client_ip String 
+  ip_latitude Decimal  [null]
+  ip_longitude Decimal  [null]
+  ip_country String  [null]
+  ip_region String  [null]
+  ip_city String  [null]
+  resident_latitude Decimal  [null]
+  resident_longitude Decimal  [null]
+  location_permission_granted Boolean  [default: 'true']
+  distance_km Decimal  [null]
+  is_vpn Boolean  [default: 'false']
+  is_proxy Boolean  [default: 'false']
+  is_hosting Boolean  [default: 'false']
+  risk_classification FraudRiskClassification 
+  created_at DateTime  [default: 'now()']
+}
+
+Table shadow_bans {
+  id String  [pk, default: 'uuid()']
+  device_uuid String  [null]
+  fingerprint_hash String  [null]
+  client_ip String  [null]
+  caller_contact String  [null]
+  reason String 
+  violation_category ShadowBanViolationCategory  [default: 'other']
+  severity ShadowBanSeverity  [default: 'low']
+  details String  [null]
+  unban_reason String  [null]
+  unbanned_at DateTime  [null]
+  active Boolean  [default: 'true']
+  created_by_id String  [null]
+  unbanned_by_id String  [null]
+  expires_at DateTime  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table quarantined_emergency_requests {
+  id String  [pk, default: 'uuid()']
+  original_payload Json 
+  device_uuid String  [null]
+  fingerprint_hash String  [null]
+  client_ip String  [null]
+  resident_latitude Decimal  [null]
+  resident_longitude Decimal  [null]
+  location_accuracy Decimal  [null]
+  location_timestamp DateTime  [null]
+  location_status String  [null]
+  communication_method String  [null]
+  shadow_ban_reason String  [null]
+  created_at DateTime  [default: 'now()']
+}
+
+Table internal_conversations {
+  id String  [pk, default: 'uuid()']
+  is_group Boolean  [default: 'false']
+  title String  [null]
+  created_by_id String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+  participants InternalConversationParticipant 
+  messages InternalMessage 
+}
+
+Table internal_conversation_participants {
+  conversation_id String 
+  user_id String 
+  conversation InternalConversation 
+  joined_at DateTime  [default: 'now()']
+  last_read_at DateTime  [default: 'now()']
+  is_muted Boolean  [default: 'false']
+}
+
+Table internal_messages {
+  id String  [pk, default: 'uuid()']
+  conversation_id String 
+  conversation InternalConversation 
+  sender_id String  [null]
+  text String  [null]
+  image_keys String 
+  reply_to_id String  [null]
+  reply_to InternalMessage  [null]
+  replies InternalMessage 
+  created_at DateTime  [default: 'now()']
+}
+
+Table agencies {
+  id String  [pk, default: 'uuid()']
+  name String  [unique]
+  type AgencyType 
+  contact_info String  [null]
+  is_active Boolean  [default: 'true']
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table agency_incident_categories {
+  agency_id String 
+  incident_category_id String 
+}
+
+Table log_agency_coordinations {
+  id String  [pk, default: 'uuid()']
+  log_id String 
+  agency_id String 
+  status CoordinationStatus  [default: 'pending']
+  remarks String  [null]
+  access_token String  [unique, default: 'uuid()']
+  created_by_id String  [null]
+  created_at DateTime  [default: 'now()']
+  updated_at DateTime 
+}
+
+Table coordination_updates {
+  id String  [pk, default: 'uuid()']
+  log_id String 
+  agency_id String  [null]
+  created_by_id String  [null]
+  message String 
+  source UpdateSource  [default: 'external']
+  created_at DateTime  [default: 'now()']
+}
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+Ref: role_permissions.role_id > roles.id
+Ref: role_permissions.permission_id > permissions.id
+Ref: user_tokens.user_id > users.id
+Ref: logs.assigned_coordinator_id > users.id
+Ref: logs.created_by_coordinator_id > users.id
+Ref: logs.incident_category_id > incident_categories.id
+Ref: log_status_history.log_id > logs.id
+Ref: log_status_history.changed_by_id > users.id
+Ref: log_resource_assignments.log_id > logs.id
+Ref: log_resource_assignments.resource_id > resources.id
+Ref: calls.log_id > logs.id
+Ref: calls.coordinator_id > users.id
+Ref: messages.log_id > logs.id
+Ref: messages.call_id > calls.id
+Ref: fraud_assessments.log_id > logs.id
+Ref: fraud_assessments.call_id > calls.id
+Ref: shadow_bans.created_by_id > users.id
+Ref: shadow_bans.unbanned_by_id > users.id
+Ref: internal_conversations.created_by_id > users.id
+Ref: internal_conversation_participants.conversation_id > internal_conversations.id
+Ref: internal_conversation_participants.user_id > users.id
+Ref: internal_messages.conversation_id > internal_conversations.id
+Ref: internal_messages.sender_id > users.id
+Ref: internal_messages.reply_to_id > internal_messages.id
+Ref: agency_incident_categories.agency_id > agencies.id
+Ref: agency_incident_categories.incident_category_id > incident_categories.id
+Ref: log_agency_coordinations.log_id > logs.id
+Ref: log_agency_coordinations.agency_id > agencies.id
+Ref: log_agency_coordinations.created_by_id > users.id
+Ref: coordination_updates.log_id > logs.id
+Ref: coordination_updates.agency_id > agencies.id
+Ref: coordination_updates.created_by_id > users.id

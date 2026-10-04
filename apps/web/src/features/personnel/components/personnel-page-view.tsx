@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import {
@@ -312,8 +311,7 @@ export default function PersonnelPageView() {
         )}
       </div>
 
-      {/* ===== Personnel Detail Dialog ===== */}
-      <PersonnelDetailDialog
+            <PersonnelDetailDialog
         isOpen={!!detailPerson}
         person={detailPerson}
         role={detailRole}
@@ -324,8 +322,7 @@ export default function PersonnelPageView() {
         }}
       />
 
-      {/* ===== Add Personnel Dialog ===== */}
-      {showAddForm && (
+            {showAddForm && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           {/* onSuccess triggers a list refresh after the account is created */}
           <AddPersonnelForm
@@ -335,8 +332,7 @@ export default function PersonnelPageView() {
         </div>
       )}
 
-      {/* ===== Edit Personnel Dialog ===== */}
-      {editingPerson && (
+            {editingPerson && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <EditPersonnelForm
             id={editingPerson.id}
@@ -349,8 +345,7 @@ export default function PersonnelPageView() {
         </div>
       )}
 
-      {/* ===== Confirmation Dialog ===== */}
-      <ConfirmationDialog
+            <ConfirmationDialog
         isOpen={!!confirmAction}
         title={
           confirmAction?.type === "deactivate"

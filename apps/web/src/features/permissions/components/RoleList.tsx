@@ -1,4 +1,3 @@
-import React from 'react';
 import { Role } from '../types/permissions.types';
 import { FiUsers } from 'react-icons/fi';
 
