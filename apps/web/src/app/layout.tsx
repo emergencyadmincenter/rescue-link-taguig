@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "RescueLink Taguig",
   description: "Emergency Response System for Taguig City",
+  verification: {
+    google: "28Y72iGA7YLCaqhHRPzCH5wyZ0LHb16XPlmjpcsuAxE",
+  },
 };
 
 export default function RootLayout({
