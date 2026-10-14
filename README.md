@@ -1,7 +1,7 @@
 # RescueLink Taguig
 
 <div align="center">
-  A comprehensive emergency response, incident logging, and civilian coordination platform designed to streamline communication between residents and emergency response agencies (Police, Fire, Medical, DRRMO) in Taguig City.
+  A comprehensive emergency response, incident logging, and civilian coordination platform developed for the <strong>Command Center of Taguig</strong> to streamline communication between residents and emergency response agencies (Police, Fire, Medical, DRRMO) in Taguig City.
 </div>
 
 <br />
@@ -49,7 +49,7 @@
 
 ## Client & Project Team
 
-**Client:** Command Center Taguig
+**Client:** Command Center of Taguig
 
 | Team Member              | Roles & Contributions                                                         |
 | :----------------------- | :---------------------------------------------------------------------------- |
