@@ -8,7 +8,7 @@ Built by **Arjohn Banado** (Project Lead) · **John Lawrence Amihan** · **Mark 
 
 [**Live Site**](https://rescuelinktaguig.com) · [Team](#team) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Documentation](#documentation)
 
-<br />
+Built by **Arjohn Banado** (Project Lead) · **John Lawrence Amihan** · **Mark Dennis Concha** · **Bob Geof Tortogo**
 
 <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
 <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
@@ -78,7 +78,21 @@ Built hand in hand with the Command Center of Taguig, from on-site requirements 
 
 ---
 
-## Showcase
+## Table of Contents
+
+- [Overview](#overview)
+- [Team](#team)
+- [Showcase](#showcase)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Cloud Deployment](#cloud-deployment)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [Testing & CI](#testing--ci)
+- [Documentation](#documentation)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
 
 <div align="center">
 
@@ -99,7 +113,7 @@ Built hand in hand with the Command Center of Taguig, from on-site requirements 
 
 ---
 
-## Key Features
+---
 
 | Feature | Description |
 | :-- | :-- |
