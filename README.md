@@ -8,7 +8,7 @@ Built by **Arjohn Banado** (Project Lead) · **John Lawrence Amihan** · **Mark 
 
 [**Live Site**](https://rescuelinktaguig.com) · [Team](#team) · [Architecture](#architecture) · [Getting Started](#getting-started) · [Documentation](#documentation)
 
-<br />
+Built by **Arjohn Banado** (Project Lead) · **John Lawrence Amihan** · **Mark Dennis Concha** · **Bob Geof Tortogo**
 
 <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js" />
 <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
@@ -67,9 +67,32 @@ RescueLink Taguig connects **Taguig City residents** directly with the **Command
 | **Mark Dennis Concha** | Backend Development, Documentation |
 | **Bob Geof Tortogo** | Backend Development, Documentation |
 
+### Client Collaboration
+
+Built hand in hand with the Command Center of Taguig, from on-site requirements gathering to live system demos with its coordinators.
+
+<div align="center">
+<img src="docs/taguig-command-center-collab.jpg" alt="RescueLink Taguig team with the Command Center of Taguig" width="75%" />
+<p><em>On-site meetings and system demos with the Command Center of Taguig at the Taguig Center for Disaster Management</em></p>
+</div>
+
 ---
 
-## Showcase
+## Table of Contents
+
+- [Overview](#overview)
+- [Team](#team)
+- [Showcase](#showcase)
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Cloud Deployment](#cloud-deployment)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [Testing & CI](#testing--ci)
+- [Documentation](#documentation)
+- [Acknowledgements](#acknowledgements)
+- [License](#license)
 
 <div align="center">
 
@@ -90,7 +113,7 @@ RescueLink Taguig connects **Taguig City residents** directly with the **Command
 
 ---
 
-## Key Features
+---
 
 | Feature | Description |
 | :-- | :-- |
