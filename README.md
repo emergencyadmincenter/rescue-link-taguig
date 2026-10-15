@@ -67,6 +67,15 @@ RescueLink Taguig connects **Taguig City residents** directly with the **Command
 | **Mark Dennis Concha** | Backend Development, Documentation |
 | **Bob Geof Tortogo** | Backend Development, Documentation |
 
+### Client Collaboration
+
+Built hand in hand with the Command Center of Taguig, from on-site requirements gathering to live system demos with its coordinators.
+
+<div align="center">
+<img src="docs/taguig-command-center-collab.jpg" alt="RescueLink Taguig team with the Command Center of Taguig" width="75%" />
+<p><em>On-site meetings and system demos with the Command Center of Taguig at the Taguig Center for Disaster Management</em></p>
+</div>
+
 ---
 
 ## Showcase
