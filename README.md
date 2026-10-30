@@ -24,6 +24,17 @@ Built by **Arjohn Banado** (Project Lead) · **John Lawrence Amihan** · **Mark 
 <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
 <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" />
 
+<br />
+<br />
+
+<a href="docs/rescuelink-demo.mp4">
+  <img src="docs/rescuelink-demo-preview.gif" alt="RescueLink Taguig 3D demo preview" width="100%" />
+</a>
+
+<p><a href="docs/rescuelink-demo.mp4"><strong>Watch the full 95-second demo video</strong></a></p>
+
+<sub>Demo video made with Remotion. Screens use fictional demo data only. Music and sound effects are original, synthesized for this video.</sub>
+
 </div>
 
 ---
